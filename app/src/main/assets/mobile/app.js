@@ -1,7 +1,7 @@
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 const uiState = {
-  page: 1, query: "", searchMode: "song", selectedSinger: "", busy: false,
+  page: 1, query: "", searchMode: "song", selectedSinger: "", voiceSingerFilter: "", busy: false,
   hotPage: 1, hotPageSize: 10, hotBusy: false,
   visible: true, connected: false, eqEnabled: false,
   equalizer: null, searchAbort: null, searchKey: ""
@@ -230,6 +230,7 @@ async function search(reset = true) {
     }
     uiState.page = 1;
     uiState.selectedSinger = "";
+    uiState.voiceSingerFilter = "";
     uiState.query = nextQuery;
     uiState.searchKey = key;
     $("#results").innerHTML = "";
@@ -245,7 +246,12 @@ async function search(reset = true) {
   uiState.busy = true;
   try {
     const data = await api(`/api/v1/songs?q=${encodeURIComponent(uiState.query)}&type=${uiState.searchMode}&page=${requestedPage}&pageSize=20`, { signal });
-    const rows = uiState.searchMode === "singer" && !uiState.selectedSinger ? singerCardsFromSongs(data.songs) : (data.songs || []).map((song, index) => songRow(song, false, false, (requestedPage - 1) * 20 + index)).join("");
+    let resultSongs = data.songs || [];
+    if (uiState.voiceSingerFilter) {
+      const wantedSinger = uiState.voiceSingerFilter.toLocaleLowerCase();
+      resultSongs = resultSongs.filter((song) => String(song.singer || "").toLocaleLowerCase().includes(wantedSinger));
+    }
+    const rows = uiState.searchMode === "singer" && !uiState.selectedSinger ? singerCardsFromSongs(resultSongs) : resultSongs.map((song, index) => songRow(song, false, false, (requestedPage - 1) * 20 + index)).join("");
     if (rows) {
       if (uiState.searchMode === "singer" && !uiState.selectedSinger && requestedPage > 1) {
         const existing = new Set(Array.from($("#results").querySelectorAll("[data-singer]")).map((item) => item.dataset.singer));
@@ -385,16 +391,31 @@ function applyVoiceSearch(command) {
   if (modeButton) modeButton.click();
   $("#query").value = command.query;
   uiState.selectedSinger = "";
+  uiState.voiceSingerFilter = command.singer || "";
   search();
-  if (command.singer) toast("识别到歌手：" + command.singer + "，正在搜索歌曲：" + command.query);
+  if (command.singer) toast("识别到歌手：" + command.singer + "、歌曲：" + command.query + "，正在筛选匹配结果");
   else if (command.mode === "singer") toast("正在搜索歌手：" + command.query);
   else toast("已识别：" + command.query + "，请选择匹配歌曲加入点歌单");
 }
 
+function useKeyboardVoiceInput(reason) {
+  const input = $("#query");
+  if (input) {
+    input.focus();
+    try { input.click(); } catch (_) {}
+  }
+  toast(reason || "请点击手机输入法键盘上的麦克风，说出歌名后点击搜索");
+}
+
 function startVoiceSearch() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const localSecureHost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  if (!window.isSecureContext && !localSecureHost) {
+    useKeyboardVoiceInput("当前扫码页面是局域网 HTTP，浏览器可能禁止网页直接录音；请用键盘上的麦克风语音输入");
+    return;
+  }
   if (!SpeechRecognition) {
-    toast("当前浏览器不支持语音识别，请使用最新版 Chrome，或手动输入歌曲名");
+    useKeyboardVoiceInput("当前浏览器没有网页语音识别功能，请使用手机输入法键盘上的麦克风");
     return;
   }
   if (voiceListening && voiceRecognition) {
@@ -418,13 +439,18 @@ function startVoiceSearch() {
     };
     voiceRecognition.onerror = (event) => {
       const messages = { "not-allowed": "麦克风权限被拒绝，请在浏览器设置中允许麦克风", "service-not-allowed": "语音识别服务不可用", "no-speech": "没有听到声音，请靠近手机再说一次", "audio-capture": "没有检测到可用麦克风", "network": "语音识别网络连接失败" };
-      toast(messages[event.error] || "语音识别失败，请手动输入歌曲名");
+      const message = messages[event.error] || "语音识别失败";
+      if (["not-allowed", "service-not-allowed", "network", "audio-capture"].includes(event.error)) {
+        useKeyboardVoiceInput(message + "；可以改用手机键盘麦克风语音输入");
+      } else {
+        toast(message + "，请再试一次或使用键盘麦克风");
+      }
     };
     voiceRecognition.onend = () => setVoiceButtonState(false);
     voiceRecognition.start();
   } catch (error) {
     setVoiceButtonState(false);
-    toast("无法启动语音识别，请检查浏览器麦克风权限");
+    useKeyboardVoiceInput("无法启动网页语音识别，请使用手机键盘麦克风输入");
   }
 }
 
