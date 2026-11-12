@@ -48,7 +48,7 @@ function songRow(song, queue = false, current = false, index = 0, ranking = fals
   return `<div class="song${ranking && index < 3 ? " podium" : ""}" data-id="${escapeHtml(song.id)}">
     <div class="song-index">${number}</div>
     <div class="info">${current ? '<span class="playing">正在播放</span>' : ""}<b>${escapeHtml(song.title)}</b><p>${escapeHtml(song.singer)}${song.language ? " · " + escapeHtml(song.language) : ""}</p></div>
-    <button type="button" class="song-detail">详情/歌词</button>${actions}
+    <button type="button" class="song-detail">详情/歌词</button>${!queue ? `<button type="button" class="favorite${song.favorite ? " active" : ""}" aria-label="${song.favorite ? "取消收藏" : "收藏"}">${song.favorite ? "♥" : "♡"}</button>` : ""}${actions}
   </div>`;
 }
 
@@ -412,6 +412,16 @@ async function showSingerDetail(name) { try { const data = await api("/api/v1/si
   }
   const row = button.closest(".song");
   if (row && button.classList.contains("song-detail")) { showSongDetail(row.dataset.id); return; }
+  if (row && button.classList.contains("favorite")) {
+    try {
+      const data = await api("/api/v1/favorites", { method: "POST", body: JSON.stringify({ songId: row.dataset.id }) });
+      button.classList.toggle("active", !!data.favorite);
+      button.textContent = data.favorite ? "♥" : "♡";
+      button.setAttribute("aria-label", data.favorite ? "取消收藏" : "收藏");
+      toast(data.message || (data.favorite ? "已加入收藏" : "已取消收藏"));
+    } catch (error) { toast(error.message); }
+    return;
+  }
   if (row && button.classList.contains("order")) {
     try {
       await api("/api/v1/queue", { method: "POST", body: JSON.stringify({ songId: row.dataset.id }) });
