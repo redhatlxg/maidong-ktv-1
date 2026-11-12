@@ -29,12 +29,19 @@ jobs:
           java-version: 17
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: Run unit tests, debug build and release lint
+      - name: Run unit tests, debug/release builds and release lint
         run: ./gradlew testDebugUnitTest testReleaseUnitTest assembleDebug assembleRelease :app:lintRelease --no-daemon
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: xiaoxiaoya-ktv-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: xiaoxiaoya-ktv-release-apk
+          path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14
