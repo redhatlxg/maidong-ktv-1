@@ -4071,6 +4071,8 @@ class MainActivity : AppCompatActivity() {
             when {
                 method == "GET" && path == "/api/v1/state" -> remoteOk(remoteStateJson())
                 method == "GET" && path == "/api/v1/songs" -> remoteOk(remoteSearchJson(query))
+                method == "GET" && path == "/api/v1/singer" -> remoteSingerJson(query)
+                method == "GET" && path.startsWith("/api/v1/lyrics/") -> remoteLyricsJson(URLDecoder.decode(path.substringAfterLast('/'), "UTF-8"))
                 method == "GET" && path == "/api/v1/hot" -> remoteOk(remoteHotJson(query))
                 method == "GET" && path == "/api/v1/queue" -> remoteOk(remoteQueueJson())
                 method == "POST" && path == "/api/v1/queue" -> remoteOrder(JSONObject(body))
@@ -4208,6 +4210,25 @@ class MainActivity : AppCompatActivity() {
         return payload
     }
 
+    private fun remoteSingerJson(query: Map<String, String>): LocalRemoteServer.ApiResponse {
+        val name = query["q"].orEmpty().trim()
+        if (name.isBlank()) return remoteError(400, "MISSING_SINGER", "缺少歌手名称")
+        val matches = if (library.muse.isAvailable()) library.muse.searchSingers(name, "", "", 0, 5) else mutableListOf()
+        val singers = JSONArray()
+        matches.forEach { row -> singers.put(JSONObject().apply { put("id", row.getOrNull(0) ?: ""); put("name", row.getOrNull(1) ?: name); put("type", row.getOrNull(2) ?: ""); put("area", row.getOrNull(3) ?: ""); put("hotScore", row.getOrNull(4)?.toIntOrNull() ?: 0); put("image", row.getOrNull(5) ?: "") }) }
+        val count = if (library.muse.isAvailable()) library.muse.countSongsBySingerName(name) else library.allSongs().count { isVisibleSong(it) && it.singer.orEmpty().contains(name, true) }
+        return remoteOk(JSONObject().put("name", name).put("songCount", count).put("singers", singers))
+    }
+
+    private fun remoteLyricsJson(id: String): LocalRemoteServer.ApiResponse {
+        val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id } ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在，请重新搜索")
+        val path = song.lyricPath.orEmpty()
+        if (path.isBlank()) return remoteOk(JSONObject().put("available", false).put("lyrics", "").put("message", "曲库没有歌词文件"))
+        val file = java.io.File(path)
+        if (!file.isFile || !file.name.endsWith(".lrc", true) || file.length() > 1024 * 1024) return remoteOk(JSONObject().put("available", false).put("lyrics", "").put("message", "暂时没有可查看的 LRC 歌词"))
+        val text = runCatching { file.readText(Charsets.UTF_8) }.getOrElse { return remoteError(500, "LYRIC_READ_FAILED", "歌词读取失败") }
+        return remoteOk(JSONObject().put("available", true).put("lyrics", text).put("format", "LRC"))
+    }
     private fun remoteHotJson(query: Map<String, String>): JSONObject {
         val page = (query["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
         val pageSize = (query["pageSize"]?.toIntOrNull() ?: 10).coerceIn(1, 30)
