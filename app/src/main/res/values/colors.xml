@@ -26,9 +26,9 @@
     <color name="bright_foreground_material_light">@android:color/black</color>
     <color name="button_material_dark">#ff5a595b</color>
     <color name="button_material_light">#ffd6d7d7</color>
-    <color name="colorAccent">#ffd81b60</color>
-    <color name="colorPrimary">#ff008577</color>
-    <color name="colorPrimaryDark">#ff00574b</color>
+    <color name="colorAccent">#ffffd56a</color>
+    <color name="colorPrimary">#ff5420a8</color>
+    <color name="colorPrimaryDark">#ff18064b</color>
     <color name="color_969696">#ff969696</color>
     <color name="color_FFDEC1">#ffffdec1</color>
     <color name="color_bg_score_view">#b3000217</color>
@@ -133,7 +133,7 @@
     <color name="dim_foreground_disabled_material_light">#80323232</color>
     <color name="dim_foreground_material_dark">#ffbebebe</color>
     <color name="dim_foreground_material_light">#ff323232</color>
-    <color name="dkplayer_theme_color">#ff39c5bb</color>
+    <color name="dkplayer_theme_color">#ff9b6bff</color>
     <color name="error_color_material_dark">#ffff7043</color>
     <color name="error_color_material_light">#ffff5722</color>
     <color name="foreground_material_dark">@android:color/white</color>
@@ -141,7 +141,7 @@
     <color name="highlighted_text_material_dark">#6680cbc4</color>
     <color name="highlighted_text_material_light">#66009688</color>
     <color name="key_popup_number_border">#26ffffff</color>
-    <color name="lrc_current_text_color">#ffff4081</color>
+    <color name="lrc_current_text_color">#ffffd56a</color>
     <color name="lrc_normal_text_color">#ff9e9e9e</color>
     <color name="lrc_time_text_color">#809e9e9e</color>
     <color name="lrc_timeline_color">#809e9e9e</color>
