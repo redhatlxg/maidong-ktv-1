@@ -8,6 +8,7 @@
     - 通用外壳:左列(视频+键盘)/ 右列(内容区 + 面包屑 + Tab + 列表)
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/layout_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -32,7 +33,7 @@
             android:layout_height="44dp"
             android:contentDescription="晓晓呀KTV"
             android:scaleType="fitCenter"
-            android:src="@drawable/ktv_logo" />
+            app:srcCompat="@drawable/ktv_logo" />
 
         <TextView
             android:id="@+id/top_brand_name"
@@ -182,7 +183,7 @@
             android:contentDescription="WiFi"
             android:padding="6dp"
             android:scaleType="centerInside"
-            android:src="@drawable/ott_ic_wifi" />
+            app:srcCompat="@drawable/ott_ic_wifi" />
     </LinearLayout>
 
     <!-- ============== 底部控制栏 ============== -->
