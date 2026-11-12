@@ -281,10 +281,13 @@ const DOUYIN_MUSIC_README = "https://raw.githubusercontent.com/SnailDev/douyin-h
 
 function parseDouyinMusicBoard(markdown) {
   const update = (markdown.match(/`更新时间：([^\`]+)`/) || [])[1] || "更新时间未知";
-  const section = markdown.match(/^## 音乐榜\s*([\s\S]*?)(?=^## |\s*$)/m);
-  if (!section) throw new Error("公开数据中没有找到音乐榜");
+  const heading = markdown.indexOf("## 音乐榜");
+  if (heading < 0) throw new Error("公开数据中没有找到音乐榜");
+  const afterHeading = markdown.slice(heading + "## 音乐榜".length);
+  const nextHeading = afterHeading.search(/^## /m);
+  const section = nextHeading < 0 ? afterHeading : afterHeading.slice(0, nextHeading);
   const items = [];
-  for (const line of section[1].split(/\r?\n/)) {
+  for (const line of section.split(/\r?\n/)) {
     const match = line.match(/^\s*\d+\.\s+\[([^\]]+)\]\((https?:\/\/[^)]+)\)\s+-\s+(.+)\s*$/);
     if (match) items.push({ title: match[1].trim(), artist: match[3].trim(), url: match[2] });
   }
