@@ -4228,7 +4228,7 @@ class MainActivity : AppCompatActivity() {
                 runCatching { JSONObject(json) }.getOrNull()?.let { return it }
             }
         }
-        val songs = if (library.muse.isAvailable() && keyword.isNotBlank()) {
+        val songs = (if (library.muse.isAvailable() && keyword.isNotBlank()) {
             if (type == "singer") library.muse.searchSongsBySingerKeyword(keyword, offset, pageSize + 1)
             else library.muse.searchSongs(keyword, offset, pageSize + 1)
         } else {
@@ -4239,7 +4239,7 @@ class MainActivity : AppCompatActivity() {
                     (song.title + " " + song.pinyin).contains(keyword, true)
                 }
             }.drop(offset).take(pageSize + 1).toMutableList()
-        }
+        }).filter(::isVisibleSong)
         val hasMore = songs.size > pageSize
         val pageSongs = songs.take(pageSize)
         val array = JSONArray()
@@ -4266,6 +4266,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun remoteLyricsJson(id: String): LocalRemoteServer.ApiResponse {
         val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id } ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在，请重新搜索")
+        if (!isVisibleSong(song)) return remoteError(404, "SONG_NOT_FOUND", "歌曲已隐藏")
         val path = song.lyricPath.orEmpty()
         if (path.isBlank()) return remoteOk(JSONObject().put("available", false).put("lyrics", "").put("message", "曲库没有歌词文件"))
         val file = java.io.File(path)
@@ -4277,12 +4278,12 @@ class MainActivity : AppCompatActivity() {
         val page = (query["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
         val pageSize = (query["pageSize"]?.toIntOrNull() ?: 10).coerceIn(1, 30)
         val offset = (page - 1) * pageSize
-        val songs = if (library.muse.isAvailable()) {
+        val songs = (if (library.muse.isAvailable()) {
             library.muse.hotSongs(offset, pageSize + 1)
         } else {
             library.allSongs().asSequence().filter(::isVisibleSong)
                 .sortedByDescending { it.playCount }.drop(offset).take(pageSize + 1).toMutableList()
-        }
+        }).filter(::isVisibleSong)
         val hasMore = songs.size > pageSize
         val array = JSONArray()
         songs.take(pageSize).forEach { song ->
@@ -4327,7 +4328,7 @@ class MainActivity : AppCompatActivity() {
         if (parts.size == 1 && method == "GET") {
             val ids = store.songsInPlaylist(name)
             val songs = JSONArray()
-            library.allSongs().filter { stableId(it) in ids }.forEach { songs.put(songJson(it)) }
+            library.allSongs().filter { isVisibleSong(it) && stableId(it) in ids }.forEach { songs.put(songJson(it)) }
             return remoteOk(JSONObject().put("name", name).put("songs", songs))
         }
         if (parts.size == 2 && parts[1] == "songs" && method == "POST") {
@@ -4335,6 +4336,7 @@ class MainActivity : AppCompatActivity() {
             if (id.isEmpty()) return remoteError(400, "MISSING_SONG_ID", "缺少歌曲 ID")
             val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id }
                 ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在或搜索结果已过期")
+            if (!isVisibleSong(song)) return remoteError(404, "SONG_NOT_FOUND", "歌曲已隐藏")
             val added = store.togglePlaylistSong(name, song)
             main.post { saveState(); remoteStateVersion++ }
             return remoteOk(JSONObject().put("added", added).put("message", if (added) "已加入歌单" else "已从歌单移除"))
@@ -4355,7 +4357,7 @@ class MainActivity : AppCompatActivity() {
     private fun remoteFavoritesJson(): JSONObject {
         val songs = JSONArray()
         val ids = store.favoriteIds.toSet()
-        library.allSongs().asSequence().filter { stableId(it) in ids }.forEach { songs.put(songJson(it)) }
+        library.allSongs().asSequence().filter { isVisibleSong(it) && stableId(it) in ids }.forEach { songs.put(songJson(it)) }
         return JSONObject().put("songs", songs)
     }
 
@@ -4384,6 +4386,7 @@ class MainActivity : AppCompatActivity() {
         if (id.isEmpty()) return remoteError(400, "MISSING_SONG_ID", "缺少歌曲 ID")
         val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id }
             ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在或搜索结果已过期")
+        if (!isVisibleSong(song)) return remoteError(404, "SONG_NOT_FOUND", "歌曲已隐藏")
         if (orderQueue?.any { stableId(it) == id } == true) {
             return remoteError(409, "ALREADY_QUEUED", "歌曲已在已点列表中")
         }
