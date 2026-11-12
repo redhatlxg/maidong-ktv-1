@@ -146,9 +146,10 @@ sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 ```bash
 keytool -genkeypair -v -keystore ../ktv_keystore.jks \
   -alias ktv -keyalg RSA -keysize 2048 -validity 10000 \
-  -storepass 123456 -keypass 123456 \
   -dname "CN=Maidong KTV, OU=Dev, O=Maidong, L=Beijing, ST=Beijing, C=CN"
 ```
+
+执行时按提示输入并确认密码；不要使用示例弱密码，也不要把密钥文件提交到 Git。
 
 ### 编译与安装
 
