@@ -87,13 +87,19 @@
         </div>
       </section>
 
+      <section id="favorites" class="page">
+        <div class="page-heading queue-heading"><div><p>MY FAVORITES</p><h2>我的收藏</h2></div><span id="favoriteCount">0 首</span></div>
+        <p class="queue-tip">收藏保存在 KTV 设备上，扫码的手机共享同一份收藏</p>
+        <div id="favoriteList" class="list"></div>
+      </section>
+
       <section id="queue" class="page">
         <div class="page-heading queue-heading"><div><p>PLAY QUEUE</p><h2>已点歌单</h2></div><span id="queueCount">0 首</span></div>
         <div class="queue-tip"><span>i</span>置顶歌曲将排在当前歌曲之后</div><div id="queueList" class="list"></div>
       </section>
     </main>
 
-    <nav><button data-page="remote" class="active"><i class="nav-remote"></i><span>遥控</span></button><button data-page="search"><i class="nav-search"></i><span>搜歌</span></button><button data-page="queue"><i class="nav-queue"></i><span>已点</span><b id="navCount" class="hidden">0</b></button></nav>
+    <nav><button data-page="remote" class="active"><i class="nav-remote"></i><span>遥控</span></button><button data-page="search"><i class="nav-search"></i><span>搜歌</span></button><button data-page="favorites"><i class="nav-fav">♥</i><span>收藏</span></button><button data-page="queue"><i class="nav-queue"></i><span>已点</span><b id="navCount" class="hidden">0</b></button></nav>
   </div>
   <section id="detailModal" class="detail-modal hidden" role="dialog" aria-modal="true"><div class="detail-sheet"><button type="button" id="detailClose" class="detail-close" aria-label="关闭">×</button><p class="detail-kicker">歌曲 / 歌手资料</p><h2 id="detailTitle">详情</h2><p id="detailMeta" class="detail-meta"></p><pre id="detailLyrics" class="detail-content">正在加载…</pre></div></section>
   <div id="toast"></div>
