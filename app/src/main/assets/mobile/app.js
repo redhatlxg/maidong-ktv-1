@@ -331,7 +331,8 @@ function switchHotTab(tab) {
   $("#douyinHot").classList.toggle("hidden", tab !== "douyin");
   if (tab === "douyin") loadDouyinMusicBoard();
 }
-\nasync function loadHot(page) {
+
+async function loadHot(page) {
   if (uiState.hotBusy || page < 1) return;
   uiState.hotBusy = true;
   $("#hotPrev").disabled = true;
