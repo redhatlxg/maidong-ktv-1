@@ -65,7 +65,7 @@
           <button type="button" data-search-mode="song" class="active">歌曲</button>
           <button type="button" data-search-mode="singer">歌手</button>
         </div>
-        <form id="searchForm" class="search-box"><span class="search-icon"></span><input id="query" type="text" inputmode="text" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入歌曲名或拼音"><button type="submit">搜索</button></form>
+        <form id="searchForm" class="search-box"><span class="search-icon"></span><input id="query" type="text" inputmode="text" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入歌曲名、歌手或说出歌名"><button id="voiceSearch" class="voice-search" type="button" aria-label="语音点歌" title="语音点歌"><span aria-hidden="true">🎙</span><small>语音</small></button><button type="submit">搜索</button></form>
         <div id="searchResultBlock" class="search-result-block hidden">
           <div class="block-title"><h3 id="resultTitle">歌手搜索结果</h3><span id="resultSummary"></span></div>
           <div id="results" class="list"></div><button id="more" class="more hidden">加载更多歌曲</button>
