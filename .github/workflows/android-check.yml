@@ -29,3 +29,10 @@ jobs:
         run: chmod +x ./gradlew
       - name: Run unit tests and assemble debug APK
         run: ./gradlew testDebugUnitTest assembleDebug --no-daemon
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: xiaoxiaoya-ktv-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
