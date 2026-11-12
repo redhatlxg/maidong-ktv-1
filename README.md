@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="app/src/main/res/drawable-nodpi/ktv_logo.png" width="132" alt="麦动 KTV Logo">
+  <img src="app/src/main/assets/mobile/xiaoxiaoya-logo.svg" width="132" alt="麦动 KTV Logo">
 </p>
 
 <h1 align="center">晓晓呀KTV</h1>
