@@ -122,7 +122,7 @@ object SongUrlResolver {
                     MiliLog.warn("NATIVE-SONG do.php 异常 源=$host ${it.javaClass.simpleName}: ${it.message}")
                     null
                 }
-            if (!url.isNullOrEmpty()) {
+            if (!url.isNullOrEmpty() && isValidSongUrl(url, musicno)) {
                 promote(host)
                 lastHost = host
                 val elapsed = System.currentTimeMillis() - startedAt
