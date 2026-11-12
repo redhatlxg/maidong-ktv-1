@@ -206,7 +206,7 @@ class LocalRemoteServer(private val context: Context) {
         val expected = boundAddress ?: return false
         return runCatching {
             val uri = URI("http://$host")
-            uri.host == expected && (uri.port == -1 || uri.port == boundPort)
+            uri.host == expected && (uri.port == boundPort && uri.userInfo == null)
         }.getOrDefault(false)
     }
 
