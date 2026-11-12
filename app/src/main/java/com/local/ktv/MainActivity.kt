@@ -9665,7 +9665,7 @@ class MainActivity : AppCompatActivity() {
                         // Android 4.4 没有带 defStyleRes 的 4 参构造器(API 21 引入),
                         // 手动套用 LoadingProgressBar 里同样的 indeterminate drawable。
                         ProgressBar(this@MainActivity).apply {
-                            indeterminateDrawable = ContextCompat.getDrawable(this@MainActivity, R.anim.loading_anim)
+                            indeterminateDrawable = ContextCompat.getDrawable(this@MainActivity, R.drawable.loading_anim)
                         }
                     },
                     LinearLayout.LayoutParams(dp(54), dp(54)).apply { topMargin = dp(22) },
