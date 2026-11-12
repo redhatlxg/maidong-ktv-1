@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="晓晓呀KTV">
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#18064b"/><stop offset=".52" stop-color="#5420d7"/><stop offset="1" stop-color="#071b62"/></linearGradient><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff2a6"/><stop offset=".45" stop-color="#ffc83d"/><stop offset="1" stop-color="#d87808"/></linearGradient><linearGradient id="mic" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".5" stop-color="#c7d7ff"/><stop offset="1" stop-color="#8d6bff"/></linearGradient></defs>
+<rect x="10" y="10" width="492" height="492" rx="112" fill="url(#bg)"/><rect x="18" y="18" width="476" height="476" rx="104" fill="none" stroke="#9d76ff" stroke-width="7" opacity=".75"/>
+<path d="M152 116l29 32 47-49 27 40 49-35-8 62H158z" fill="url(#gold)" stroke="#fff0a0" stroke-width="7" stroke-linejoin="round"/>
+<rect x="196" y="142" width="120" height="198" rx="60" fill="url(#mic)" stroke="#fff" stroke-width="9"/>
+<g stroke="#34216f" stroke-width="11" stroke-linecap="round"><path d="M218 193h76M211 225h90M211 257h90M220 289h72"/></g>
+<path d="M176 250v31a80 80 0 00160 0v-31M256 361v47m-48 0h96" fill="none" stroke="url(#gold)" stroke-width="18" stroke-linecap="round"/>
+<path d="M118 213l-22 19 28 3m270-43 23 18-29 7" fill="none" stroke="#ff5de4" stroke-width="9" stroke-linecap="round"/>
+<path d="M110 438h292" stroke="url(#gold)" stroke-width="8" stroke-linecap="round"/>
+<text x="256" y="474" text-anchor="middle" font-family="sans-serif" font-size="37" font-weight="900" fill="#fff">晓晓呀 KTV</text>
+</svg>
