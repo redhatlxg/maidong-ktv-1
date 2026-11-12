@@ -216,7 +216,8 @@ async function updateAudio(values) {
   } catch (error) { toast(error.message); }
 }
 
-async function search(reset = true) {
+async function search(reset = true, preserveVoiceSingerFilter = false) {
+  if (reset && !preserveVoiceSingerFilter) uiState.voiceSingerFilter = "";
   if (reset) {
     const nextQuery = $("#query").value.trim();
     if (!nextQuery) {
@@ -545,7 +546,7 @@ function applyVoiceSearch(command) {
   uiState.searchKey = "";
   uiState.selectedSinger = "";
   uiState.voiceSingerFilter = command.singer || "";
-  search();
+  search(true, true);
   if (command.singer) toast("识别到歌手：" + command.singer + "、歌曲：" + command.query + "，正在筛选匹配结果");
   else if (command.mode === "singer") toast("正在搜索歌手：" + command.query);
   else toast("已识别：" + command.query + "，请选择匹配歌曲加入点歌单");
