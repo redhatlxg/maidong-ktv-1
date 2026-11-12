@@ -69,6 +69,7 @@ function openPage(name) {
   $(`nav button[data-page="${name}"]`)?.classList.add("active");
   $("#" + name)?.classList.add("active");
   if (name === "queue") loadQueue();
+  if (name === "favorites") loadFavorites();
   if (name === "search" && !$("#hotList").children.length) loadHot(1);
 }
 
@@ -357,6 +358,16 @@ async function loadHot(page) {
     $("#hotNext").disabled = false;
     toast(error.message);
   } finally { uiState.hotBusy = false; }
+}
+
+async function loadFavorites() {
+  try {
+    const data = await api("/api/v1/favorites");
+    const songs = data.songs || [];
+    $("#favoriteCount").textContent = `${songs.length} 首`;
+    $("#favoriteList").innerHTML = songs.map((song, index) => songRow(song, false, false, index)).join("")
+      || '<div class="empty">还没有收藏歌曲<br><small>在搜歌页面点击 ♡ 即可收藏</small></div>';
+  } catch (error) { toast(error.message); }
 }
 
 async function loadQueue(silent = false) {
