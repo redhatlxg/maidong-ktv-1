@@ -1,27 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 首页"本地"卡片: 粉紫渐变(对应设计图星球图标的粉卡) -->
+<!-- 晓晓呀KTV首页分类卡片：统一霓虹紫蓝舞台配色 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="rectangle">
-            <gradient
-                android:angle="45"
-                android:startColor="#FFFF80C0"
-                android:centerColor="#FFE84A8C"
-                android:endColor="#FF7B3FCC"
-                android:type="linear" />
-            <corners android:radius="10dp" />
-        </shape>
-    </item>
-    <item android:left="0dp" android:gravity="right|bottom">
-        <shape android:shape="rectangle">
-            <size android:width="120dp" android:height="120dp" />
-            <gradient
-                android:angle="135"
-                android:startColor="#33FFFFFF"
-                android:centerColor="#11FFFFFF"
-                android:endColor="#00000000"
-                android:type="linear" />
-            <corners android:radius="10dp" />
-        </shape>
-    </item>
+ <item><shape android:shape="rectangle">
+  <gradient android:angle="45" android:startColor="#FFEC79CF" android:centerColor="#FFC45ACB" android:endColor="#FF6B3F9F" android:type="linear"/>
+  <corners android:radius="16dp"/>
+ </shape></item>
+ <item android:gravity="right|bottom">
+  <shape android:shape="rectangle">
+   <size android:width="150dp" android:height="150dp"/>
+   <gradient android:angle="135" android:startColor="#40FFFFFF" android:centerColor="#16FFFFFF" android:endColor="#00000000"/>
+   <corners android:radius="16dp"/>
+  </shape>
+ </item>
 </layer-list>
