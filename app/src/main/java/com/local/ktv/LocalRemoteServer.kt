@@ -3,6 +3,7 @@ package com.local.ktv
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import androidx.appcompat.content.res.AppCompatResources
 import java.io.ByteArrayOutputStream
 import java.io.BufferedInputStream
 import java.net.Inet4Address
@@ -199,7 +200,7 @@ class LocalRemoteServer(private val context: Context) {
 
     private fun logoAsset(): ApiResponse = try {
         // ktv_logo 是 VectorDrawable，不是 raw 资源；渲染为 PNG 后再通过局域网接口返回。
-        val drawable = context.resources.getDrawable(R.drawable.ktv_logo)
+        val drawable = AppCompatResources.getDrawable(context, R.drawable.ktv_logo) ?: error("Logo resource unavailable")
         val width = drawable.intrinsicWidth.coerceAtLeast(1)
         val height = drawable.intrinsicHeight.coerceAtLeast(1)
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
