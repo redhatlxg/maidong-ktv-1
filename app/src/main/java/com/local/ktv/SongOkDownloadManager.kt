@@ -22,6 +22,7 @@ object SongOkDownloadManager {
     private const val MAX_NETWORK_RETRY = 8
     private const val MAX_RETRY_COUNT = 3
     private const val STALL_TIMEOUT_MS = 25_000L
+    private val MEDIA_EXTENSIONS = setOf("ts", "ls", "mp4", "mkv")
 
     interface DownloadCallback {
         fun onDownloadStart(song: Song)
@@ -73,16 +74,47 @@ object SongOkDownloadManager {
         return downloaded
     }
 
-    /**
-     * 历史上的"注入广告副本清理"入口（MainActivity 启动时调用）。
-     * 广告过滤已按需求全部移除: 现为 no-op, 不再扫描/删除任何本地文件。
-     *
-     * @return 恒为 0
-     */
+    /** 只清理由多首歌曲共用同一视频文件所证明的注入广告副本；绝不清空歌曲目录。 */
     @JvmStatic
     fun purgeInjectedAdDuplicatesOnce(context: android.content.Context): Int {
-        return 0
+        val marker = File(context.filesDir, "ad_dup_purge_v1")
+        if (marker.exists()) return 0
+        var removed = 0
+        var groups = 0
+        runCatching {
+            val files = AppPaths.cloudSongsDir.listFiles().orEmpty()
+                .filter { it.isFile && it.extension.toLowerCase(java.util.Locale.ROOT) in MEDIA_EXTENSIONS && it.length() > 0 }
+            files.groupBy { it.length() }.filterValues { it.size >= 2 }.forEach { (_, sameSize) ->
+                sameSize.groupBy { headFingerprint(it) }.forEach { (fingerprint, duplicates) ->
+                    if (fingerprint != null && duplicates.size >= 2) {
+                        groups++
+                        duplicates.forEach { file ->
+                            SongFileValidator.forget(file)
+                            if (file.delete()) removed++
+                        }
+                    }
+                }
+            }
+            marker.writeText("purged=${System.currentTimeMillis()} removed=$removed groups=$groups", Charsets.UTF_8)
+        }.onFailure { Log.w(TAG, "purge injected ad duplicates failed: ${it.message}") }
+        if (removed > 0) MiliLog.warn("SONG-AD 清理注入广告副本 removed=$removed groups=$groups")
+        return removed
     }
+
+    private fun headFingerprint(file: File): String? = runCatching {
+        val digest = java.security.MessageDigest.getInstance("MD5")
+        file.inputStream().use { input ->
+            val buffer = ByteArray(1024 * 1024)
+            var total = 0
+            while (total < 4 * 1024 * 1024) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                digest.update(buffer, 0, read)
+                total += read
+            }
+        }
+        digest.digest().joinToString("") { "%02x".format(it) }
+    }.getOrNull()
 
     @JvmStatic
     fun isDownloading(song: Song): Boolean {
@@ -188,17 +220,27 @@ object SongOkDownloadManager {
         val musicNoFromFile = song.filename?.removeSuffix(".ts")?.removeSuffix(".ls")?.takeIf { it.isNotBlank() }
         val musicNo = musicNoFromFile ?: song.id
         if (!forceRefresh) {
-            song.downloadUrl?.takeIf(String::isNotBlank)?.let { cached -> return cached }
+            song.downloadUrl?.takeIf(String::isNotBlank)?.let { cached ->
+                if (AdVideoFilter.isTrustedSongUrl(cached, musicNoFromFile)) return cached
+                Log.w(TAG, "丢弃不可信缓存地址: ${song.title} -> $cached")
+                song.downloadUrl = null
+                purgeCachedSongFile(song, "untrusted-cached-url")
+            }
         }
         return SongApiClient.getSongDownloadUrl(musicNo).orEmpty().also { url ->
             // 请求源 = 本次点歌实际命中的源(JS 上报); 取不到时留空。
             val srcHost = SongApiClient.lastSongSourceHost()
-            if (url.isNotEmpty()) {
+            if (url.isNotEmpty() && AdVideoFilter.isTrustedSongUrl(url, musicNoFromFile)) {
                 song.downloadUrl = url
                 val cdnHost = runCatching { java.net.URI(url).host }.getOrNull() ?: "unknown"
                 MiliLog.info(
                     "点歌编号=$musicNo 标题=${song.title} 请求源=$srcHost 状态=成功 urlHost=$cdnHost",
                 )
+            } else if (url.isNotEmpty()) {
+                Log.w(TAG, "拒绝不可信歌曲地址: ${song.title} -> $url")
+                MiliLog.error("SONG-AD 拒绝不可信地址 编号=$musicNo url=$url")
+                purgeCachedSongFile(song, "untrusted-resolved-url")
+                ""
             } else {
                 Log.w(TAG, "Unable to get download URL: ${song.title}")
                 MiliLog.error(
@@ -207,6 +249,18 @@ object SongOkDownloadManager {
                 ""
             }
         }
+    }
+
+    private fun purgeCachedSongFile(song: Song, reason: String) {
+        runCatching {
+            val file = getLocalFile(song)
+            if (file.exists()) {
+                SongFileValidator.forget(file)
+                file.delete()
+                MiliLog.warn("SONG-AD 清除可疑歌曲缓存 编号=${song.id} 原因=$reason")
+            }
+            song.path = null
+        }.onFailure { Log.w(TAG, "purge cached file failed: ${it.message}") }
     }
 
     private fun startDownloadTask(song: Song, url: String, callback: DownloadCallback?, attempt: Int) {
