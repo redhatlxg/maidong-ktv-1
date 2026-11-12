@@ -349,6 +349,86 @@ document.addEventListener("click", async (event) => {
   }
 });
 
+// ─── 手机语音点歌：使用浏览器原生语音识别，不占用电视端演唱麦克风 ───
+let voiceRecognition = null;
+let voiceListening = false;
+
+function parseVoiceSongCommand(transcript) {
+  let phrase = String(transcript || "").trim().replace(/[，。！？、,.!?；;：:]+$/g, "");
+  phrase = phrase.replace(/^(请|麻烦)?(帮我)?(点歌|播放|我要听|我想听|我想点|来一首|唱一首|搜索|找一下)\s*/i, "").trim();
+  phrase = phrase.replace(/^(请|帮我)\s*/, "").trim();
+  if (!phrase) return null;
+  const singerOnly = phrase.match(/^(.+?)(?:的)?(?:所有)?(?:歌|歌曲)$/);
+  if (singerOnly && singerOnly[1].trim()) return { mode: "singer", query: singerOnly[1].trim(), spoken: transcript };
+  const split = phrase.match(/^(.{1,20}?)的(.{1,30})$/);
+  if (split && split[1].trim() && split[2].trim()) {
+    const title = split[2].replace(/^(那首|歌曲)?/, "").trim();
+    if (title) return { mode: "song", query: title, singer: split[1].trim(), spoken: transcript };
+  }
+  phrase = phrase.replace(/^(那首|歌曲|歌名是)/, "").trim();
+  return phrase ? { mode: "song", query: phrase, spoken: transcript } : null;
+}
+
+function setVoiceButtonState(listening) {
+  voiceListening = listening;
+  const button = $("#voiceSearch");
+  if (!button) return;
+  button.classList.toggle("listening", listening);
+  button.setAttribute("aria-pressed", listening ? "true" : "false");
+  button.title = listening ? "正在聆听，点击停止" : "语音点歌";
+  const label = button.querySelector("small");
+  if (label) label.textContent = listening ? "聆听中" : "语音";
+}
+
+function applyVoiceSearch(command) {
+  const modeButton = document.querySelector(`[data-search-mode="${command.mode}"]`);
+  if (modeButton) modeButton.click();
+  $("#query").value = command.query;
+  uiState.selectedSinger = "";
+  search();
+  if (command.singer) toast("识别到歌手：" + command.singer + "，正在搜索歌曲：" + command.query);
+  else if (command.mode === "singer") toast("正在搜索歌手：" + command.query);
+  else toast("已识别：" + command.query + "，请选择匹配歌曲加入点歌单");
+}
+
+function startVoiceSearch() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    toast("当前浏览器不支持语音识别，请使用最新版 Chrome，或手动输入歌曲名");
+    return;
+  }
+  if (voiceListening && voiceRecognition) {
+    voiceRecognition.stop();
+    setVoiceButtonState(false);
+    return;
+  }
+  try {
+    voiceRecognition = new SpeechRecognition();
+    voiceRecognition.lang = "zh-CN";
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = false;
+    voiceRecognition.maxAlternatives = 3;
+    voiceRecognition.onstart = () => { setVoiceButtonState(true); toast("请说出歌名，例如：周杰伦的晴天"); };
+    voiceRecognition.onresult = (event) => {
+      const result = event.results && event.results[0] && event.results[0][0];
+      const transcript = result ? result.transcript : "";
+      const command = parseVoiceSongCommand(transcript);
+      if (!command) { toast("没有识别出歌曲名称，请再试一次"); return; }
+      applyVoiceSearch(command);
+    };
+    voiceRecognition.onerror = (event) => {
+      const messages = { "not-allowed": "麦克风权限被拒绝，请在浏览器设置中允许麦克风", "service-not-allowed": "语音识别服务不可用", "no-speech": "没有听到声音，请靠近手机再说一次", "audio-capture": "没有检测到可用麦克风", "network": "语音识别网络连接失败" };
+      toast(messages[event.error] || "语音识别失败，请手动输入歌曲名");
+    };
+    voiceRecognition.onend = () => setVoiceButtonState(false);
+    voiceRecognition.start();
+  } catch (error) {
+    setVoiceButtonState(false);
+    toast("无法启动语音识别，请检查浏览器麦克风权限");
+  }
+}
+
+$("#voiceSearch")?.addEventListener("click", startVoiceSearch);
 $("#searchForm").addEventListener("submit", (event) => { event.preventDefault(); search(); });
 $("#more").addEventListener("click", () => search(false));
 $("#hotPrev").addEventListener("click", () => loadHot(uiState.hotPage - 1));
