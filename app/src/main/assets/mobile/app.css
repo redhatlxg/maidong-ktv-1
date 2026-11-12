@@ -136,3 +136,8 @@ nav button.active:before{content:"";position:absolute;top:3px;width:30px;height:
 button:focus-visible,input:focus-visible{outline:2px solid #ffe08a;outline-offset:3px}
 @media(min-width:430px){.app-shell{max-width:560px}.page{padding-left:22px;padding-right:22px}.topbar{padding-left:23px;padding-right:23px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+/* 收藏按钮与收藏页 */
+.song .favorite{min-width:38px;height:36px;border-radius:12px;border:1px solid rgba(255,224,138,.18);background:rgba(255,255,255,.04);color:#b9a9d4;font-size:20px;line-height:1}
+.song .favorite.active{color:#ff8db7;background:rgba(255,105,160,.12);border-color:rgba(255,141,183,.35)}
+nav .nav-fav{font-style:normal;font-size:17px;line-height:1}
