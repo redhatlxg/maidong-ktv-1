@@ -2457,7 +2457,7 @@ class MainActivity : AppCompatActivity() {
         header.setPadding(dp(12), dp(4), dp(12), dp(4))
         header.setBackgroundColor(Color.TRANSPARENT)
         val logo = ImageView(this)
-        logo.setImageResource(R.drawable.ktv_logo)
+        logo.setImageDrawable(AppCompatResources.getDrawable(this@MainActivity, R.drawable.ktv_logo))
         logo.setScaleType(ImageView.ScaleType.FIT_CENTER)
         header.addView(logo, LinearLayout.LayoutParams(dp(42), dp(42)))
         val song = label(currentAndNextText(), 18, Color.WHITE)
@@ -9670,7 +9670,7 @@ class MainActivity : AppCompatActivity() {
                         // Android 4.4 没有带 defStyleRes 的 4 参构造器(API 21 引入),
                         // 手动套用 LoadingProgressBar 里同样的 indeterminate drawable。
                         ProgressBar(this@MainActivity).apply {
-                            indeterminateDrawable = ContextCompat.getDrawable(this@MainActivity, R.drawable.loading_anim)
+                            indeterminateDrawable = AppCompatResources.getDrawable(this@MainActivity, R.drawable.loading_anim)
                         }
                     },
                     LinearLayout.LayoutParams(dp(54), dp(54)).apply { topMargin = dp(22) },
