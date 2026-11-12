@@ -230,7 +230,6 @@ async function search(reset = true) {
     }
     uiState.page = 1;
     uiState.selectedSinger = "";
-    uiState.voiceSingerFilter = "";
     uiState.query = nextQuery;
     uiState.searchKey = key;
     $("#results").innerHTML = "";
@@ -385,7 +384,9 @@ document.addEventListener("click", async (event) => {
     return;
   }
   if (button.dataset.action) playerAction(button.dataset.action);
-  if (button.dataset.vocal) updateAudio({ vocalMode: button.dataset.vocal });
+  if (button.dataset.vocal) { updateAudio({ vocalMode: button.dataset.vocal }); return; }
+});
+
 async function showSongDetail(songId) { try { const row = Array.from(document.querySelectorAll(".song")).find((item) => item.dataset.id === songId); const data = await api("/api/v1/lyrics/" + encodeURIComponent(songId)); $("#detailTitle").textContent = row?.querySelector(".info b")?.textContent || "歌曲详情"; $("#detailMeta").textContent = row?.querySelector(".info p")?.textContent || ""; $("#detailLyrics").textContent = data.available ? data.lyrics : (data.message || "暂无歌词"); $("#detailModal").classList.remove("hidden"); } catch (error) { toast(error.message); } }
 async function showSingerDetail(name) { try { const data = await api("/api/v1/singer?q=" + encodeURIComponent(name)); const singer = (data.singers || []).find((item) => item.name === name) || (data.singers || [])[0] || {}; $("#detailTitle").textContent = data.name || name; $("#detailMeta").textContent = [singer.area, singer.type].filter(Boolean).join(" · ") || "歌手资料"; $("#detailLyrics").textContent = "曲库收录歌曲：" + (data.songCount ?? 0) + " 首\n歌手：" + (singer.name || name) + "\n地区：" + (singer.area || "曲库未标注") + "\n类型：" + (singer.type || "曲库未标注") + "\n\n这里只展示曲库已有资料，不会编造个人简介。"; $("#detailModal").classList.remove("hidden"); } catch (error) { toast(error.message); } }
   if (button.dataset.singer) {
@@ -395,7 +396,7 @@ async function showSingerDetail(name) { try { const data = await api("/api/v1/si
     $("#resultSummary").textContent = "正在加载歌曲…"; $("#more").classList.add("hidden"); search(false); return;
   }
   if (button.dataset.searchMode) {
-    uiState.selectedSinger = ""; uiState.searchMode = button.dataset.searchMode;
+    uiState.selectedSinger = ""; uiState.voiceSingerFilter = ""; uiState.searchMode = button.dataset.searchMode;
     $$('[data-search-mode]').forEach((item) => item.classList.toggle("active", item === button));
     $("#query").placeholder = uiState.searchMode === "singer" ? "输入歌手名或拼音" : "输入歌曲名或拼音";
     $("#query").value = "";
@@ -461,6 +462,9 @@ function applyVoiceSearch(command) {
   const modeButton = document.querySelector(`[data-search-mode="${command.mode}"]`);
   if (modeButton) modeButton.click();
   $("#query").value = command.query;
+  uiState.searchMode = command.mode;
+  $("[data-search-mode]").forEach((item) => item.classList.toggle("active", item.dataset.searchMode === command.mode));
+  uiState.searchKey = "";
   uiState.selectedSinger = "";
   uiState.voiceSingerFilter = command.singer || "";
   search();
