@@ -4116,6 +4116,9 @@ class MainActivity : AppCompatActivity() {
                 method == "GET" && path == "/api/v1/queue" -> remoteOk(remoteQueueJson())
                 method == "GET" && path == "/api/v1/favorites" -> remoteOk(remoteFavoritesJson())
                 method == "POST" && path == "/api/v1/favorites" -> remoteToggleFavorite(JSONObject(body))
+                method == "GET" && path == "/api/v1/playlists" -> remoteOk(remotePlaylistsJson())
+                method == "POST" && path == "/api/v1/playlists" -> remoteCreatePlaylist(JSONObject(body))
+                path.startsWith("/api/v1/playlists/") -> remotePlaylistRoute(method, path.removePrefix("/api/v1/playlists/"), JSONObject(body))
                 method == "POST" && path == "/api/v1/queue" -> remoteOrder(JSONObject(body))
                 method == "POST" && path == "/api/v1/player/actions" -> remotePlayerAction(JSONObject(body))
                 method == "PATCH" && path == "/api/v1/player/audio" -> remoteAudio(JSONObject(body))
@@ -4289,6 +4292,63 @@ class MainActivity : AppCompatActivity() {
         while (remoteSongCache.size > 500) remoteSongCache.remove(remoteSongCache.keys.first())
         return JSONObject().put("songs", array).put("page", page).put("pageSize", pageSize)
             .put("hasPrevious", page > 1).put("hasMore", hasMore)
+    }
+
+    /** 手机远程歌单：读取名称和歌曲数量。 */
+    private fun remotePlaylistsJson(): JSONObject {
+        val rows = JSONArray()
+        store.playlists.forEach { name ->
+            rows.put(JSONObject().put("name", name).put("count", store.songsInPlaylist(name).size))
+        }
+        return JSONObject().put("playlists", rows)
+    }
+
+    /** 创建自定义歌单；内置歌单不可覆盖，名称与数量均有限制。 */
+    private fun remoteCreatePlaylist(json: JSONObject): LocalRemoteServer.ApiResponse {
+        val name = json.optString("name").trim()
+        if (name.isBlank() || name.length > 24 || name.any { it.isISOControl() }) {
+            return remoteError(400, "BAD_PLAYLIST_NAME", "歌单名称须为 1 到 24 个字符")
+        }
+        if (store.playlists.any { it.equals(name, ignoreCase = true) }) {
+            return remoteError(409, "PLAYLIST_EXISTS", "歌单名称已存在")
+        }
+        if (store.playlists.size >= 20) return remoteError(409, "PLAYLIST_LIMIT", "最多创建 20 个歌单")
+        store.playlists += name
+        store.songsInPlaylist(name)
+        main.post { saveState(); remoteStateVersion++ }
+        return remoteOk(JSONObject().put("name", name).put("message", "歌单已创建"), 201)
+    }
+
+    /** 歌单详情、添加/移除歌曲与删除自定义歌单。 */
+    private fun remotePlaylistRoute(method: String, encoded: String, body: JSONObject): LocalRemoteServer.ApiResponse {
+        val parts = encoded.split("/")
+        val name = runCatching { URLDecoder.decode(parts.firstOrNull().orEmpty(), "UTF-8") }.getOrDefault("")
+        if (name.isBlank() || name !in store.playlists) return remoteError(404, "PLAYLIST_NOT_FOUND", "歌单不存在")
+        if (parts.size == 1 && method == "GET") {
+            val ids = store.songsInPlaylist(name)
+            val songs = JSONArray()
+            library.allSongs().filter { stableId(it) in ids }.forEach { songs.put(songJson(it)) }
+            return remoteOk(JSONObject().put("name", name).put("songs", songs))
+        }
+        if (parts.size == 2 && parts[1] == "songs" && method == "POST") {
+            val id = body.optString("songId").trim()
+            if (id.isEmpty()) return remoteError(400, "MISSING_SONG_ID", "缺少歌曲 ID")
+            val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id }
+                ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在或搜索结果已过期")
+            val added = store.togglePlaylistSong(name, song)
+            main.post { saveState(); remoteStateVersion++ }
+            return remoteOk(JSONObject().put("added", added).put("message", if (added) "已加入歌单" else "已从歌单移除"))
+        }
+        if (parts.size == 1 && method == "DELETE") {
+            if (name == "我的收藏" || name == "常唱歌曲") {
+                return remoteError(409, "BUILTIN_PLAYLIST", "内置歌单不能删除")
+            }
+            store.playlists.remove(name)
+            store.playlistSongs.remove(name)
+            main.post { saveState(); remoteStateVersion++ }
+            return remoteOk(JSONObject().put("message", "歌单已删除"))
+        }
+        return remoteError(405, "METHOD_NOT_ALLOWED", "不支持的歌单操作")
     }
 
     /** 返回设备端持久化收藏列表；所有扫码手机共享同一份收藏数据。 */
