@@ -22,7 +22,6 @@ object SongOkDownloadManager {
     private const val MAX_NETWORK_RETRY = 8
     private const val MAX_RETRY_COUNT = 3
     private const val STALL_TIMEOUT_MS = 25_000L
-    private val MEDIA_EXTENSIONS = setOf("ts", "ls", "mp4", "mkv")
 
     interface DownloadCallback {
         fun onDownloadStart(song: Song)
@@ -74,48 +73,10 @@ object SongOkDownloadManager {
         return downloaded
     }
 
-    /** 只清理由多首歌曲共用同一视频文件所证明的注入广告副本；绝不清空歌曲目录。 */
-    @JvmStatic
-    fun purgeInjectedAdDuplicatesOnce(context: android.content.Context): Int {
-        val marker = File(context.filesDir, "ad_dup_purge_v1")
-        if (marker.exists()) return 0
-        var removed = 0
-        var groups = 0
-        runCatching {
-            val files = AppPaths.cloudSongsDir.listFiles().orEmpty()
-                .filter { it.isFile && it.extension.toLowerCase(java.util.Locale.ROOT) in MEDIA_EXTENSIONS && it.length() > 0 }
-            files.groupBy { it.length() }.filterValues { it.size >= 2 }.forEach { (_, sameSize) ->
-                sameSize.groupBy { headFingerprint(it) }.forEach { (fingerprint, duplicates) ->
-                    if (fingerprint != null && duplicates.size >= 2) {
-                        groups++
-                        duplicates.forEach { file ->
-                            SongFileValidator.forget(file)
-                            if (file.delete()) removed++
-                        }
-                    }
-                }
-            }
-            marker.writeText("purged=${System.currentTimeMillis()} removed=$removed groups=$groups", Charsets.UTF_8)
-        }.onFailure { Log.w(TAG, "purge injected ad duplicates failed: ${it.message}") }
-        if (removed > 0) MiliLog.warn("SONG-AD 清理注入广告副本 removed=$removed groups=$groups")
-        return removed
-    }
-
-    private fun headFingerprint(file: File): String? = runCatching {
-        val digest = java.security.MessageDigest.getInstance("MD5")
-        file.inputStream().use { input ->
-            val buffer = ByteArray(1024 * 1024)
-            var total = 0
-            while (total < 4 * 1024 * 1024) {
-                val read = input.read(buffer)
-                if (read < 0) break
-                digest.update(buffer, 0, read)
-                total += read
-            }
-        }
-        digest.digest().joinToString("") { "%02x".format(it) }
-    }.getOrNull()
-
+    /**
+     * 已停用自动重复文件清理：仅凭文件大小和前 4MB 指纹无法证明文件是广告，
+     * 可能误删合法的重复曲目或共享媒体。需要基于明确的广告特征建立可验证规则后再恢复。
+     */
     @JvmStatic
     fun isDownloading(song: Song): Boolean {
         val key = songKey(song)
