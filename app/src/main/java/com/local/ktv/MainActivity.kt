@@ -11214,22 +11214,22 @@ class MainActivity : AppCompatActivity() {
 
         // ===== 主题色(对标原版麦动 配色) =====
         /** 主背景:极深蓝黑(原版 #080C12 系)  */
-        private val BG = Color.rgb(8, 12, 18)
+        private val BG = Color.rgb(9, 8, 23)
 
         /** 面板背景:深蓝灰(原版卡片底色)  */
-        private val PANEL = Color.rgb(22, 31, 42)
+        private val PANEL = Color.rgb(29, 22, 54)
 
         /** 次级面板:更深(列表区背景)  */
-        private val PANEL_2 = Color.rgb(15, 22, 31)
+        private val PANEL_2 = Color.rgb(18, 16, 38)
 
         /** 焦点色:青绿色(原版选中态)  */
-        private val FOCUS = Color.rgb(39, 204, 164)
+        private val FOCUS = Color.rgb(165, 107, 255)
 
         /** 金色:标题与高亮(原版 color_yellow_3 #FFE363 系)  */
-        private val GOLD = Color.rgb(245, 190, 89)
+        private val GOLD = Color.rgb(255, 224, 138)
 
         /** 强调红:选中态/激活态(原版 color_red #FD3359)  */
-        private val ACCENT_RED = Color.rgb(253, 51, 89)
+        private val ACCENT_RED = Color.rgb(243, 107, 210)
 
         /** 文本白:主文本色(原版 color_white_3 #F1F1F1)  */
         private val TEXT_WHITE = Color.rgb(241, 241, 241)
@@ -11238,10 +11238,10 @@ class MainActivity : AppCompatActivity() {
         private val TEXT_DIM = Color.argb(180, 241, 241, 241)
 
         /** 导航选中背景:半透明红  */
-        private val NAV_SELECTED = Color.argb(50, 253, 51, 89)
+        private val NAV_SELECTED = Color.argb(58, 165, 107, 255)
 
         /** 分割线颜色  */
-        private val DIVIDER = Color.argb(80, 241, 241, 241)
+        private val DIVIDER = Color.argb(48, 210, 190, 255)
         private const val PREFS = "ktv"
         private const val KEY_CATALOG_URL = "catalog_url"
         private const val KEY_SHOW_MOBILE_QR = "show_mobile_qr"
