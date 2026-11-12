@@ -430,7 +430,7 @@ class MainActivity : AppCompatActivity() {
     private var recordEnabled = true
     private var scoreEnabled = true
     private var marqueeEnabled = true
-    private var marqueeText: String? = "欢迎使用麦动"
+    private var marqueeText: String? = "欢迎使用晓晓呀KTV"
     private var playWhileDownloading = false
     private var clearDownloadsOnBoot = false
     private var autoFullscreenSeconds = 30
@@ -1070,7 +1070,7 @@ class MainActivity : AppCompatActivity() {
         nav!!.setPadding(dp(10), dp(10), dp(10), dp(10))
         navScroll.addView(nav, FrameLayout.LayoutParams(-1, -2))
 
-        val brand = label("麦动", 26, GOLD)
+        val brand = label("晓晓呀KTV", 26, GOLD)
         brand.setGravity(Gravity.CENTER)
         nav!!.addView(brand, LinearLayout.LayoutParams(-1, dp(64)))
         // 导航项(图标 + 文字),选中态由 selectNav() 维护
@@ -2046,7 +2046,7 @@ class MainActivity : AppCompatActivity() {
     private fun showExitDialog() {
         AlertDialog.Builder(this)
             .setTitle("退出确认")
-            .setMessage("确定要退出麦动吗?")
+            .setMessage("确定要退出晓晓呀KTV吗?")
             .setPositiveButton(
                 "确定退出",
                 DialogInterface.OnClickListener { d: DialogInterface?, w: Int -> finish() })
@@ -2195,7 +2195,7 @@ class MainActivity : AppCompatActivity() {
                 // 跑马灯
                 addSettingsTitle(content, "跑马灯")
                 addSettingsItem(content, "跑马灯状态", "关", null)
-                addSettingsItem(content, "跑马灯内容", "麦动 欢迎光临", null)
+                addSettingsItem(content, "跑马灯内容", "晓晓呀KTV 欢迎光临", null)
                 addSettingsItem(content, "滚动速度", "正常", null)
             }
 
@@ -2210,7 +2210,7 @@ class MainActivity : AppCompatActivity() {
             7 -> {
                 // 关于
                 addSettingsTitle(content, "关于")
-                addSettingsItem(content, "应用名称", "麦动", null)
+                addSettingsItem(content, "应用名称", "晓晓呀KTV", null)
                 addSettingsItem(content, "框架来源", "杨家三郎/麦动KTV", null)
                 addSettingsItem(content, "内核", "由 DSH 重构数据库源", null)
                 addSettingsItem(content, "版本号", BuildConfig.VERSION_NAME, null)
@@ -4505,7 +4505,7 @@ class MainActivity : AppCompatActivity() {
                 "保存",
                 DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
                     marqueeText = input.getText().toString().trim { it <= ' ' }
-                    if (marqueeText!!.isEmpty()) marqueeText = "欢迎使用麦动"
+                    if (marqueeText!!.isEmpty()) marqueeText = "欢迎使用晓晓呀KTV"
                     saveState()
                     toast("跑马灯已保存")
                 })
@@ -9910,7 +9910,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAboutDialog() {
         AlertDialog.Builder(this)
-            .setTitle("关于麦动")
+            .setTitle("关于晓晓呀KTV")
             .setMessage(
                 "框架来源：杨家三郎/麦动KTV\n" +
                     "由 DSH 重构数据库源\n" +
