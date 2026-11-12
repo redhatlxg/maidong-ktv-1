@@ -3,7 +3,7 @@ const $$ = (selector) => document.querySelectorAll(selector);
 const uiState = {
   page: 1, query: "", searchMode: "song", selectedSinger: "", voiceSingerFilter: "", busy: false,
   hotPage: 1, hotPageSize: 10, hotBusy: false, hotTab: "library", douyinHotLoaded: false, douyinHotBusy: false,
-  visible: true, connected: false, eqEnabled: false,
+  visible: true, connected: false, eqEnabled: false, queueBusy: false, queueUpdatedAt: 0,
   equalizer: null, searchAbort: null, searchKey: ""
 };
 
@@ -359,13 +359,18 @@ async function loadHot(page) {
   } finally { uiState.hotBusy = false; }
 }
 
-async function loadQueue() {
+async function loadQueue(silent = false) {
+  // 所有扫码手机读取设备端同一份队列；防止轮询重叠导致旧响应覆盖新状态。
+  if (uiState.queueBusy || !uiState.visible) return;
+  uiState.queueBusy = true;
   try {
     const data = await api("/api/v1/queue");
     const queue = data.queue || [];
     $("#queueCount").textContent = `${queue.length} 首`;
     $("#queueList").innerHTML = queue.map((song, index) => songRow(song, true, index === 0, index)).join("") || '<div class="empty">还没有点歌<br><small>去曲库选一首喜欢的歌吧</small></div>';
-  } catch (error) { toast(error.message); }
+    uiState.queueUpdatedAt = Date.now();
+  } catch (error) { if (!silent) toast(error.message); }
+  finally { uiState.queueBusy = false; }
 }
 
 document.addEventListener("click", async (event) => {
@@ -555,6 +560,13 @@ $("#eqCollapse")?.addEventListener("click", () => {
 });
 document.addEventListener("visibilitychange", () => { uiState.visible = !document.hidden; if (uiState.visible) refresh(); });
 // 搜索进行中暂停状态轮询: 避免与设备端 1GB 曲库查询抢 I/O。
-window.setInterval(() => { if (uiState.visible && !uiState.busy) refresh(); }, 1000);
+window.setInterval(() => {
+  if (!uiState.visible || uiState.busy) return;
+  refresh();
+  // 队列页保持实时同步：多部手机点歌、置顶或删除后，其他手机约 2 秒内看到变化。
+  if ($("#queue")?.classList.contains("active") && Date.now() - uiState.queueUpdatedAt >= 1800) {
+    loadQueue(true);
+  }
+}, 1000);
 refresh();
 loadHot(1);
