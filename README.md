@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="app/src/main/assets/mobile/xiaoxiaoya-logo.svg" width="132" alt="麦动 KTV Logo">
+  <img src="app/src/main/assets/mobile/xiaoxiaoya-logo.svg" width="132" alt="晓晓呀KTV Logo">
 </p>
 
 <h1 align="center">晓晓呀KTV</h1>
@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/ktv668899/maidong-ktv/releases"><img src="https://img.shields.io/github/v/tag/ktv668899/maidong-ktv?label=release&amp;style=flat-square&amp;color=2f81f7&amp;sort=semver" alt="release"></a>
   <img src="https://img.shields.io/badge/platform-Android%20TV%20%7C%20Mobile-3DDC84?style=flat-square&amp;logo=android&amp;logoColor=white" alt="platform">
-  <img src="https://img.shields.io/badge/Android-5.0%2B%20(API%2021)-3DDC84?style=flat-square" alt="minSdk">
+  <img src="https://img.shields.io/badge/Android-4.4%2B%20(API%2019)-3DDC84?style=flat-square" alt="minSdk">
   <img src="https://img.shields.io/badge/Kotlin-1.9.22-7F52FF?style=flat-square&amp;logo=kotlin&amp;logoColor=white" alt="kotlin">
   <img src="https://img.shields.io/badge/Gradle-8.13-02303A?style=flat-square&amp;logo=gradle&amp;logoColor=white" alt="gradle">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-学习交流%20%2F%20禁止商用-orange?style=flat-square" alt="license"></a>
@@ -121,7 +121,7 @@ adb install -r maidong-ktv-release.apk
 | 项目 | 要求 |
 |---|---|
 | JDK | OpenJDK **17** |
-| Android SDK | `compileSdk 35` · `minSdk 21` · `targetSdk 25` |
+| Android SDK | `compileSdk 35` · `minSdk 19` · `targetSdk 25` |
 | Gradle | 使用仓库自带 wrapper（**8.13**），无需单独安装 |
 | 系统 | Linux / macOS / Windows 命令行均可 |
 
@@ -134,16 +134,14 @@ sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 
 ### 配置签名
 
-`app/build.gradle` 默认读取**仓库上一级目录**的密钥文件：
+`app/build.gradle` 不包含签名密码或密钥路径。Release 签名只从本机 Gradle 属性或环境变量读取：
 
-```groovy
-storeFile file("../../ktv_keystore.jks")
-storePassword "123456"
-keyAlias "ktv"
-keyPassword "123456"
-```
+- `RELEASE_STORE_FILE`
+- `RELEASE_STORE_PASSWORD`
+- `RELEASE_KEY_ALIAS`
+- `RELEASE_KEY_PASSWORD`
 
-没有密钥就自己生成一份，或临时把 `signingConfigs.release` 换成 `signingConfigs.debug`：
+请在本机的 `~/.gradle/gradle.properties` 或安全的环境变量中配置这些值，不要把密码、密钥文件或真实凭据提交到仓库。没有签名配置时可先构建 Debug 包进行功能测试。
 
 ```bash
 keytool -genkeypair -v -keystore ../ktv_keystore.jks \
@@ -188,7 +186,7 @@ maidong-ktv/
 |---|---|
 | 曲库初始化失败 | 确认电视能访问 `mconn.cherryonline.cn`；设置页提供「重置数据库」 |
 | 点歌提示 403 / 拿不到播放地址 | 多为歌曲源对陌生出口 IP 的试用窗口到期，重启光猫更换公网 IP 后恢复 |
-| 热更新脚本不生效 | 远端 `ktv_api.js` 必须保留 `KTV_BRIDGE_API: 8` 标记，否则内置版本优先 |
+| 热更新脚本不生效 | 远端 `ktv_api.js` 必须保留 `KTV_BRIDGE_API: 9` 标记，否则内置版本优先 |
 | 安装报 `NO_MATCHING_ABIS` | 用的是裁剪过 ABI 的包；本项目已同时打包 v7a 与 arm64 |
 | 想改签名 / 精简 ABI | 编辑 `app/build.gradle` 的 `signingConfigs` 与 `ndk.abiFilters` 后重编 |
 
