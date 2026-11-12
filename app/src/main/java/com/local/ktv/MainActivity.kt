@@ -4228,7 +4228,7 @@ class MainActivity : AppCompatActivity() {
                 runCatching { JSONObject(json) }.getOrNull()?.let { return it }
             }
         }
-        val songs = (if (library.muse.isAvailable() && keyword.isNotBlank()) {
+        val rawSongs = if (library.muse.isAvailable() && keyword.isNotBlank()) {
             if (type == "singer") library.muse.searchSongsBySingerKeyword(keyword, offset, pageSize + 1)
             else library.muse.searchSongs(keyword, offset, pageSize + 1)
         } else {
@@ -4239,8 +4239,9 @@ class MainActivity : AppCompatActivity() {
                     (song.title + " " + song.pinyin).contains(keyword, true)
                 }
             }.drop(offset).take(pageSize + 1).toMutableList()
-        }).filter(::isVisibleSong)
-        val hasMore = songs.size > pageSize
+        }
+        val hasMore = rawSongs.size > pageSize
+        val songs = rawSongs.filter(::isVisibleSong)
         val pageSongs = songs.take(pageSize)
         val array = JSONArray()
         pageSongs.forEach { song ->
@@ -4278,13 +4279,14 @@ class MainActivity : AppCompatActivity() {
         val page = (query["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
         val pageSize = (query["pageSize"]?.toIntOrNull() ?: 10).coerceIn(1, 30)
         val offset = (page - 1) * pageSize
-        val songs = (if (library.muse.isAvailable()) {
+        val rawSongs = if (library.muse.isAvailable()) {
             library.muse.hotSongs(offset, pageSize + 1)
         } else {
             library.allSongs().asSequence().filter(::isVisibleSong)
                 .sortedByDescending { it.playCount }.drop(offset).take(pageSize + 1).toMutableList()
-        }).filter(::isVisibleSong)
-        val hasMore = songs.size > pageSize
+        }
+        val hasMore = rawSongs.size > pageSize
+        val songs = rawSongs.filter(::isVisibleSong)
         val array = JSONArray()
         songs.take(pageSize).forEach { song ->
             remoteSongCache[stableId(song)] = song
