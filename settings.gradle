@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "麦动"
+rootProject.name = "晓晓呀KTV"
 include ":app"
