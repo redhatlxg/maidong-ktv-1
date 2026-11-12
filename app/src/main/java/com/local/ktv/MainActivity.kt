@@ -2672,8 +2672,8 @@ class MainActivity : AppCompatActivity() {
         fullScreenChromeVisible = visible
         fullScreenControls?.visibility = if (visible) View.VISIBLE else View.GONE
         fullScreenProgressRow?.visibility = if (visible) View.VISIBLE else View.GONE
-        // 右上角二维码跟随控制层一起出现/隐藏（不再按"手机是否在点歌"自动隐藏）。
-        fullScreenQrOverlay?.visibility = if (visible) View.VISIBLE else View.GONE
+        // 扫码点歌二维码必须常驻；控制层自动收起时也不能隐藏二维码。
+        fullScreenQrOverlay?.visibility = View.VISIBLE
         main.removeCallbacks(hideFullScreenChromeRunnable)
         if (visible && isFullScreen) {
             val controls = fullScreenControls
@@ -3532,24 +3532,46 @@ class MainActivity : AppCompatActivity() {
         val root = findViewById<FrameLayout?>(R.id.layout_root) ?: return
         mobileQrOverlay?.let { root.removeView(it) }
         mobileQrOverlay = null
-        if (prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, false) != true) return
+        // 常驻显示，不再受设置开关、手机访问状态或播放控制层影响。
         val url = remoteUrl()
-        if (url.isBlank()) return
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(dp(6), dp(6), dp(6), dp(4))
-            setBackgroundColor(Color.argb(205, 255, 255, 255))
-            addView(ImageView(this@MainActivity).apply {
-                setImageBitmap(qrBitmap(url, dp(112)))
-                contentDescription = "手机点歌二维码"
-            }, LinearLayout.LayoutParams(dp(116), dp(116)))
+            setPadding(dp(7), dp(7), dp(7), dp(6))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(12).toFloat()
+                setStroke(dp(2), Color.rgb(7, 193, 96))
+            }
             addView(TextView(this@MainActivity).apply {
-                text = "手机点歌"
-                textSize = 13f
+                text = "微信扫一扫"
+                textSize = 12f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(59, 18, 92))
-            }, LinearLayout.LayoutParams(-1, dp(24)))
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(Color.rgb(7, 193, 96))
+                includeFontPadding = false
+            }, LinearLayout.LayoutParams(-1, dp(22)))
+            if (url.isNotBlank()) {
+                addView(ImageView(this@MainActivity).apply {
+                    setImageBitmap(qrBitmap(url, dp(112)))
+                    contentDescription = "微信扫码点歌二维码"
+                    setBackgroundColor(Color.WHITE)
+                }, LinearLayout.LayoutParams(dp(116), dp(116)))
+            } else {
+                addView(TextView(this@MainActivity).apply {
+                    text = "连接局域网后\n自动生成二维码"
+                    textSize = 11f
+                    gravity = Gravity.CENTER
+                    setTextColor(Color.DKGRAY)
+                }, LinearLayout.LayoutParams(dp(116), dp(116)))
+            }
+            addView(TextView(this@MainActivity).apply {
+                text = "扫码手机点歌"
+                textSize = 12f
+                gravity = Gravity.CENTER
+                setTextColor(Color.rgb(7, 193, 96))
+                includeFontPadding = false
+            }, LinearLayout.LayoutParams(-1, dp(22)))
             setOnClickListener { showMobileRemoteDialog() }
         }
         val params = FrameLayout.LayoutParams(dp(128), dp(152), Gravity.END or Gravity.BOTTOM).apply {
@@ -3569,26 +3591,46 @@ class MainActivity : AppCompatActivity() {
         fullScreenQrOverlay = null
         if (!isFullScreen) return
         val url = remoteUrl()
-        if (url.isBlank()) return
         val qrSize = dp(if (compactUi) 68 else 84)
-        val totalWidth = dp(if (compactUi) 78 else 96)
+        val totalWidth = dp(if (compactUi) 86 else 104)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(dp(4), dp(4), dp(4), dp(3))
-            setBackgroundColor(Color.argb(218, 255, 255, 255))
+            setPadding(dp(5), dp(5), dp(5), dp(4))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(9).toFloat()
+                setStroke(dp(2), Color.rgb(7, 193, 96))
+            }
             UiCompat.setElevation(this, dp(12).toFloat())
-            addView(ImageView(this@MainActivity).apply {
-                setImageBitmap(qrBitmap(url, qrSize))
-                contentDescription = "扫码手机点歌"
-            }, LinearLayout.LayoutParams(qrSize, qrSize))
             addView(TextView(this@MainActivity).apply {
-                text = "扫码点歌"
+                text = "微信扫码"
                 textSize = if (compactUi) 9f else 10f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(59, 18, 92))
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(Color.rgb(7, 193, 96))
                 includeFontPadding = false
-            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 16 else 18)))
+            }, LinearLayout.LayoutParams(-1, dp(16)))
+            if (url.isNotBlank()) {
+                addView(ImageView(this@MainActivity).apply {
+                    setImageBitmap(qrBitmap(url, qrSize))
+                    contentDescription = "微信扫码点歌"
+                }, LinearLayout.LayoutParams(qrSize, qrSize))
+            } else {
+                addView(TextView(this@MainActivity).apply {
+                    text = "连接局域网"
+                    textSize = 9f
+                    gravity = Gravity.CENTER
+                    setTextColor(Color.DKGRAY)
+                }, LinearLayout.LayoutParams(qrSize, qrSize))
+            }
+            addView(TextView(this@MainActivity).apply {
+                text = "手机点歌"
+                textSize = if (compactUi) 9f else 10f
+                gravity = Gravity.CENTER
+                setTextColor(Color.rgb(7, 193, 96))
+                includeFontPadding = false
+            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 15 else 17)))
             setOnClickListener { showMobileRemoteDialog() }
         }
         val params = FrameLayout.LayoutParams(totalWidth, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.END or Gravity.TOP).apply {
@@ -3597,22 +3639,19 @@ class MainActivity : AppCompatActivity() {
         }
         container.addView(box, params)
         box.bringToFront()
-        // 跟随控制层显隐：控制层收起时二维码也不显示(新建时按当前状态初始化)。
-        box.visibility = if (fullScreenChromeVisible) View.VISIBLE else View.GONE
+        // 常驻显示：播放控制栏自动隐藏时，二维码仍保持可见。
+        box.visibility = View.VISIBLE
         // 同手机点歌二维码: 展示型表面不做焦点填充。
         TvFocusStyler.suppressFill(box)
         fullScreenQrOverlay = box
     }
 
     private fun showMobileRemoteSettings() {
-        val enabled = prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, false) == true
+        prefs()?.edit()?.putBoolean(KEY_SHOW_MOBILE_QR, true)?.apply()
         AlertDialog.Builder(this)
-            .setTitle("手机点歌")
-            .setSingleChoiceItems(arrayOf("仅在菜单中显示二维码", "播放页右下角显示二维码"), if (enabled) 1 else 0) { dialog, which ->
-                prefs()?.edit()?.putBoolean(KEY_SHOW_MOBILE_QR, which == 1)?.apply()
-                updateMobileQrOverlay()
-                dialog.dismiss()
-            }
+            .setTitle("扫码点歌")
+            .setMessage("微信扫码点歌二维码已设为常驻显示，不会随播放控制栏收起或手机端访问状态而隐藏。")
+            .setPositiveButton("知道了", null)
             .setNeutralButton("查看二维码") { _, _ -> showMobileRemoteDialog() }
             .setNegativeButton("关闭", null)
             .create().showForTv()
