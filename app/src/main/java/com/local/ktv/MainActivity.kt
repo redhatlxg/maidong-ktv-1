@@ -5583,7 +5583,6 @@ class MainActivity : AppCompatActivity() {
 
                 val buf = ByteArray(262144) // 256KB buffer for speed
                 var downloaded: kotlin.Long = 0
-                var lastPct = 0
                 var lastTime = System.currentTimeMillis()
                 var lastBytes: kotlin.Long = 0
 
@@ -5598,7 +5597,6 @@ class MainActivity : AppCompatActivity() {
                     if (now - lastTime > 1000) {
                         val pct = if (totalSize > 0) (downloaded * 100 / totalSize).toInt() else 0
                         val speed = downloaded - lastBytes
-                        lastPct = pct
                         lastTime = now
                         lastBytes = downloaded
                         val p = pct
