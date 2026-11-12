@@ -2,7 +2,7 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 const uiState = {
   page: 1, query: "", searchMode: "song", selectedSinger: "", voiceSingerFilter: "", busy: false,
-  hotPage: 1, hotPageSize: 10, hotBusy: false,
+  hotPage: 1, hotPageSize: 10, hotBusy: false, hotTab: "library", douyinHotLoaded: false, douyinHotBusy: false,
   visible: true, connected: false, eqEnabled: false,
   equalizer: null, searchAbort: null, searchKey: ""
 };
@@ -276,7 +276,60 @@ async function search(reset = true) {
   } finally { uiState.busy = false; }
 }
 
-async function loadHot(page) {
+
+const DOUYIN_MUSIC_README = "https://raw.githubusercontent.com/lonnyzhang423/douyin-hot-hub/main/README.md";
+
+function parseDouyinMusicBoard(markdown) {
+  const update = (markdown.match(/`更新时间：([^\`]+)`/) || [])[1] || "更新时间未知";
+  const section = markdown.match(/^## 音乐榜\s*([\s\S]*?)(?=^## |\s*$)/m);
+  if (!section) throw new Error("公开数据中没有找到音乐榜");
+  const items = [];
+  for (const line of section[1].split(/\r?\n/)) {
+    const match = line.match(/^\s*\d+\.\s+\[([^\]]+)\]\((https?:\/\/[^)]+)\)\s+-\s+(.+)\s*$/);
+    if (match) items.push({ title: match[1].trim(), artist: match[3].trim(), url: match[2] });
+  }
+  if (!items.length) throw new Error("音乐榜暂时没有可展示的歌曲");
+  return { update, items };
+}
+
+function renderDouyinMusicBoard(items) {
+  $("#douyinHotList").innerHTML = items.map((item, index) => `
+    <div class="douyin-song">
+      <span class="douyin-rank ${index < 3 ? "top" : ""}">${String(index + 1).padStart(2, "0")}</span>
+      <div class="douyin-song-info"><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.artist)}</small></div>
+      <button type="button" class="douyin-find" data-douyin-search="${escapeHtml(item.title)}">曲库查找</button>
+    </div>`).join("");
+}
+
+async function loadDouyinMusicBoard(force = false) {
+  if (uiState.douyinHotBusy || (uiState.douyinHotLoaded && !force)) return;
+  uiState.douyinHotBusy = true;
+  $("#douyinUpdated").textContent = "正在获取…";
+  $("#douyinHotList").innerHTML = '<div class="empty compact">正在获取免费公开榜单…</div>';
+  try {
+    const response = await fetch(DOUYIN_MUSIC_README, { cache: force ? "no-store" : "default" });
+    if (!response.ok) throw new Error("免费数据源暂时无法访问（HTTP " + response.status + "）");
+    const board = parseDouyinMusicBoard(await response.text());
+    renderDouyinMusicBoard(board.items);
+    $("#douyinUpdated").textContent = board.update + " · " + board.items.length + " 首";
+    uiState.douyinHotLoaded = true;
+  } catch (error) {
+    $("#douyinUpdated").textContent = "获取失败";
+    $("#douyinHotList").innerHTML = '<div class="empty compact">暂时无法获取抖音音乐榜<br><small>' + escapeHtml(error.message) + '<br>可稍后点击刷新重试</small></div>';
+    toast("抖音音乐榜加载失败");
+  } finally {
+    uiState.douyinHotBusy = false;
+  }
+}
+
+function switchHotTab(tab) {
+  uiState.hotTab = tab;
+  $("[data-hot-tab]").forEach((button) => button.classList.toggle("active", button.dataset.hotTab === tab));
+  $("#hot").classList.toggle("hidden", tab !== "library");
+  $("#douyinHot").classList.toggle("hidden", tab !== "douyin");
+  if (tab === "douyin") loadDouyinMusicBoard();
+}
+\nasync function loadHot(page) {
   if (uiState.hotBusy || page < 1) return;
   uiState.hotBusy = true;
   $("#hotPrev").disabled = true;
@@ -316,6 +369,18 @@ document.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button) return;
   if (button.dataset.page) openPage(button.dataset.page);
+  if (button.dataset.hotTab) { switchHotTab(button.dataset.hotTab); return; }
+  if (button.id === "douyinRefresh") { loadDouyinMusicBoard(true); return; }
+  if (button.dataset.douyinSearch) {
+    switchHotTab("library");
+    openPage("search");
+    uiState.searchMode = "song";
+    $("[data-search-mode]").forEach((item) => item.classList.toggle("active", item.dataset.searchMode === "song"));
+    $("#query").value = button.dataset.douyinSearch;
+    search();
+    toast("正在本地曲库查找：" + button.dataset.douyinSearch);
+    return;
+  }
   if (button.dataset.action) playerAction(button.dataset.action);
   if (button.dataset.vocal) updateAudio({ vocalMode: button.dataset.vocal });
 async function showSongDetail(songId) { try { const row = Array.from(document.querySelectorAll(".song")).find((item) => item.dataset.id === songId); const data = await api("/api/v1/lyrics/" + encodeURIComponent(songId)); $("#detailTitle").textContent = row?.querySelector(".info b")?.textContent || "歌曲详情"; $("#detailMeta").textContent = row?.querySelector(".info p")?.textContent || ""; $("#detailLyrics").textContent = data.available ? data.lyrics : (data.message || "暂无歌词"); $("#detailModal").classList.remove("hidden"); } catch (error) { toast(error.message); } }
@@ -464,6 +529,7 @@ $("#searchForm").addEventListener("submit", (event) => { event.preventDefault();
 $("#more").addEventListener("click", () => search(false));
 $("#hotPrev").addEventListener("click", () => loadHot(uiState.hotPage - 1));
 $("#hotNext").addEventListener("click", () => loadHot(uiState.hotPage + 1));
+$("#douyinRefresh")?.addEventListener("click", () => loadDouyinMusicBoard(true));
 // 音乐音量可调; 麦克风音量由功放硬件控制, 不再向设备发送无效果请求。
 attachThumbOnlyDrag($("#musicVolume"));
 $("#musicVolume").addEventListener("input", (event) => { $("#musicValue").textContent = event.target.value; });
