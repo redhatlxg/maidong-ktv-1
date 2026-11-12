@@ -277,7 +277,7 @@ async function search(reset = true) {
 }
 
 
-const DOUYIN_MUSIC_README = "https://raw.githubusercontent.com/lonnyzhang423/douyin-hot-hub/main/README.md";
+const DOUYIN_MUSIC_README = "https://raw.githubusercontent.com/SnailDev/douyin-hot-hub/main/README.md";
 
 function parseDouyinMusicBoard(markdown) {
   const update = (markdown.match(/`更新时间：([^\`]+)`/) || [])[1] || "更新时间未知";
