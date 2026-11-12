@@ -5,7 +5,9 @@ package com.local.ktv
  * 非 HTTP(S) 地址，以及文件名与点歌编号不匹配的 TS 资源。
  */
 object AdVideoFilter {
-    private val adMarkers = listOf("/ad_files/", "my_ad_video")
+    private val adMarkers = listOf("/ad_files/", "my_ad_video", "wb66", "demo")
+    private val ipHost = Regex("^\\d{1,3}(?:\\.\\d{1,3}){3}$")
+    private val r2DemoPath = Regex("pub-[a-z0-9]+\\.r2\\.dev/ss/", RegexOption.IGNORE_CASE)
     private val adHosts = listOf("gz.ac16.vip", "ac16.vip")
     private val tsBasename = Regex("/([^/?]+)\\.ts(?:\\?|$)", RegexOption.IGNORE_CASE)
 
@@ -15,6 +17,7 @@ object AdVideoFilter {
         val lower = url.toLowerCase(java.util.Locale.ROOT)
         if (adMarkers.any { lower.contains(it) }) return true
         val host = hostOf(url) ?: return false
+        if (ipHost.matches(host) || r2DemoPath.containsMatchIn(lower)) return true
         return adHosts.any { host == it || host.endsWith(".$it") }
     }
 
