@@ -4118,7 +4118,7 @@ class MainActivity : AppCompatActivity() {
                 method == "POST" && path == "/api/v1/favorites" -> remoteToggleFavorite(JSONObject(body))
                 method == "GET" && path == "/api/v1/playlists" -> remoteOk(remotePlaylistsJson())
                 method == "POST" && path == "/api/v1/playlists" -> remoteCreatePlaylist(JSONObject(body))
-                path.startsWith("/api/v1/playlists/") -> remotePlaylistRoute(method, path.removePrefix("/api/v1/playlists/"), JSONObject(body))
+                path.startsWith("/api/v1/playlists/") -> remotePlaylistRoute(method, path.removePrefix("/api/v1/playlists/"), if (body.isBlank()) JSONObject() else JSONObject(body))
                 method == "POST" && path == "/api/v1/queue" -> remoteOrder(JSONObject(body))
                 method == "POST" && path == "/api/v1/player/actions" -> remotePlayerAction(JSONObject(body))
                 method == "PATCH" && path == "/api/v1/player/audio" -> remoteAudio(JSONObject(body))
