@@ -217,7 +217,11 @@ async function updateAudio(values) {
 }
 
 async function search(reset = true, preserveVoiceSingerFilter = false) {
-  if (reset && !preserveVoiceSingerFilter) uiState.voiceSingerFilter = "";
+  if (reset && !preserveVoiceSingerFilter && uiState.voiceSingerFilter) {
+    uiState.voiceSingerFilter = "";
+    // 同一关键词的手动搜索必须重新取完整结果，不能复用上一次语音筛选后的缓存。
+    uiState.searchKey = "";
+  }
   if (reset) {
     const nextQuery = $("#query").value.trim();
     if (!nextQuery) {
