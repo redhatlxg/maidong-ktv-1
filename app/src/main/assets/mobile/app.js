@@ -48,7 +48,7 @@ function songRow(song, queue = false, current = false, index = 0, ranking = fals
   return `<div class="song${ranking && index < 3 ? " podium" : ""}" data-id="${escapeHtml(song.id)}">
     <div class="song-index">${number}</div>
     <div class="info">${current ? '<span class="playing">正在播放</span>' : ""}<b>${escapeHtml(song.title)}</b><p>${escapeHtml(song.singer)}${song.language ? " · " + escapeHtml(song.language) : ""}</p></div>
-    ${actions}
+    <button type="button" class="song-detail">详情/歌词</button>${actions}
   </div>`;
 }
 
@@ -318,9 +318,11 @@ document.addEventListener("click", async (event) => {
   if (button.dataset.page) openPage(button.dataset.page);
   if (button.dataset.action) playerAction(button.dataset.action);
   if (button.dataset.vocal) updateAudio({ vocalMode: button.dataset.vocal });
+async function showSongDetail(songId) { try { const row = Array.from(document.querySelectorAll(".song")).find((item) => item.dataset.id === songId); const data = await api("/api/v1/lyrics/" + encodeURIComponent(songId)); $("#detailTitle").textContent = row?.querySelector(".info b")?.textContent || "歌曲详情"; $("#detailMeta").textContent = row?.querySelector(".info p")?.textContent || ""; $("#detailLyrics").textContent = data.available ? data.lyrics : (data.message || "暂无歌词"); $("#detailModal").classList.remove("hidden"); } catch (error) { toast(error.message); } }
+async function showSingerDetail(name) { try { const data = await api("/api/v1/singer?q=" + encodeURIComponent(name)); const singer = (data.singers || []).find((item) => item.name === name) || (data.singers || [])[0] || {}; $("#detailTitle").textContent = data.name || name; $("#detailMeta").textContent = [singer.area, singer.type].filter(Boolean).join(" · ") || "歌手资料"; $("#detailLyrics").textContent = "曲库收录歌曲：" + (data.songCount ?? 0) + " 首\n歌手：" + (singer.name || name) + "\n地区：" + (singer.area || "曲库未标注") + "\n类型：" + (singer.type || "曲库未标注") + "\n\n这里只展示曲库已有资料，不会编造个人简介。"; $("#detailModal").classList.remove("hidden"); } catch (error) { toast(error.message); } }
   if (button.dataset.singer) {
     uiState.selectedSinger = button.dataset.singer; uiState.query = button.dataset.singer; uiState.page = 1;
-    uiState.searchKey = "singer|" + uiState.query; $("#query").value = button.dataset.singer;
+    uiState.searchKey = "singer|" + uiState.query; $("#query").value = button.dataset.singer; showSingerDetail(button.dataset.singer);
     $("#results").innerHTML = ""; $("#resultTitle").textContent = button.dataset.singer + " 的歌曲";
     $("#resultSummary").textContent = "正在加载歌曲…"; $("#more").classList.add("hidden"); search(false); return;
   }
@@ -335,6 +337,7 @@ document.addEventListener("click", async (event) => {
     $("#query").focus();
   }
   const row = button.closest(".song");
+  if (row && button.classList.contains("song-detail")) { showSongDetail(row.dataset.id); return; }
   if (row && button.classList.contains("order")) {
     try {
       await api("/api/v1/queue", { method: "POST", body: JSON.stringify({ songId: row.dataset.id }) });
@@ -454,6 +457,8 @@ function startVoiceSearch() {
   }
 }
 
+$("#detailClose")?.addEventListener("click", () => $("#detailModal").classList.add("hidden"));
+$("#detailModal")?.addEventListener("click", (event) => { if (event.target.id === "detailModal") $("#detailModal").classList.add("hidden"); });
 $("#voiceSearch")?.addEventListener("click", startVoiceSearch);
 $("#searchForm").addEventListener("submit", (event) => { event.preventDefault(); search(); });
 $("#more").addEventListener("click", () => search(false));
