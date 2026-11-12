@@ -1,7 +1,7 @@
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 const uiState = {
-  page: 1, query: "", searchMode: "song", busy: false,
+  page: 1, query: "", searchMode: "song", selectedSinger: "", busy: false,
   hotPage: 1, hotPageSize: 10, hotBusy: false,
   visible: true, connected: false, eqEnabled: false,
   equalizer: null, searchAbort: null, searchKey: ""
@@ -52,6 +52,18 @@ function songRow(song, queue = false, current = false, index = 0, ranking = fals
   </div>`;
 }
 
+function singerCard(singer, count) {
+  const name = String(singer || "").trim();
+  if (!name) return "";
+  const initial = Array.from(name)[0] || "♪";
+  return '<button type="button" class="singer-card" data-singer="' + escapeHtml(name) + '"><span class="singer-avatar" aria-hidden="true">' + escapeHtml(initial) + '</span><span class="singer-card-info"><b>' + escapeHtml(name) + '</b><small>' + count + ' 首相关歌曲</small></span><span class="singer-card-arrow" aria-hidden="true">›</span></button>';
+}
+
+function singerCardsFromSongs(songs) {
+  const counts = new Map();
+  (songs || []).forEach((song) => { const name = String(song.singer || "").trim(); if (name) counts.set(name, (counts.get(name) || 0) + 1); });
+  return Array.from(counts, ([name, count]) => singerCard(name, count)).join("");
+}
 function openPage(name) {
   $$("nav button,.page").forEach((element) => element.classList.remove("active"));
   $(`nav button[data-page="${name}"]`)?.classList.add("active");
@@ -217,6 +229,7 @@ async function search(reset = true) {
       return;
     }
     uiState.page = 1;
+    uiState.selectedSinger = "";
     uiState.query = nextQuery;
     uiState.searchKey = key;
     $("#results").innerHTML = "";
@@ -232,10 +245,16 @@ async function search(reset = true) {
   uiState.busy = true;
   try {
     const data = await api(`/api/v1/songs?q=${encodeURIComponent(uiState.query)}&type=${uiState.searchMode}&page=${requestedPage}&pageSize=20`, { signal });
-    const rows = (data.songs || []).map((song, index) => songRow(song, false, false, (requestedPage - 1) * 20 + index)).join("");
-    if (rows) $("#results").insertAdjacentHTML("beforeend", rows);
-    else if (reset) $("#results").innerHTML = '<div class="empty">没有找到相关歌曲<br><small>请更换关键词后重试</small></div>';
-    $("#resultSummary").textContent = `“${uiState.query}”${data.hasMore ? "，还有更多" : ""}`;
+    const rows = uiState.searchMode === "singer" && !uiState.selectedSinger ? singerCardsFromSongs(data.songs) : (data.songs || []).map((song, index) => songRow(song, false, false, (requestedPage - 1) * 20 + index)).join("");
+    if (rows) {
+      if (uiState.searchMode === "singer" && !uiState.selectedSinger && requestedPage > 1) {
+        const existing = new Set(Array.from($("#results").querySelectorAll("[data-singer]")).map((item) => item.dataset.singer));
+        const wrapper = document.createElement("div"); wrapper.innerHTML = rows;
+        Array.from(wrapper.children).forEach((card) => { if (!existing.has(card.dataset.singer)) $("#results").appendChild(card); });
+      } else $("#results").insertAdjacentHTML("beforeend", rows);
+    } else if (reset) $("#results").innerHTML = '<div class="empty">没有找到相关内容<br><small>请更换关键词后重试</small></div>';
+    $("#resultSummary").textContent = uiState.selectedSinger ? uiState.selectedSinger + " 的歌曲" + (data.hasMore ? "，还有更多" : "") : `“${uiState.query}”${data.hasMore ? "，还有更多" : ""}`;
+    $("#more").textContent = uiState.searchMode === "singer" && !uiState.selectedSinger ? "加载更多歌手" : "加载更多歌曲";
     $("#more").classList.toggle("hidden", !data.hasMore);
     uiState.page = requestedPage + 1;
     // 预热下一页: 设备端会把它缓存下来, 用户点「更多」时基本瞬时。
@@ -293,8 +312,14 @@ document.addEventListener("click", async (event) => {
   if (button.dataset.page) openPage(button.dataset.page);
   if (button.dataset.action) playerAction(button.dataset.action);
   if (button.dataset.vocal) updateAudio({ vocalMode: button.dataset.vocal });
+  if (button.dataset.singer) {
+    uiState.selectedSinger = button.dataset.singer; uiState.query = button.dataset.singer; uiState.page = 1;
+    uiState.searchKey = "singer|" + uiState.query; $("#query").value = button.dataset.singer;
+    $("#results").innerHTML = ""; $("#resultTitle").textContent = button.dataset.singer + " 的歌曲";
+    $("#resultSummary").textContent = "正在加载歌曲…"; $("#more").classList.add("hidden"); search(false); return;
+  }
   if (button.dataset.searchMode) {
-    uiState.searchMode = button.dataset.searchMode;
+    uiState.selectedSinger = ""; uiState.searchMode = button.dataset.searchMode;
     $$('[data-search-mode]').forEach((item) => item.classList.toggle("active", item === button));
     $("#query").placeholder = uiState.searchMode === "singer" ? "输入歌手名或拼音" : "输入歌曲名或拼音";
     $("#query").value = "";
