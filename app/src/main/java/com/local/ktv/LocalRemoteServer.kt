@@ -228,7 +228,7 @@ class LocalRemoteServer(private val context: Context) {
             "Content-Type: ${response.contentType}\r\n" +
             "Cache-Control: no-store\r\n" +
             "X-Content-Type-Options: nosniff\r\n" +
-            "Content-Security-Policy: default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'\r\n" +
+            "Content-Security-Policy: default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self' https://raw.githubusercontent.com\r\n" +
             "Content-Length: ${bytes.size}\r\nConnection: close\r\n\r\n").toByteArray())
         output.write(bytes)
         output.flush()
