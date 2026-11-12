@@ -126,8 +126,8 @@ object SongApiClient {
 
     private fun isLikelyDemoUrl(url: String): Boolean {
         val host = runCatching { java.net.URI(url).host }.getOrNull() ?: return true
-        return host.matches(Regex("^\\\\d{1,3}\\\\.\\\\d{1,3}\\\\.\\\\d{1,3}\\\\.\\\\d{1,3}$")) ||
-            host.matches(Regex("^pub-[a-z0-9]+\\\\.r2\\\\.dev$")) ||
+        return host.matches(Regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$")) ||
+            host.matches(Regex("^pub-[a-z0-9]+\\.r2\\.dev$")) ||
             url.contains("wb66", ignoreCase = true) || url.contains("demo", ignoreCase = true)
     }
 
