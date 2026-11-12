@@ -8407,9 +8407,17 @@ class MainActivity : AppCompatActivity() {
     private fun showSystemKeyboard() {
         val input = searchInput ?: return
         input.inputType = InputType.TYPE_CLASS_TEXT
+        input.isFocusable = true
+        input.isFocusableInTouchMode = true
         input.requestFocus()
-        (getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager)
-            ?.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+        // Wait until the search field is attached and has focus before asking
+        // the IME to show; this avoids dropped keyboard requests on TV boxes.
+        input.post {
+            if (!isFinishing && input.isAttachedToWindow && input.hasFocus()) {
+                (getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager)
+                    ?.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+            }
+        }
     }
 
     private fun hideSystemKeyboard() {
