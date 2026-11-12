@@ -556,8 +556,7 @@ class MainActivity : AppCompatActivity() {
         initializeDatabase()
         startRemoteServer()
         updateMobileQrOverlay()
-        // 仅清理可证明为同一广告视频的重复缓存；绝不清空歌曲目录。
-        io.execute { SongOkDownloadManager.purgeInjectedAdDuplicatesOnce(applicationContext) }
+        // 不按文件指纹自动删除媒体：重复内容也可能是合法曲目，避免误删用户缓存。
         // 预热公放候选缓存（独立守护线程 + 内部超时），让之后的「切歌 → 公放」零 I/O。
         // 延后一点避开曲库加载/启动高峰，但不影响正确性：预热完成前切歌会走安全兜底路径。
         main.postDelayed({ primeRandomCandidates() }, 5_000L)
