@@ -299,10 +299,24 @@ class KtvJsBridge(context: Context) {
         }
     }
 
+    private val demoHostPatterns = listOf(
+        Regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$"),
+        Regex("^pub-[a-z0-9]+\\.r2\\.dev$"),
+    )
+
+    private fun isTrustedDownloadUrl(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        val uri = runCatching { java.net.URI(url) }.getOrNull() ?: return false
+        val scheme = uri.scheme?.toLowerCase(java.util.Locale.ROOT)
+        val host = uri.host?.toLowerCase(java.util.Locale.ROOT) ?: return false
+        if (scheme != "http" && scheme != "https") return false
+        if (demoHostPatterns.any { it.matches(host) }) return false
+        if (url.contains("wb66", true) || url.contains("demo", true)) return false
+        return true
+    }
+
     private fun complete(requestId: String, url: String?) {
-        // 广告过滤已按需求全部移除(域名白名单 / demo 兜底 / AdVideoFilter 均已删除):
-        // 取址结果原样返回, 由下载层直接使用。
-        callbacks.remove(requestId)?.invoke(url)
+        callbacks.remove(requestId)?.invoke(AdVideoFilter.resolve(url)?.takeIf { isTrustedDownloadUrl(it) })
     }
 
     private fun readAssetScript(): String =
