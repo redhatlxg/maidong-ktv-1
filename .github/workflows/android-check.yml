@@ -15,7 +15,9 @@ jobs:
         with:
           node-version: 22
       - name: Check mobile JavaScript syntax
-        run: node --check app/src/main/assets/mobile/app.js
+        run: |
+          node --check app/src/main/assets/mobile/app.js
+          node --check app/src/main/assets/mobile/ktv_api.js
 
   android:
     runs-on: ubuntu-latest
@@ -27,8 +29,8 @@ jobs:
           java-version: 17
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: Run unit tests and assemble debug APK
-        run: ./gradlew testDebugUnitTest assembleDebug --no-daemon
+      - name: Run unit tests, debug build and release lint
+        run: ./gradlew testDebugUnitTest assembleDebug :app:lintRelease --no-daemon
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
