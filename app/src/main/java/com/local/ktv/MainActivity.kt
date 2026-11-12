@@ -4114,6 +4114,8 @@ class MainActivity : AppCompatActivity() {
                 method == "GET" && path.startsWith("/api/v1/lyrics/") -> remoteLyricsJson(URLDecoder.decode(path.substringAfterLast('/'), "UTF-8"))
                 method == "GET" && path == "/api/v1/hot" -> remoteOk(remoteHotJson(query))
                 method == "GET" && path == "/api/v1/queue" -> remoteOk(remoteQueueJson())
+                method == "GET" && path == "/api/v1/favorites" -> remoteOk(remoteFavoritesJson())
+                method == "POST" && path == "/api/v1/favorites" -> remoteToggleFavorite(JSONObject(body))
                 method == "POST" && path == "/api/v1/queue" -> remoteOrder(JSONObject(body))
                 method == "POST" && path == "/api/v1/player/actions" -> remotePlayerAction(JSONObject(body))
                 method == "PATCH" && path == "/api/v1/player/audio" -> remoteAudio(JSONObject(body))
@@ -4287,6 +4289,28 @@ class MainActivity : AppCompatActivity() {
         while (remoteSongCache.size > 500) remoteSongCache.remove(remoteSongCache.keys.first())
         return JSONObject().put("songs", array).put("page", page).put("pageSize", pageSize)
             .put("hasPrevious", page > 1).put("hasMore", hasMore)
+    }
+
+    /** 返回设备端持久化收藏列表；所有扫码手机共享同一份收藏数据。 */
+    private fun remoteFavoritesJson(): JSONObject {
+        val songs = JSONArray()
+        val ids = store.favoriteIds.toSet()
+        library.allSongs().asSequence().filter { stableId(it) in ids }.forEach { songs.put(songJson(it)) }
+        return JSONObject().put("songs", songs)
+    }
+
+    /** 按曲库稳定 ID 切换收藏，避免客户端传入文件路径或歌曲对象。 */
+    private fun remoteToggleFavorite(json: JSONObject): LocalRemoteServer.ApiResponse {
+        val id = json.optString("songId").trim()
+        if (id.isEmpty()) return remoteError(400, "MISSING_SONG_ID", "缺少歌曲 ID")
+        val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id }
+            ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在或搜索结果已过期")
+        val added = store.toggleFavorite(song)
+        main.post {
+            saveState()
+            remoteStateVersion++
+        }
+        return remoteOk(JSONObject().put("favorite", added).put("message", if (added) "已加入收藏" else "已取消收藏"))
     }
 
     private fun remoteQueueJson(): JSONObject {
