@@ -48,7 +48,7 @@ function songRow(song, queue = false, current = false, index = 0, ranking = fals
   return `<div class="song${ranking && index < 3 ? " podium" : ""}" data-id="${escapeHtml(song.id)}">
     <div class="song-index">${number}</div>
     <div class="info">${current ? '<span class="playing">正在播放</span>' : ""}<b>${escapeHtml(song.title)}</b><p>${escapeHtml(song.singer)}${song.language ? " · " + escapeHtml(song.language) : ""}</p></div>
-    <button type="button" class="song-detail">详情/歌词</button>${!queue ? `<button type="button" class="favorite${song.favorite ? " active" : ""}" aria-label="${song.favorite ? "取消收藏" : "收藏"}">${song.favorite ? "♥" : "♡"}</button>` : ""}${actions}
+    <button type="button" class="song-detail">详情/歌词</button>${!queue ? `<button type="button" class="favorite${song.favorite ? " active" : ""}" aria-label="${song.favorite ? "取消收藏" : "收藏"}">${song.favorite ? "♥" : "♡"}</button><button type="button" class="playlist-add" aria-label="加入歌单">＋歌单</button>` : ""}${actions}
   </div>`;
 }
 
@@ -70,6 +70,7 @@ function openPage(name) {
   $("#" + name)?.classList.add("active");
   if (name === "queue") loadQueue();
   if (name === "favorites") loadFavorites();
+  if (name === "playlists") loadPlaylists();
   if (name === "search" && !$("#hotList").children.length) loadHot(1);
 }
 
@@ -360,6 +361,29 @@ async function loadHot(page) {
   } finally { uiState.hotBusy = false; }
 }
 
+async function loadPlaylists() {
+  try {
+    const data = await api("/api/v1/playlists");
+    const rows = data.playlists || [];
+    $("#playlistList").innerHTML = rows.map(item => `<button type="button" class="playlist-card" data-playlist="${escapeHtml(item.name)}"><b>${escapeHtml(item.name)}</b><small>${item.count} 首歌曲</small><span>›</span></button>`).join("")
+      || '<div class="empty">还没有歌单</div>';
+    $("#playlistSongsBlock").classList.add("hidden");
+    $("#playlistList").classList.remove("hidden");
+  } catch (error) { toast(error.message); }
+}
+
+async function openPlaylist(name) {
+  try {
+    const data = await api("/api/v1/playlists/" + encodeURIComponent(name));
+    $("#playlistDetailName").textContent = name;
+    $("#playlistSongs").innerHTML = (data.songs || []).map((song, index) => songRow(song, false, false, index)).join("")
+      || '<div class="empty">这个歌单还是空的</div>';
+    $("#playlistList").classList.add("hidden");
+    $("#playlistSongsBlock").classList.remove("hidden");
+    $("#deletePlaylist").dataset.playlist = name;
+  } catch (error) { toast(error.message); }
+}
+
 async function loadFavorites() {
   try {
     const data = await api("/api/v1/favorites");
@@ -423,6 +447,34 @@ async function showSingerDetail(name) { try { const data = await api("/api/v1/si
   }
   const row = button.closest(".song");
   if (row && button.classList.contains("song-detail")) { showSongDetail(row.dataset.id); return; }
+  if (button.dataset.playlist) { openPlaylist(button.dataset.playlist); return; }
+  if (button.id === "createPlaylist") {
+    const name = window.prompt("请输入新歌单名称（最多 24 个字符）");
+    if (name && name.trim()) {
+      try { await api("/api/v1/playlists", { method: "POST", body: JSON.stringify({ name: name.trim() }) }); toast("歌单已创建"); loadPlaylists(); }
+      catch (error) { toast(error.message); }
+    }
+    return;
+  }
+  if (button.id === "playlistBack") { loadPlaylists(); return; }
+  if (button.id === "deletePlaylist") {
+    const name = button.dataset.playlist;
+    if (name && window.confirm("确定删除歌单“" + name + "”？")) {
+      try { await api("/api/v1/playlists/" + encodeURIComponent(name), { method: "DELETE" }); toast("歌单已删除"); loadPlaylists(); }
+      catch (error) { toast(error.message); }
+    }
+    return;
+  }
+  if (row && button.classList.contains("playlist-add")) {
+    const name = window.prompt("输入要加入的歌单名称（可在“我的歌单”中新建）");
+    if (name && name.trim()) {
+      try {
+        const data = await api("/api/v1/playlists/" + encodeURIComponent(name.trim()) + "/songs", { method: "POST", body: JSON.stringify({ songId: row.dataset.id }) });
+        toast(data.message || "歌单已更新");
+      } catch (error) { toast(error.message); }
+    }
+    return;
+  }
   if (row && button.classList.contains("favorite")) {
     try {
       const data = await api("/api/v1/favorites", { method: "POST", body: JSON.stringify({ songId: row.dataset.id }) });
@@ -555,6 +607,7 @@ function startVoiceSearch() {
   }
 }
 
+$("#playlistBack")?.addEventListener("click", () => loadPlaylists());
 $("#detailClose")?.addEventListener("click", () => $("#detailModal").classList.add("hidden"));
 $("#detailModal")?.addEventListener("click", (event) => { if (event.target.id === "detailModal") $("#detailModal").classList.add("hidden"); });
 $("#voiceSearch")?.addEventListener("click", startVoiceSearch);
