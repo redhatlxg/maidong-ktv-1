@@ -39,6 +39,14 @@ public final class AdVideoFilterTest {
         assertFalse(AdVideoFilter.isTrustedSongUrl(null, "7303235"));
     }
     @Test
+    public void rejectsKnownDemoAndTestResources() {
+        assertFalse(AdVideoFilter.isTrustedSongUrl("http://cdn.example.com/wb66/7303235.ts", "7303235"));
+        assertFalse(AdVideoFilter.isTrustedSongUrl("https://cdn.example.com/demo/7303235.ts", "7303235"));
+        assertFalse(AdVideoFilter.isTrustedSongUrl("http://192.0.2.10/x/7303235.ts", "7303235"));
+        assertFalse(AdVideoFilter.isTrustedSongUrl("https://pub-abc123.r2.dev/ss/7303235.ts", "7303235"));
+    }
+
+    @Test
     public void allowsNonTsUrlWithoutAdMarkers() {
         assertTrue(AdVideoFilter.isTrustedSongUrl("http://cdn.example.com/path/stream?token=abc", "7303235"));
     }
