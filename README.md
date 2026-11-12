@@ -161,7 +161,7 @@ export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64   # 按本机实际路径调
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
-产物为已签名 release APK，内含 `armeabi-v7a` 与 `arm64-v8a` 双 ABI。
+配置上述 Release 签名参数后，产物为已签名 Release APK，内含 `armeabi-v7a` 与 `arm64-v8a` 双 ABI；未配置签名时请先构建 Debug 包。
 
 ## 📁 目录结构
 
