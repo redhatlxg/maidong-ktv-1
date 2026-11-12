@@ -42,4 +42,10 @@ public final class AdVideoFilterTest {
     public void allowsNonTsUrlWithoutAdMarkers() {
         assertTrue(AdVideoFilter.isTrustedSongUrl("http://cdn.example.com/path/stream?token=abc", "7303235"));
     }
+
+    @Test
+    public void doesNotCompareTsFilenameWhenMusicNumberIsUnknown() {
+        // song.id 可能是数据库主键；只有 filename 推出的点歌编号才可信。
+        assertTrue(AdVideoFilter.isTrustedSongUrl("http://cdn.example.com/x/9999999.ts", null));
+    }
 }
