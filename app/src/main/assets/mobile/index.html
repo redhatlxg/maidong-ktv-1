@@ -70,10 +70,20 @@
           <div class="block-title"><h3 id="resultTitle">歌手搜索结果</h3><span id="resultSummary"></span></div>
           <div id="results" class="list"></div><button id="more" class="more hidden">加载更多歌曲</button>
         </div>
+        <div class="hot-tabs" role="tablist" aria-label="热歌榜单">
+          <button type="button" class="active" data-hot-tab="library">曲库热歌</button>
+          <button type="button" data-hot-tab="douyin">抖音音乐榜</button>
+        </div>
         <div id="hot" class="hot-block">
-          <div class="block-title"><h3>热歌排行</h3><span id="hotSummary">正在加载…</span></div>
+          <div class="block-title"><h3>曲库热歌排行</h3><span id="hotSummary">正在加载…</span></div>
           <div id="hotList" class="list ranking-list"></div>
           <div class="rank-pager"><button id="hotPrev" type="button">上一页</button><b id="hotPage">第 1 页</b><button id="hotNext" type="button">下一页</button></div>
+        </div>
+        <div id="douyinHot" class="hot-block douyin-hot hidden">
+          <div class="block-title"><h3>抖音音乐榜</h3><span id="douyinUpdated">等待获取数据</span></div>
+          <p class="douyin-note">免费公开归档数据 · 非官方实时榜单</p>
+          <div id="douyinHotList" class="list ranking-list"><div class="empty compact">正在获取抖音音乐榜…</div></div>
+          <div class="douyin-footer"><span>数据来源：douyin-hot-hub</span><button id="douyinRefresh" type="button">刷新榜单</button></div>
         </div>
       </section>
 
