@@ -1,5 +1,9 @@
 name: Android and mobile checks
 
+concurrency:
+  group: android-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     branches: [master]
