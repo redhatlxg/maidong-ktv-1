@@ -3,6 +3,13 @@ plugins {
     id "org.jetbrains.kotlin.android"
 }
 
+// Release signing secrets must be supplied locally via Gradle properties or environment variables.
+def releaseStorePath = providers.gradleProperty("RELEASE_STORE_FILE").orElse(providers.environmentVariable("RELEASE_STORE_FILE")).orNull
+def releaseStorePasswordValue = providers.gradleProperty("RELEASE_STORE_PASSWORD").orElse(providers.environmentVariable("RELEASE_STORE_PASSWORD")).orNull
+def releaseKeyAliasValue = providers.gradleProperty("RELEASE_KEY_ALIAS").orElse(providers.environmentVariable("RELEASE_KEY_ALIAS")).orNull
+def releaseKeyPasswordValue = providers.gradleProperty("RELEASE_KEY_PASSWORD").orElse(providers.environmentVariable("RELEASE_KEY_PASSWORD")).orNull
+def releaseSigningReady = [releaseStorePath, releaseStorePasswordValue, releaseKeyAliasValue, releaseKeyPasswordValue].every { it != null && !it.toString().trim().isEmpty() }
+
 android {
     namespace "com.local.ktv"
     compileSdk 35
@@ -39,13 +46,15 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
-    // 签名配置:使用已有的 ktv_keystore.jks
+    // 只有本地提供完整签名参数时才配置 release 签名；不把密钥写入仓库。
     signingConfigs {
-        release {
-            storeFile file("../../ktv_keystore.jks")
-            storePassword "123456"
-            keyAlias "ktv"
-            keyPassword "123456"
+        if (releaseSigningReady) {
+            release {
+                storeFile file(releaseStorePath)
+                storePassword releaseStorePasswordValue
+                keyAlias releaseKeyAliasValue
+                keyPassword releaseKeyPasswordValue
+            }
         }
     }
 
@@ -53,7 +62,9 @@ android {
         release {
             minifyEnabled true
             shrinkResources true
-            signingConfig signingConfigs.release
+            if (releaseSigningReady) {
+                signingConfig signingConfigs.release
+            }
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
