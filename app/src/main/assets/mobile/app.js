@@ -326,7 +326,7 @@ async function loadDouyinMusicBoard(force = false) {
 
 function switchHotTab(tab) {
   uiState.hotTab = tab;
-  $("[data-hot-tab]").forEach((button) => button.classList.toggle("active", button.dataset.hotTab === tab));
+  $$("[data-hot-tab]").forEach((button) => button.classList.toggle("active", button.dataset.hotTab === tab));
   $("#hot").classList.toggle("hidden", tab !== "library");
   $("#douyinHot").classList.toggle("hidden", tab !== "douyin");
   if (tab === "douyin") loadDouyinMusicBoard();
