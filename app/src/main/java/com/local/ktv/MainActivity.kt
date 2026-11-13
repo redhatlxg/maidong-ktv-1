@@ -925,7 +925,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
         findViewById<LinearLayout?>(R.id.main_layout)?.setPadding(dp(12), dp(10), dp(12), dp(8))
-        findViewById<LinearLayout?>(R.id.home_layout)?.setPadding(dp(12), dp(10), dp(12), dp(8))
+        findViewById<LinearLayout?>(R.id.home_layout)?.apply {
+            setPadding(dp(16), dp(10), dp(16), dp(8))
+            (getChildAt(0)?.layoutParams as? LinearLayout.LayoutParams)?.let {
+                it.weight = 0.60f
+                getChildAt(0).layoutParams = it
+            }
+            (findViewById<View>(R.id.home_center_column).layoutParams as? LinearLayout.LayoutParams)?.let {
+                it.weight = 0.24f
+                findViewById<View>(R.id.home_center_column).layoutParams = it
+            }
+            (findViewById<View>(R.id.home_poster_container).layoutParams as? LinearLayout.LayoutParams)?.let {
+                it.weight = 0.16f
+                findViewById<View>(R.id.home_poster_container).layoutParams = it
+            }
+        }
         findViewById<LinearLayout?>(R.id.left_column)?.let { left ->
             val desiredWidthDp = (widthDp * 0.34f).toInt().coerceIn(230, 340)
             left.layoutParams = left.layoutParams.apply { width = dp(desiredWidthDp) }
