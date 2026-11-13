@@ -22,7 +22,8 @@ class LocalRemoteServer(private val context: Context) {
         val status: Int = 200,
         val body: String = "",
         val contentType: String = "application/json; charset=utf-8",
-        val bytes: ByteArray? = null
+        val bytes: ByteArray? = null,
+        val headers: Map<String, String> = emptyMap()
     )
 
     interface Callback {
@@ -47,6 +48,7 @@ class LocalRemoteServer(private val context: Context) {
     @Volatile private var boundPort = -1
     @Volatile private var lastError: String? = null
     @Volatile private var lastActivityAtMs = 0L
+    @Volatile private var pairingToken: String? = null
     private var server: ServerSocket? = null
     private var callback: Callback? = null
 
@@ -78,6 +80,7 @@ class LocalRemoteServer(private val context: Context) {
         }
         server = candidate
         boundAddress = address
+        pairingToken = java.util.UUID.randomUUID().toString().replace("-", "")
         lastError = null
         running = true
         pool.execute {
@@ -124,12 +127,14 @@ class LocalRemoteServer(private val context: Context) {
         server = null
         boundPort = -1
         boundAddress = null
+        pairingToken = null
         pool.shutdownNow()
     }
 
     fun isRunning(): Boolean = running
     fun port(): Int = boundPort
     fun address(): String? = boundAddress
+    fun pairingToken(): String? = pairingToken
     fun error(): String? = lastError
 
     /** 是否在 [withinMs] 内有手机端请求(扫码点歌页面可见时每秒轮询 state)。 */
@@ -138,8 +143,8 @@ class LocalRemoteServer(private val context: Context) {
         return last > 0 && System.currentTimeMillis() - last <= withinMs
     }
 
-    fun url(): String? = if (running && boundAddress != null && boundPort > 0) {
-        "http://$boundAddress:$boundPort/mobile"
+    fun url(): String? = if (running && boundAddress != null && boundPort > 0 && pairingToken != null) {
+        "http://$boundAddress:$boundPort/mobile?pair=$pairingToken"
     } else null
 
     private fun handle(socket: Socket) {
@@ -218,9 +223,27 @@ class LocalRemoteServer(private val context: Context) {
                     offset += count
                 }
                 val body = String(bodyBytes, Charsets.UTF_8)
+                val activeToken = pairingToken
+                val cookieToken = headers["cookie"].orEmpty().split(';')
+                    .mapNotNull { part ->
+                        val pair = part.trim().split('=', limit = 2)
+                        if (pair.size == 2 && pair[0] == SESSION_COOKIE) pair[1] else null
+                    }.firstOrNull()
+                val hasSession = activeToken != null && cookieToken == activeToken
+                val hasValidPairLink = activeToken != null && query["pair"] == activeToken
+                if (!hasSession && !(pageRequest && hasValidPairLink)) {
+                    write(client, ApiResponse(403, error("PAIRING_REQUIRED", "请使用电视上的微信扫码点歌二维码进入")))
+                    return
+                }
                 // 手机端已成功建立会话并访问页面/接口 → 记录活跃(用于控制二维码显隐)。
                 lastActivityAtMs = System.currentTimeMillis()
                 val response = when {
+                    pageRequest && hasValidPairLink && !hasSession -> {
+                        val page = asset("mobile/index.html", "text/html; charset=utf-8")
+                        page.copy(headers = mapOf(
+                            "Set-Cookie" to "$SESSION_COOKIE=$activeToken; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800"
+                        ))
+                    }
                     pageRequest -> asset("mobile/index.html", "text/html; charset=utf-8")
                     path == "/mobile/app.css" -> asset("mobile/app.css", "text/css; charset=utf-8")
                     path == "/mobile/logo.css" -> asset("mobile/logo.css", "text/css; charset=utf-8")
@@ -312,12 +335,14 @@ class LocalRemoteServer(private val context: Context) {
             "Cache-Control: no-store\r\n" +
             "X-Content-Type-Options: nosniff\r\n" +
             "Content-Security-Policy: default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'\r\n" +
+            response.headers.entries.joinToString("") { (name, value) -> "$name: $value\r\n" } +
             "Content-Length: ${bytes.size}\r\nConnection: close\r\n\r\n").toByteArray())
         output.write(bytes)
         output.flush()
     }
 
     companion object {
+        private const val SESSION_COOKIE = "ktv_session"
         private const val MAX_CONCURRENT_REQUESTS = 12
         private const val MAX_REQUEST_BODY_BYTES = 64 * 1024
         private const val MAX_REQUEST_HEADERS = 64
