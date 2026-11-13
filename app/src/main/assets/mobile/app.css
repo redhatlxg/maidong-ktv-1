@@ -702,3 +702,25 @@ input[type=range]::-moz-range-thumb{border-color:#e85a6a}
   body{background:#07090d}
   .app-shell{box-shadow:0 0 60px rgba(0,0,0,.45);border-left:1px solid rgba(255,255,255,.04);border-right:1px solid rgba(255,255,255,.04)}
 }
+
+
+/* Accessibility: visible keyboard focus and reduced-motion support. */
+button:focus-visible,
+input:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible{
+  outline:2px solid #f0c878;
+  outline-offset:3px;
+}
+button:disabled{
+  cursor:not-allowed;
+  opacity:.55;
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
