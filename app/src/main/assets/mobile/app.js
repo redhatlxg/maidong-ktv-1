@@ -111,7 +111,7 @@ function openPage(name) {
     $("#query").placeholder = "输入歌手名或拼音";
     $("[data-search-mode]").forEach((item) => item.classList.toggle("active", item.dataset.searchMode === "singer"));
     uiState.singerGroup = "all";
-    $("[data-singer-group]").forEach((item) => item.classList.toggle("active", item.dataset.singerGroup === "all"));
+    $$("[data-singer-group]").forEach((item) => item.classList.toggle("active", item.dataset.singerGroup === "all"));
     $("#searchResultBlock").classList.remove("hidden");
     loadSingers(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
