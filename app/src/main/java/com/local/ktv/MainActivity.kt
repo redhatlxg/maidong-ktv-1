@@ -2678,9 +2678,9 @@ class MainActivity : AppCompatActivity() {
         fullScreenChromeVisible = visible
         fullScreenControls?.visibility = if (visible) View.VISIBLE else View.GONE
         fullScreenProgressRow?.visibility = if (visible) View.VISIBLE else View.GONE
-        // 右上角二维码跟随控制层一起出现/隐藏（不再按"手机是否在点歌"自动隐藏）。
+        // 微信扫码入口在全屏播放时也常驻右上角，不随播放器控制栏自动隐藏。
         fullScreenQrOverlay?.visibility =
-            if (prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, true) != false) View.VISIBLE else View.GONE
+            if (isFullScreen && prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, true) != false) View.VISIBLE else View.GONE
         main.removeCallbacks(hideFullScreenChromeRunnable)
         if (visible && isFullScreen) {
             val controls = fullScreenControls
@@ -3426,9 +3426,9 @@ class MainActivity : AppCompatActivity() {
         val screenHeightDp = metrics.heightPixels / metrics.density
         val compact = screenHeightDp < 620f
         val qrSide = min(
-            (screenHeightDp * 0.30f).toInt(),
-            if (compact) 118 else 158,
-        ).coerceAtLeast(96)
+            (screenHeightDp * 0.32f).toInt(),
+            if (compact) 148 else 184,
+        ).coerceAtLeast(120)
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
@@ -3543,8 +3543,8 @@ class MainActivity : AppCompatActivity() {
         if (prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, true) != true) return
         val url = remoteUrl()
         if (url.isBlank()) return
-        val qrSize = dp(if (compactUi) 68 else 86)
-        val panelWidth = dp(if (compactUi) 88 else 108)
+        val qrSize = dp(if (compactUi) 96 else 118)
+        val panelWidth = dp(if (compactUi) 112 else 134)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
@@ -3575,7 +3575,7 @@ class MainActivity : AppCompatActivity() {
         mobileQrOverlay = box
     }
 
-    /** 全屏播放时固定显示在右上角的小型手机点歌二维码。 */
+    /** 全屏播放时固定显示在右上角的微信扫码点歌入口，控制栏收起后仍保留。 */
     private fun updateFullScreenQrOverlay() {
         val container = fullScreenContainer ?: return
         fullScreenQrOverlay?.let { container.removeView(it) }
@@ -3583,8 +3583,8 @@ class MainActivity : AppCompatActivity() {
         if (!isFullScreen || prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, true) == false) return
         val url = remoteUrl()
         if (url.isBlank()) return
-        val qrSize = dp(if (compactUi) 68 else 84)
-        val totalWidth = dp(if (compactUi) 88 else 108)
+        val qrSize = dp(if (compactUi) 96 else 116)
+        val totalWidth = dp(if (compactUi) 112 else 132)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER

@@ -89,6 +89,27 @@ private class KtvSurfaceView(context: Context) : SurfaceView(context) {
         videoHeight = height
         if (width > 0 && height > 0) holder.setFixedSize(width, height)
         requestLayout()
+        post { updateCropScale(this.width, this.height) }
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        updateCropScale(w, h)
+    }
+
+    /** Fill the KTV viewport with a centered crop when the source aspect differs. */
+    private fun updateCropScale(width: Int, height: Int) {
+        if (width <= 0 || height <= 0 || videoWidth <= 0 || videoHeight <= 0) {
+            scaleX = 1f
+            scaleY = 1f
+            return
+        }
+        val viewportRatio = width.toFloat() / height.toFloat()
+        val sourceRatio = videoWidth.toFloat() / videoHeight.toFloat()
+        val zoom = maxOf(viewportRatio / sourceRatio, sourceRatio / viewportRatio)
+            .coerceIn(1f, 1.45f)
+        scaleX = zoom
+        scaleY = zoom
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {

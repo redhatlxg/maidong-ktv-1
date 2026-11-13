@@ -379,6 +379,7 @@ document.addEventListener("click", async (event) => {
     if (uiState.category) search(true);
     else $("#searchResultBlock").classList.add("hidden");
   }
+  if (button.id === "quickRank") $("#hot").scrollIntoView({ behavior: "smooth", block: "start" });
   if (button.dataset.page) openPage(button.dataset.page);
   if (button.dataset.action) playerAction(button.dataset.action);
   if (button.dataset.vocal) updateAudio({ vocalMode: button.dataset.vocal });

@@ -240,3 +240,28 @@ nav button>b{background:#b58a4b;color:#fff}
 /* Light theme category chips */
 .category-chips button{background:linear-gradient(145deg,#fff,#edf1f2);border-color:rgba(60,80,94,.13);color:#526773}
 .category-chips button.active{background:linear-gradient(135deg,#dfc99f,#b58a4b);color:#fff}
+
+
+/* Xiaoxiaoya scan-to-order landing: search-first commercial KTV layout */
+.ktv-welcome{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 18px;padding:17px 16px;border:1px solid rgba(217,184,121,.2);border-radius:16px;background:linear-gradient(120deg,#202b34 0%,#151e26 72%,#20232a 100%);box-shadow:0 12px 28px rgba(0,0,0,.2)}
+.ktv-welcome>div:first-child{min-width:0}
+.ktv-welcome small{display:block;margin-bottom:6px;color:#d9bd86;font-size:10px;letter-spacing:1.5px}
+.ktv-welcome b{display:block;font-size:19px;letter-spacing:.3px;color:#f5f1e9}
+.ktv-welcome p{margin:6px 0 0;color:#aeb8c0;font-size:11px;line-height:1.5}
+.ktv-shortcuts{display:flex;flex-direction:column;gap:6px;flex:0 0 104px}
+.ktv-shortcuts button{min-height:34px;padding:0 8px;border:1px solid rgba(217,184,121,.2);border-radius:9px;background:rgba(217,184,121,.08);color:#e1cb9c;font-size:11px;font-weight:700}
+.ktv-shortcuts button:first-child{background:linear-gradient(135deg,#e1cb9c,#b99458);color:#171c21}
+.search-mode{margin-top:4px}
+.category-block{margin-top:20px;padding:15px 13px;border-radius:15px;background:#131c24;border:1px solid rgba(255,255,255,.07)}
+.category-block .block-title h3{font-size:15px;color:#f0e7d5}
+.category-chips{display:flex;gap:8px;overflow-x:auto;padding:12px 1px 3px;scrollbar-width:none}
+.category-chips::-webkit-scrollbar{display:none}
+.category-chips button{flex:0 0 auto;min-height:35px;padding:0 13px;border:1px solid rgba(217,184,121,.18);border-radius:18px;background:#1c2832;color:#c5cbd0;font-size:12px}
+.category-chips button.active{background:linear-gradient(135deg,#e1cb9c,#b99458);color:#171c21;border-color:transparent;font-weight:800}
+.hot-block{margin-top:22px;padding:18px 13px;border:1px solid rgba(255,255,255,.07);border-radius:15px;background:rgba(18,27,35,.72)}
+.hot-block .block-title h3{color:#f0e7d5}
+.song{min-height:66px;border-radius:12px;background:#1a252e;border-color:rgba(255,255,255,.055)}
+.song .order{min-width:58px;height:34px;border-radius:9px;background:linear-gradient(135deg,#e1cb9c,#b99458);color:#171c21;font-weight:800}
+nav{background:rgba(10,15,20,.97);border-top:1px solid rgba(217,184,121,.14)}
+nav button.active{color:#e2c996}
+@media(max-width:390px){.ktv-welcome{align-items:flex-start;padding:14px 12px}.ktv-welcome b{font-size:17px}.ktv-shortcuts{flex-basis:94px}.ktv-shortcuts button{font-size:10px}}

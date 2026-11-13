@@ -708,10 +708,10 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="horizontal"
-            android:paddingStart="45dp"
-            android:paddingTop="30dp"
-            android:paddingEnd="45dp"
-            android:paddingBottom="21dp">
+            android:paddingStart="32dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="32dp"
+            android:paddingBottom="18dp">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -842,7 +842,7 @@
                 android:id="@+id/home_center_column"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.20"
+                android:layout_weight="0.23"
                 android:orientation="vertical"
                 android:layout_marginEnd="8dp">
 
@@ -886,7 +886,7 @@
                 android:id="@+id/home_poster_container"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.23"
+                android:layout_weight="0.20"
                 android:background="@drawable/home_banner_0">
 
                 <TextView

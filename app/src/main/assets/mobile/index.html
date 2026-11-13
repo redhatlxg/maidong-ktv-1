@@ -21,7 +21,7 @@
     </header>
 
     <main>
-      <section id="remote" class="page active">
+      <section id="remote" class="page">
         <article class="hero-card">
           <div class="hero-glow"></div><div class="album"><div class="disc"><span>♪</span></div></div>
           <div class="hero-copy"><div class="eyebrow"><span class="playing-dot"></span>正在播放</div><h2 id="nowTitle">暂无歌曲</h2><p id="nowSinger">请先点一首喜欢的歌</p><div class="sound-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
@@ -59,11 +59,12 @@
         <article class="next-card"><div class="next-number">02</div><div><small>下一首</small><b id="nextSong">队列为空</b></div><button data-page="queue">查看队列 <span>›</span></button></article>
       </section>
 
-      <section id="search" class="page">
-        <div class="page-heading"><div><p>SONG LIBRARY</p><h2>想唱什么？</h2></div><span>海量本地曲库</span></div>
+      <section id="search" class="page active">
+        <div class="page-heading"><div><p>WELCOME TO XIAOXIAOYA KTV</p><h2>点歌大厅</h2></div><span>扫码成功 · 开始点歌</span></div>
+        <article class="ktv-welcome"><div><small>晓晓呀 · KTV</small><b>想唱什么，马上点</b><p>搜索歌曲、歌手，或从分类与排行榜中挑选</p></div><div class="ktv-shortcuts"><button type="button" data-search-mode="song">歌名点歌</button><button type="button" data-search-mode="singer">歌手点歌</button><button type="button" id="quickRank">热门排行</button></div></article>
         <div class="search-mode" role="group" aria-label="搜索方式">
-          <button type="button" data-search-mode="song" class="active">歌曲</button>
-          <button type="button" data-search-mode="singer">歌手</button>
+          <button type="button" data-search-mode="song" class="active">歌曲点歌</button>
+          <button type="button" data-search-mode="singer">歌手点歌</button>
         </div>
         <div id="singerGroups" class="singer-groups hidden" role="group" aria-label="歌手分类">
           <button type="button" data-singer-group="all" class="active">全部</button>
@@ -73,7 +74,7 @@
           <button type="button" data-singer-group="female">女歌手</button>
           <button type="button" data-singer-group="group">组合</button>
         </div>
-        <form id="searchForm" class="search-box"><span class="search-icon"></span><input id="query" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入歌曲名、歌手或拼音"><button type="submit">搜索</button></form>
+        <form id="searchForm" class="search-box"><span class="search-icon"></span><input id="query" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入歌曲名、歌手名或拼音首字母"><button type="submit">搜索</button></form>
         <div class="category-block"><div class="block-title"><h3>歌曲分类</h3><span>按类型选歌</span></div><div id="categoryChips" class="category-chips"><button type="button" data-category="" class="active">全部歌曲</button></div></div>
         <button type="button" id="alphabetToggle" class="alphabet-toggle" aria-expanded="false">拼音辅助键盘 <span>展开</span></button>
         <div class="alphabet-panel hidden" aria-label="拼音首字母快捷输入">
@@ -101,7 +102,7 @@
       </section>
     </main>
 
-    <nav><button data-page="remote" class="active"><i class="nav-remote"></i><span>遥控</span></button><button data-page="search"><i class="nav-search"></i><span>搜歌</span></button><button data-page="queue"><i class="nav-queue"></i><span>已点</span><b id="navCount" class="hidden">0</b></button></nav>
+    <nav><button data-page="remote"><i class="nav-remote"></i><span>遥控</span></button><button data-page="search" class="active"><i class="nav-search"></i><span>搜歌</span></button><button data-page="queue"><i class="nav-queue"></i><span>已点</span><b id="navCount" class="hidden">0</b></button></nav>
   </div>
   <div id="toast"></div>
   <script src="/mobile/app.js"></script>
