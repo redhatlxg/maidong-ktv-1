@@ -1,7 +1,7 @@
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 const uiState = {
-  page: 1, query: "", searchMode: "song", busy: false,
+  page: 1, query: "", searchMode: "song", busy: false, resultMode: "songs", singerGroup: "all",
   hotPage: 1, hotPageSize: 10, hotBusy: false,
   visible: true, connected: false, eqEnabled: false,
   equalizer: null, searchAbort: null, searchKey: ""
@@ -50,6 +50,41 @@ function songRow(song, queue = false, current = false, index = 0, ranking = fals
     <div class="info">${current ? '<span class="playing">正在播放</span>' : ""}<b>${escapeHtml(song.title)}</b><p>${escapeHtml(song.singer)}${song.language ? " · " + escapeHtml(song.language) : ""}</p></div>
     ${actions}
   </div>`;
+}
+
+function singerRow(singer, index) {
+  return `<div class="song singer-row">
+    <div class="song-index">${String(index + 1).padStart(2, "0")}</div>
+    <div class="info"><b>${escapeHtml(singer.name)}</b><p>${escapeHtml([singer.area, singer.type].filter(Boolean).join(" · ") || "歌手")}</p></div>
+    <button class="singer-select" type="button" data-singer="${escapeHtml(singer.name)}">查看歌曲</button>
+  </div>`;
+}
+
+async function loadSingers(reset = true) {
+  if (reset) {
+    uiState.page = 1;
+    uiState.resultMode = "singers";
+    $("#results").innerHTML = "";
+    $("#searchResultBlock").classList.remove("hidden");
+    $("#resultTitle").textContent = "歌手分类";
+    $("#resultSummary").textContent = "正在加载歌手…";
+    $("#more").classList.add("hidden");
+  }
+  const requestedPage = uiState.page;
+  try {
+    const data = await api(`/api/v1/singers?group=${encodeURIComponent(uiState.singerGroup)}&page=${requestedPage}&pageSize=30`);
+    const singers = data.singers || [];
+    const rows = singers.map((singer, index) => singerRow(singer, (requestedPage - 1) * 30 + index)).join("");
+    if (rows) $("#results").insertAdjacentHTML("beforeend", rows);
+    else if (reset) $("#results").innerHTML = '<div class="empty">这个分类暂时没有歌手</div>';
+    $("#resultSummary").textContent = singers.length ? `共显示 ${(requestedPage - 1) * 30 + singers.length} 位` : "暂无歌手";
+    $("#more").classList.toggle("hidden", !data.hasMore);
+    uiState.page = requestedPage + 1;
+  } catch (error) {
+    if (reset) $("#results").innerHTML = '<div class="empty">歌手列表加载失败</div>';
+    $("#resultSummary").textContent = "请检查连接后重试";
+    toast(error.message);
+  }
 }
 
 function openPage(name) {
@@ -293,14 +328,33 @@ document.addEventListener("click", async (event) => {
   if (button.dataset.page) openPage(button.dataset.page);
   if (button.dataset.action) playerAction(button.dataset.action);
   if (button.dataset.vocal) updateAudio({ vocalMode: button.dataset.vocal });
+  if (button.dataset.singerGroup) {
+    uiState.singerGroup = button.dataset.singerGroup;
+    $("[data-singer-group]").forEach((item) => item.classList.toggle("active", item === button));
+    loadSingers(true);
+  }
+  if (button.classList.contains("singer-select")) {
+    $("#query").value = button.dataset.singer || "";
+    uiState.searchMode = "singer";
+    uiState.resultMode = "songs";
+    $("#searchResultBlock").classList.add("hidden");
+    search(true);
+  }
   if (button.dataset.searchMode) {
     uiState.searchMode = button.dataset.searchMode;
     $$('[data-search-mode]').forEach((item) => item.classList.toggle("active", item === button));
     $("#query").placeholder = uiState.searchMode === "singer" ? "输入歌手名或拼音" : "输入歌曲名或拼音";
+    $("#singerGroups").classList.toggle("hidden", uiState.searchMode !== "singer");
     $("#query").value = "";
     $("#results").innerHTML = "";
     $("#searchResultBlock").classList.add("hidden");
     $("#more").classList.add("hidden");
+    uiState.resultMode = "songs";
+    if (uiState.searchMode === "singer") {
+      uiState.singerGroup = "all";
+      $("[data-singer-group]").forEach((item) => item.classList.toggle("active", item.dataset.singerGroup === "all"));
+      loadSingers(true);
+    }
     $("#query").focus();
   }
   const row = button.closest(".song");
@@ -325,7 +379,7 @@ document.addEventListener("click", async (event) => {
 });
 
 $("#searchForm").addEventListener("submit", (event) => { event.preventDefault(); search(); });
-$("#more").addEventListener("click", () => search(false));
+$("#more").addEventListener("click", () => uiState.resultMode === "singers" ? loadSingers(false) : search(false));
 $("#hotPrev").addEventListener("click", () => loadHot(uiState.hotPage - 1));
 $("#hotNext").addEventListener("click", () => loadHot(uiState.hotPage + 1));
 // 音乐音量可调; 麦克风音量由功放硬件控制, 不再向设备发送无效果请求。
