@@ -4593,8 +4593,20 @@ class MainActivity : AppCompatActivity() {
             }
             return bitmap
         } catch (e: Exception) {
+            // 生成失败时绝不能返回纯白方块冒充二维码；用醒目的红色叉号明确标记不可扫描。
             val fallback = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565)
             fallback.eraseColor(Color.WHITE)
+            val border = (size / 24).coerceAtLeast(2)
+            val stroke = (size / 12).coerceAtLeast(3)
+            val red = Color.rgb(217, 54, 72)
+            for (y in 0 until size) {
+                for (x in 0 until size) {
+                    val onBorder = x < border || y < border || x >= size - border || y >= size - border
+                    val onCross = kotlin.math.abs(x - y) <= stroke ||
+                        kotlin.math.abs((size - 1 - x) - y) <= stroke
+                    if (onBorder || onCross) fallback.setPixel(x, y, red)
+                }
+            }
             return fallback
         }
     }
