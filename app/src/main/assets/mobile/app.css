@@ -515,3 +515,14 @@ nav button.active .nav-favorite{color:#fff0b8}
   nav button{font-size:10px}
   .song .favorite{margin-right:4px}
 }
+
+/* Premium KTV icon system */
+.control-icon svg,.tiny-icon svg,.volume-icon svg{width:1.35em;height:1.35em;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.controls .control-icon{display:grid;place-items:center;color:#e8c17d;font-size:23px;line-height:1}
+.controls button{color:#e9e1d4;background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.025));border:1px solid rgba(232,193,125,.15)}
+.controls .primary{background:linear-gradient(145deg,#e8c17d,#a77b43);color:#211a15;box-shadow:0 10px 26px rgba(168,123,67,.22),inset 0 1px rgba(255,255,255,.35)}
+.controls .primary .control-icon{color:#211a15}
+.tiny-icon,.volume-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--gold);vertical-align:middle}
+.tiny-icon svg,.volume-icon svg{width:19px;height:19px}
+.search-icon{display:inline-block;width:18px;height:18px;border:2px solid var(--gold);border-radius:50%;position:relative;flex:none}
+.search-icon:after{content:"";position:absolute;width:7px;height:2px;background:var(--gold);right:-5px;bottom:-2px;transform:rotate(45deg);border-radius:2px}
