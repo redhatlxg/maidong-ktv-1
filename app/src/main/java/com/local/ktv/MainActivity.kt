@@ -4138,28 +4138,29 @@ class MainActivity : AppCompatActivity() {
     /** 远程点歌页面：调节均衡器（与 App 内均衡器弹窗等价）。 */
     private fun remoteEqualizer(json: JSONObject): LocalRemoteServer.ApiResponse =
         remoteOnMain {
+            // 先校验整份请求，再修改任何均衡器状态，避免错误请求只执行一半。
+            if (json.has("globalMix") && !KtvEqualizer.globalMixSupported()) {
+                return@remoteOnMain remoteError(400, "GLOBAL_MIX_UNSUPPORTED", "本机不支持全局混音")
+            }
+            val presetName = if (json.has("preset")) json.optString("preset") else null
+            if (presetName != null && presetName !in KtvEqualizer.presetNames()) {
+                return@remoteOnMain remoteError(400, "BAD_PRESET", "预设不存在")
+            }
+            val levelsArray = if (json.has("levels")) json.optJSONArray("levels")
+                ?: return@remoteOnMain remoteError(400, "BAD_LEVELS", "频段格式错误")
+            else null
+            val caps = if (levelsArray != null) KtvEqualizer.capabilities(this) else null
+
             if (json.has("globalMix")) {
-                if (!KtvEqualizer.globalMixSupported()) {
-                    return@remoteOnMain remoteError(400, "GLOBAL_MIX_UNSUPPORTED", "本机不支持全局混音")
-                }
                 KtvEqualizer.setGlobalMix(json.optBoolean("globalMix"))
             }
             if (json.has("enabled")) {
                 KtvEqualizer.setEnabled(json.optBoolean("enabled"))
             }
-            if (json.has("preset")) {
-                val name = json.optString("preset")
-                if (name !in KtvEqualizer.presetNames()) {
-                    return@remoteOnMain remoteError(400, "BAD_PRESET", "预设不存在")
-                }
-                KtvEqualizer.applyPreset(name)
-            }
-            if (json.has("levels")) {
-                val array = json.optJSONArray("levels")
-                    ?: return@remoteOnMain remoteError(400, "BAD_LEVELS", "频段格式错误")
-                val caps = KtvEqualizer.capabilities(this)
+            presetName?.let(KtvEqualizer::applyPreset)
+            if (levelsArray != null && caps != null) {
                 val levels = FloatArray(caps.bandCount) { index ->
-                    array.optDouble(index, 0.0).toFloat().coerceIn(caps.minDb, caps.maxDb)
+                    levelsArray.optDouble(index, 0.0).toFloat().coerceIn(caps.minDb, caps.maxDb)
                 }
                 KtvEqualizer.setLevels(levels)
                 KtvEqualizer.markCustomPreset()
