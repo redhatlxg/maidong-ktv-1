@@ -53,8 +53,13 @@ function songRow(song, queue = false, current = false, index = 0, ranking = fals
 }
 
 function singerRow(singer, index) {
+  const avatarText = escapeHtml((singer.name || "歌").slice(0, 1));
+  const avatar = singer.image
+    ? `<span class="singer-avatar-fallback">${avatarText}</span><img class="singer-avatar-image" src="${escapeHtml(singer.image)}" alt="" loading="lazy">`
+    : `<span class="singer-avatar-fallback">${avatarText}</span>`;
   return `<div class="song singer-row">
     <div class="song-index">${String(index + 1).padStart(2, "0")}</div>
+    <div class="singer-avatar">${avatar}</div>
     <div class="info"><b>${escapeHtml(singer.name)}</b><p>${escapeHtml([singer.area, singer.type].filter(Boolean).join(" · ") || "歌手")}</p></div>
     <button class="singer-select" type="button" data-singer="${escapeHtml(singer.name)}">查看歌曲</button>
   </div>`;
@@ -75,8 +80,13 @@ async function loadSingers(reset = true) {
     const data = await api(`/api/v1/singers?group=${encodeURIComponent(uiState.singerGroup)}&q=${encodeURIComponent($("#query").value.trim())}&page=${requestedPage}&pageSize=30`);
     const singers = data.singers || [];
     const rows = singers.map((singer, index) => singerRow(singer, (requestedPage - 1) * 30 + index)).join("");
-    if (rows) $("#results").insertAdjacentHTML("beforeend", rows);
-    else if (reset) $("#results").innerHTML = '<div class="empty">这个分类暂时没有歌手</div>';
+    if (rows) {
+      $("#results").insertAdjacentHTML("beforeend", rows);
+      $("#results .singer-avatar-image").forEach((image) => {
+        image.addEventListener("error", () => image.remove(), { once: true });
+        image.addEventListener("load", () => image.previousElementSibling?.classList.add("hidden"), { once: true });
+      });
+    } else if (reset) $("#results").innerHTML = '<div class="empty">这个分类暂时没有歌手</div>';
     $("#resultSummary").textContent = singers.length ? `共显示 ${(requestedPage - 1) * 30 + singers.length} 位` : "暂无歌手";
     $("#more").classList.toggle("hidden", !data.hasMore);
     uiState.page = requestedPage + 1;
