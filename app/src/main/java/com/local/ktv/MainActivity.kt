@@ -4170,6 +4170,8 @@ class MainActivity : AppCompatActivity() {
                 method == "GET" && path == "/api/v1/singer" -> remoteSingerJson(query)
                 method == "GET" && path.startsWith("/api/v1/lyrics/") -> remoteLyricsJson(URLDecoder.decode(path.substringAfterLast('/'), "UTF-8"))
                 method == "GET" && path == "/api/v1/hot" -> remoteOk(remoteHotJson(query))
+                method == "GET" && path == "/api/v1/categories" -> remoteOk(remoteCategoriesJson())
+                method == "GET" && path == "/api/v1/category" -> remoteOk(remoteCategorySongsJson(query))
                 method == "GET" && path == "/api/v1/queue" -> remoteOk(remoteQueueJson())
                 method == "GET" && path == "/api/v1/downloads" -> remoteOk(remoteDownloadsJson())
                 method == "DELETE" && path == "/api/v1/downloads" -> remoteDeleteAllDownloads()
@@ -4503,6 +4505,33 @@ class MainActivity : AppCompatActivity() {
         while (remoteSongCache.size > 500) remoteSongCache.remove(remoteSongCache.keys.first())
         return JSONObject().put("songs", array).put("page", page).put("pageSize", pageSize)
             .put("hasPrevious", page > 1).put("hasMore", hasMore)
+    }
+
+    /** 手机点歌分类：复用曲库实际分类，不在前端伪造分类名称。 */
+    private fun remoteCategoriesJson(): JSONObject {
+        val categories = JSONArray()
+        library.categories().forEach { categories.put(it) }
+        return JSONObject().put("categories", categories)
+    }
+
+    /** 按曲库分类返回最多 120 首可见歌曲；歌曲仍通过现有点歌队列接口入队。 */
+    private fun remoteCategorySongsJson(query: Map<String, String>): JSONObject {
+        val category = query["name"].orEmpty().trim().ifBlank { "全部" }
+        val songs = JSONArray()
+        library.allSongs().asSequence()
+            .filter { song ->
+                isVisibleSong(song) && (
+                    category == "全部" ||
+                        (song.category?.takeIf { it.isNotBlank() } ?: "其他") == category
+                )
+            }
+            .take(120)
+            .forEach { song ->
+                remoteSongCache[stableId(song)] = song
+                songs.put(songJson(song))
+            }
+        while (remoteSongCache.size > 500) remoteSongCache.remove(remoteSongCache.keys.first())
+        return JSONObject().put("category", category).put("songs", songs)
     }
 
     /** 手机远程歌单：读取名称和歌曲数量。 */
