@@ -308,7 +308,7 @@ class MainActivity : AppCompatActivity() {
     private var audioManager: AudioManager? = null
     private var recorder: MediaRecorder? = null
     /** 电视/投影等设备需 App 占用麦克风输入后才会启用麦克风声音输出(供演唱)。 */
-    private val micActivator = MicActivator(this)
+    private val micActivator by lazy(LazyThreadSafetyMode.NONE) { MicActivator(applicationContext) }
     private var currentRecording: File? = null
     private var currentPage = "首页"
 
