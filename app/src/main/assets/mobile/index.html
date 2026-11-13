@@ -109,7 +109,31 @@
       </section>
     </main>
 
-    <nav><button data-page="remote" class="active"><i class="nav-remote"></i><span>遥控</span></button><button data-page="search"><i class="nav-search"></i><span>搜歌</span></button><button data-page="favorites"><i class="nav-fav">♥</i><span>收藏</span></button><button data-page="playlists"><i class="nav-fav">♫</i><span>歌单</span></button><button data-page="queue"><i class="nav-queue"></i><span>已点</span><b id="navCount" class="hidden">0</b></button></nav>
+          <section id="settings" class="page">
+        <div class="page-heading"><div><p>PERSONAL SPACE</p><h2>设置与管理</h2></div><span>晓晓呀 KTV</span></div>
+        <article class="settings-profile">
+          <div class="settings-emblem">♫</div>
+          <div><b>晓晓呀 KTV</b><small>让每一次点歌都更顺手</small></div>
+          <span class="settings-version">设备设置</span>
+        </article>
+        <div class="settings-section-title"><span>01</span><div><b>下载空间</b><small>管理保存在 KTV 主机上的歌曲</small></div></div>
+        <article class="settings-download-card">
+          <div class="download-metrics"><div><small>已下载歌曲</small><b id="downloadCount">读取中…</b></div><div><small>占用空间</small><b id="downloadSize">—</b></div></div>
+          <div class="download-storage-track"><i id="downloadStorageBar"></i></div>
+          <p id="downloadHint">仅清理下载缓存，不会删除在线曲库、收藏和歌单</p>
+          <button type="button" id="refreshDownloads" class="settings-secondary">刷新下载信息</button>
+          <button type="button" id="deleteAllDownloads" class="settings-danger">一键删除全部下载歌曲</button>
+        </article>
+        <div class="settings-section-title"><span>02</span><div><b>使用说明</b><small>操作更安心</small></div></div>
+        <div class="settings-info-list">
+          <div><span>触屏浏览</span><small>歌曲列表上下滑动，分类栏左右滑动</small></div>
+          <div><span>点歌方式</span><small>点击“点歌”加入队列，滑动不会误点</small></div>
+          <div><span>数据保护</span><small>收藏、歌单和在线曲库不会因清理下载而改变</small></div>
+        </div>
+      </section>
+    </main>
+
+    <nav><button data-page="remote" class="active"><i class="nav-remote"></i><span>遥控</span></button><button data-page="search"><i class="nav-search"></i><span>点歌</span></button><button data-page="favorites"><i class="nav-fav">♥</i><span>收藏</span></button><button data-page="playlists"><i class="nav-fav">♫</i><span>歌单</span></button><button data-page="queue"><i class="nav-queue"></i><span>队列</span><b id="navCount" class="hidden">0</b></button><button data-page="settings"><i class="nav-settings">⚙</i><span>设置</span></button></nav>
   </div>
   <section id="detailModal" class="detail-modal hidden" role="dialog" aria-modal="true"><div class="detail-sheet"><button type="button" id="detailClose" class="detail-close" aria-label="关闭">×</button><p class="detail-kicker">歌曲 / 歌手资料</p><h2 id="detailTitle">详情</h2><p id="detailMeta" class="detail-meta"></p><pre id="detailLyrics" class="detail-content">正在加载…</pre></div></section>
   <div id="toast"></div>
