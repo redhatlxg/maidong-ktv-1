@@ -3,7 +3,7 @@ const $$ = (selector) => document.querySelectorAll(selector);
 const uiState = {
   page: 1, query: "", searchMode: "song", busy: false, resultMode: "songs", singerGroup: "all",
   hotPage: 1, hotPageSize: 10, hotBusy: false,
-  visible: true, connected: false, eqEnabled: false,
+  visible: true, connected: false, eqEnabled: false, category: "",
   equalizer: null, searchAbort: null, searchKey: ""
 };
 
@@ -257,7 +257,7 @@ async function search(reset = true) {
       return;
     }
     // 同一关键词+同一搜索方式且结果已渲染 → 不重复请求设备(设备端也要查 1GB 曲库)。
-    const key = `${uiState.searchMode}|${nextQuery}`;
+    const key = `${uiState.searchMode}|${nextQuery}|${uiState.category}`;
     if (key === uiState.searchKey && $("#results").childElementCount) {
       $("#searchResultBlock").scrollIntoView({ behavior: "smooth", block: "start" });
       return;
@@ -267,7 +267,7 @@ async function search(reset = true) {
     uiState.searchKey = key;
     $("#results").innerHTML = "";
     $("#searchResultBlock").classList.remove("hidden");
-    $("#resultTitle").textContent = uiState.searchMode === "singer" ? "歌手搜索结果" : "歌曲搜索结果";
+    $("#resultTitle").textContent = uiState.category ? `${uiState.category} · 歌曲` : (uiState.searchMode === "singer" ? "歌手搜索结果" : "歌曲搜索结果");
     $("#resultSummary").textContent = `正在搜索“${uiState.query}”`;
     $("#more").classList.add("hidden");
     if (uiState.searchAbort) uiState.searchAbort.abort();
@@ -277,7 +277,7 @@ async function search(reset = true) {
   const requestedPage = uiState.page;
   uiState.busy = true;
   try {
-    const data = await api(`/api/v1/songs?q=${encodeURIComponent(uiState.query)}&type=${uiState.searchMode}&page=${requestedPage}&pageSize=20`, { signal });
+    const data = await api(`/api/v1/songs?q=${encodeURIComponent(uiState.query)}&type=${uiState.searchMode}&category=${encodeURIComponent(uiState.category)}&page=${requestedPage}&pageSize=20`, { signal });
     const rows = (data.songs || []).map((song, index) => songRow(song, false, false, (requestedPage - 1) * 20 + index)).join("");
     if (rows) $("#results").insertAdjacentHTML("beforeend", rows);
     else if (reset) $("#results").innerHTML = '<div class="empty">没有找到相关歌曲<br><small>请更换关键词后重试</small></div>';
@@ -287,7 +287,7 @@ async function search(reset = true) {
     // 预热下一页: 设备端会把它缓存下来, 用户点「更多」时基本瞬时。
     if (requestedPage === 1 && data.hasMore) {
       window.setTimeout(() => {
-        api(`/api/v1/songs?q=${encodeURIComponent(uiState.query)}&type=${uiState.searchMode}&page=2&pageSize=20`)
+        api(`/api/v1/songs?q=${encodeURIComponent(uiState.query)}&type=${uiState.searchMode}&category=${encodeURIComponent(uiState.category)}&page=2&pageSize=20`)
           .catch(() => {});
       }, 500);
     }
@@ -295,6 +295,20 @@ async function search(reset = true) {
     // 被下一次搜索取消属于正常情况, 不弹提示。
     if (error && error.name !== "AbortError") toast(error.message);
   } finally { uiState.busy = false; }
+}
+
+async function loadCategories() {
+  try {
+    const data = await api("/api/v1/categories");
+    const categories = Array.isArray(data.categories) ? data.categories : [];
+    const host = $("#categoryChips");
+    if (!host) return;
+    host.innerHTML = '<button type="button" data-category="" class="active">全部歌曲</button>' +
+      categories.map((name) => `<button type="button" data-category="${escapeHtml(name)}">${escapeHtml(name)}</button>`).join("");
+  } catch (error) {
+    // 分类接口不可用时保留「全部歌曲」，不影响常规搜索和热歌排行。
+    toast("歌曲分类暂时不可用");
+  }
 }
 
 async function loadHot(page) {
@@ -353,6 +367,17 @@ document.addEventListener("click", async (event) => {
     }
     input.dispatchEvent(new Event("input", { bubbles: true }));
   }
+  if (button.hasAttribute("data-category")) {
+    uiState.category = button.dataset.category || "";
+    uiState.searchMode = "song";
+    uiState.query = "";
+    uiState.searchKey = "";
+    $("#query").value = "";
+    $("[data-search-mode]").forEach((item) => item.classList.toggle("active", item.dataset.searchMode === "song"));
+    $("#singerGroups").classList.add("hidden");
+    $("#categoryChips [data-category]").forEach((item) => item.classList.toggle("active", item === button));
+    search(true);
+  }
   if (button.dataset.page) openPage(button.dataset.page);
   if (button.dataset.action) playerAction(button.dataset.action);
   if (button.dataset.vocal) updateAudio({ vocalMode: button.dataset.vocal });
@@ -370,6 +395,8 @@ document.addEventListener("click", async (event) => {
   }
   if (button.dataset.searchMode) {
     uiState.searchMode = button.dataset.searchMode;
+    uiState.category = "";
+    $("#categoryChips [data-category]").forEach((item) => item.classList.toggle("active", !item.dataset.category));
     $$('[data-search-mode]').forEach((item) => item.classList.toggle("active", item === button));
     $("#query").placeholder = uiState.searchMode === "singer" ? "输入歌手名或拼音" : "输入歌曲名或拼音";
     $("#singerGroups").classList.toggle("hidden", uiState.searchMode !== "singer");
@@ -441,4 +468,5 @@ document.addEventListener("visibilitychange", () => { uiState.visible = !documen
 // 搜索进行中暂停状态轮询: 避免与设备端 1GB 曲库查询抢 I/O。
 window.setInterval(() => { if (uiState.visible && !uiState.busy) refresh(); }, 1000);
 refresh();
+loadCategories();
 loadHot(1);

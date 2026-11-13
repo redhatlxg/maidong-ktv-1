@@ -4084,6 +4084,7 @@ class MainActivity : AppCompatActivity() {
             when {
                 method == "GET" && path == "/api/v1/state" -> remoteOnMain { remoteOk(remoteStateJson()) }
                 method == "GET" && path == "/api/v1/songs" -> remoteOk(remoteSearchJson(query))
+                method == "GET" && path == "/api/v1/categories" -> remoteOk(remoteCategoriesJson())
                 method == "GET" && path == "/api/v1/singers" -> remoteOk(remoteSingersJson(query))
                 method == "GET" && path == "/api/v1/hot" -> remoteOk(remoteHotJson(query))
                 method == "GET" && path == "/api/v1/queue" -> remoteOnMain { remoteOk(remoteQueueJson()) }
@@ -4194,17 +4195,27 @@ class MainActivity : AppCompatActivity() {
     private fun remoteSearchJson(query: Map<String, String>): JSONObject {
         val keyword = query["q"].orEmpty().trim()
         val type = query["type"].orEmpty().lowercase(Locale.ROOT).let { if (it == "song") "song" else "singer" }
+        val category = query["category"].orEmpty().trim()
         val page = (query["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
         val pageSize = (query["pageSize"]?.toIntOrNull() ?: 20).coerceIn(1, 50)
         val offset = (page - 1) * pageSize
         // 命中缓存: 不再查 1GB 曲库(翻页/重复搜索基本瞬时)。
-        val cacheKey = "$type|$keyword|$page|$pageSize"
+        val cacheKey = "$type|$keyword|$category|$page|$pageSize"
         remoteSearchCache[cacheKey]?.let { (json, at) ->
             if (System.currentTimeMillis() - at < SEARCH_CACHE_TTL_MS) {
                 runCatching { JSONObject(json) }.getOrNull()?.let { return it }
             }
         }
-        val songs = if (library.muse.isAvailable() && keyword.isNotBlank()) {
+        val songs = if (category.isNotBlank()) {
+            library.allSongs().asSequence().filter { song ->
+                isVisibleSong(song) && song.category.equals(category, ignoreCase = true) &&
+                    (keyword.isBlank() || if (type == "singer") {
+                        song.singer.orEmpty().contains(keyword, true)
+                    } else {
+                        (song.title + " " + song.singer + " " + song.pinyin).contains(keyword, true)
+                    })
+            }.drop(offset).take(pageSize + 1).toMutableList()
+        } else if (library.muse.isAvailable() && keyword.isNotBlank()) {
             if (type == "singer") library.muse.searchSongsBySingerKeyword(keyword, offset, pageSize + 1)
             else library.muse.searchSongs(keyword, offset, pageSize + 1)
         } else {
@@ -4227,6 +4238,19 @@ class MainActivity : AppCompatActivity() {
             .put("type", type).put("hasMore", hasMore)
         remoteSearchCache[cacheKey] = payload.toString() to System.currentTimeMillis()
         return payload
+    }
+
+    /** 手机端歌曲分类：只返回曲库中真实存在且对用户可见的分类。 */
+    private fun remoteCategoriesJson(): JSONObject {
+        val categories = library.allSongs().asSequence()
+            .filter(::isVisibleSong)
+            .map { it.category.orEmpty().trim() }
+            .filter { it.isNotEmpty() }
+            .distinct()
+            .sorted()
+            .take(40)
+            .toList()
+        return JSONObject().put("categories", JSONArray(categories))
     }
 
     /** 手机端歌手分类列表：复用正式曲库 singers 表的 area/type 字段，不猜测歌手归属。 */

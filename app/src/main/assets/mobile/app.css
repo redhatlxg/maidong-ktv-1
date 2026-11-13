@@ -226,3 +226,17 @@ nav button>b{background:#b58a4b;color:#fff}
 .alphabet-keys .alphabet-edit{background:rgba(181,138,75,.11);color:#8b6838;border-color:rgba(181,138,75,.22)}
 .search-box input{font-size:16px;min-width:0}.search-box input:focus{outline:2px solid rgba(181,138,75,.28);outline-offset:1px}
 @media(max-width:360px){.alphabet-toggle{min-height:38px}.alphabet-keys{gap:4px}.alphabet-keys button{height:30px}}
+
+
+/* Song category quick navigation */
+.category-block{margin-top:20px}
+.category-block .block-title{margin-bottom:10px}
+.category-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 1px 8px;scrollbar-width:none}
+.category-chips::-webkit-scrollbar{display:none}
+.category-chips button{flex:0 0 auto;min-height:36px;padding:0 14px;border-radius:12px;background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.1);color:#e8dff0;font-size:12px;white-space:nowrap}
+.category-chips button.active{background:linear-gradient(135deg,#ffdf7f,#ffb84a);border-color:transparent;color:#3a2140;font-weight:750;box-shadow:0 5px 14px rgba(255,184,74,.18)}
+.category-chips button:disabled{opacity:.55}
+
+/* Light theme category chips */
+.category-chips button{background:linear-gradient(145deg,#fff,#edf1f2);border-color:rgba(60,80,94,.13);color:#526773}
+.category-chips button.active{background:linear-gradient(135deg,#dfc99f,#b58a4b);color:#fff}
