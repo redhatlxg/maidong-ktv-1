@@ -7717,7 +7717,7 @@ class MainActivity : AppCompatActivity() {
                 textSize = if (compactUi) 17f else 21f
                 setTextColor(Color.WHITE)
                 setPadding(dp(24), dp(8), dp(24), dp(8))
-                singleLine = true
+                setSingleLine(true)
                 ellipsize = android.text.TextUtils.TruncateAt.MARQUEE
                 marqueeRepeatLimit = -1
                 isSelected = true
