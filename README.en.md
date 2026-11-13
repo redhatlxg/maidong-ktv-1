@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="app/src/main/res/drawable-nodpi/ktv_logo.png" width="140" alt="Maidong KTV Logo">
+  <img src="app/src/main/res/drawable-nodpi/ktv_logo.png" width="140" alt="XiaoXiaoYa KTV Logo">
 </p>
 
-<h1 align="center">Maidong KTV</h1>
+<h1 align="center">XiaoXiaoYa KTV</h1>
 
-<p align="center">A local karaoke application for Android TV and landscape song-selection devices</p>
+<p align="center">A local karaoke application for Android TV boxes and mobile song-selection devices</p>
 
 <p align="center">Remote Control · Song Discovery · Request Queue · Download Management · Stable Playback</p>
 
@@ -39,7 +39,7 @@
 - Segmented database download, verification, merge, and atomic update.
 - Directory creation, database scanning, and download startup only after storage permission is granted.
 - Local disk and USB song scanning, reserved storage settings, and automatic cleanup.
-- Unified Maidong KTV data storage to avoid conflicts with other applications.
+- Unified XiaoXiaoYa KTV data storage to avoid conflicts with other applications.
 
 ## Settings
 
@@ -55,7 +55,7 @@
 - Consistent state and meaning across top, windowed, and full-screen playback controls.
 - Stable focus during list refreshes, paging, tab changes, and song ordering.
 - Focus changes color only and preserves each control's original dimensions, corners, and layout.
-- A consistent circular Maidong logo across the home screen, player, and application information.
+- A consistent circular XiaoXiaoYa logo across the home screen, player, and application information.
 
 ## Project Notice
 
@@ -65,7 +65,7 @@
 >
 > **UI/feature framework credit**: [https://gitee.com/yangyachao-X/maidong-ktv](https://gitee.com/yangyachao-X/maidong-ktv)
 >
-> This repository reworks the upstream "Maidong KTV" UI and feature framework, and the core/data layer was
+> This repository reworks the upstream "XiaoXiaoYa KTV" UI and feature framework, and the core/data layer was
 > rewritten with **DSH (DeepSeek Harness)**: library sync, song-source integration, device auth,
 > risk-control handling, remote logging, and ad blocking are all new implementations.
 
