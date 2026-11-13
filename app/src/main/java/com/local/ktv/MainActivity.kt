@@ -4109,6 +4109,8 @@ class MainActivity : AppCompatActivity() {
                 method == "GET" && path == "/api/v1/singers" -> remoteOk(remoteSingersJson(query))
                 method == "GET" && path == "/api/v1/hot" -> remoteOk(remoteHotJson(query))
                 method == "GET" && path == "/api/v1/queue" -> remoteOnMain { remoteOk(remoteQueueJson()) }
+                method == "GET" && path == "/api/v1/favorites" -> remoteOnMain { remoteOk(remoteFavoritesJson()) }
+                method == "POST" && path == "/api/v1/favorites" -> remoteToggleFavorite(JSONObject(body))
                 method == "POST" && path == "/api/v1/queue" -> remoteOrder(JSONObject(body))
                 method == "POST" && path == "/api/v1/player/actions" -> remotePlayerAction(JSONObject(body))
                 method == "PATCH" && path == "/api/v1/player/audio" -> remoteAudio(JSONObject(body))
@@ -4338,6 +4340,31 @@ class MainActivity : AppCompatActivity() {
         val array = JSONArray()
         orderQueue?.toList()?.forEach { array.put(songJson(it)) }
         return JSONObject().put("queue", array)
+    }
+
+    /** 手机端收藏列表：复用电视端同一份收藏状态。 */
+    private fun remoteFavoritesJson(): JSONObject {
+        val array = JSONArray()
+        for (song in library.allSongs()) {
+            if (isVisibleSong(song) && store.isFavorite(song)) array.put(songJson(song))
+        }
+        return JSONObject().put("songs", array)
+    }
+
+    /** 手机端收藏/取消收藏：所有变更回到主线程执行并持久化。 */
+    private fun remoteToggleFavorite(json: JSONObject): LocalRemoteServer.ApiResponse {
+        val id = json.optString("songId").trim()
+        if (id.isEmpty()) return remoteError(400, "MISSING_SONG_ID", "缺少歌曲 ID")
+        val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id }
+            ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在或搜索结果已过期")
+        return remoteOnMain {
+            val added = store.toggleFavorite(song)
+            saveState()
+            remoteStateVersion++
+            remoteOk(JSONObject()
+                .put("favorite", added)
+                .put("message", if (added) "已加入收藏" else "已取消收藏"))
+        }
     }
 
     private fun remoteOrder(json: JSONObject): LocalRemoteServer.ApiResponse {
