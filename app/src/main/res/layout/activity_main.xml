@@ -425,7 +425,8 @@
                             android:textColor="#FFF"
                             android:textColorHint="#80FFFFFF"
                             android:textSize="13sp"
-                            android:hint="搜索  输入首字母搜索"
+                            android:hint="输入歌名、歌手或拼音"
+                            android:inputType="text"
                             android:imeOptions="actionSearch"
                             android:singleLine="true" />
 
@@ -485,7 +486,7 @@
                             android:layout_marginTop="8dp"
                             android:gravity="center"
                             android:background="@drawable/bg_key_mode_dim"
-                            android:text="手写"
+                            android:text="数字"
                             android:textColor="#99FFFFFF"
                             android:textSize="14sp" />
 

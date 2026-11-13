@@ -336,19 +336,22 @@ async function loadQueue() {
 document.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button) return;
-  if (button.dataset.letter) {
+  if (button.dataset.letter || button.dataset.letterAction) {
     const input = $("#query");
-    input.value += button.dataset.letter.toLowerCase();
-    input.focus();
-  }
-  if (button.dataset.letterAction === "backspace") {
-    const input = $("#query");
-    input.value = input.value.slice(0, -1);
-    input.focus();
-  }
-  if (button.dataset.letterAction === "clear") {
-    $("#query").value = "";
-    $("#query").focus();
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? start;
+    if (button.dataset.letter) {
+      input.setRangeText(button.dataset.letter.toLowerCase(), start, end, "preserve");
+    } else if (button.dataset.letterAction === "backspace") {
+      if (start !== end) input.setRangeText("", start, end, "preserve");
+      else if (start > 0) {
+        const previous = Array.from(input.value.slice(0, start)).pop() || "";
+        input.setRangeText("", start - previous.length, start, "preserve");
+      }
+    } else if (button.dataset.letterAction === "clear") {
+      input.value = "";
+    }
+    input.dispatchEvent(new Event("input", { bubbles: true }));
   }
   if (button.dataset.page) openPage(button.dataset.page);
   if (button.dataset.action) playerAction(button.dataset.action);
@@ -403,6 +406,17 @@ document.addEventListener("click", async (event) => {
   }
 });
 
+$("#alphabetToggle")?.addEventListener("click", () => {
+  const panel = $(".alphabet-panel");
+  if (!panel) return;
+  const expanded = !panel.classList.contains("hidden");
+  panel.classList.toggle("hidden", expanded);
+  $("#alphabetToggle").setAttribute("aria-expanded", String(!expanded));
+  $("#alphabetToggle span").textContent = expanded ? "展开" : "收起";
+});
+$("#query")?.addEventListener("compositionend", () => {
+  // 中文输入法候选词提交后保留文本，由用户主动点击搜索。
+});
 $("#searchForm").addEventListener("submit", (event) => { event.preventDefault(); uiState.searchMode === "singer" ? loadSingers(true) : search(); });
 $("#more").addEventListener("click", () => uiState.resultMode === "singers" ? loadSingers(false) : search(false));
 $("#hotPrev").addEventListener("click", () => loadHot(uiState.hotPage - 1));

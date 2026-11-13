@@ -2677,7 +2677,8 @@ class MainActivity : AppCompatActivity() {
         fullScreenControls?.visibility = if (visible) View.VISIBLE else View.GONE
         fullScreenProgressRow?.visibility = if (visible) View.VISIBLE else View.GONE
         // 右上角二维码跟随控制层一起出现/隐藏（不再按"手机是否在点歌"自动隐藏）。
-        fullScreenQrOverlay?.visibility = if (visible) View.VISIBLE else View.GONE
+        fullScreenQrOverlay?.visibility =
+            if (prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, true) != false) View.VISIBLE else View.GONE
         main.removeCallbacks(hideFullScreenChromeRunnable)
         if (visible && isFullScreen) {
             val controls = fullScreenControls
@@ -3533,35 +3534,41 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateMobileQrOverlay() {
-        val root = findViewById<FrameLayout?>(R.id.layout_root) ?: return
-        mobileQrOverlay?.let { root.removeView(it) }
+        // 二维码固定嵌入首页 MV 播放窗口右上角，不再漂浮在屏幕右下角。
+        val container = findViewById<FrameLayout?>(R.id.home_player_container) ?: return
+        mobileQrOverlay?.let { old -> (old.parent as? ViewGroup)?.removeView(old) }
         mobileQrOverlay = null
-        if (prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, false) != true) return
+        if (prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, true) != true) return
         val url = remoteUrl()
         if (url.isBlank()) return
+        val qrSize = dp(if (compactUi) 66 else 82)
+        val panelWidth = dp(if (compactUi) 78 else 96)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(dp(6), dp(6), dp(6), dp(4))
-            setBackgroundColor(Color.argb(205, 255, 255, 255))
+            setPadding(dp(5), dp(5), dp(5), dp(4))
+            setBackgroundColor(Color.argb(238, 255, 255, 255))
+            UiCompat.setElevation(this, dp(10).toFloat())
             addView(ImageView(this@MainActivity).apply {
-                setImageBitmap(qrBitmap(url, dp(112)))
-                contentDescription = "手机点歌二维码"
-            }, LinearLayout.LayoutParams(dp(116), dp(116)))
+                setImageBitmap(qrBitmap(url, qrSize))
+                contentDescription = "固定在 MV 右上角的手机点歌二维码"
+                scaleType = ImageView.ScaleType.FIT_CENTER
+            }, LinearLayout.LayoutParams(qrSize, qrSize))
             addView(TextView(this@MainActivity).apply {
-                text = "手机点歌"
-                textSize = 13f
+                text = "扫码点歌"
+                textSize = if (compactUi) 9f else 10f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(59, 18, 92))
-            }, LinearLayout.LayoutParams(-1, dp(24)))
+                setTextColor(Color.rgb(48, 65, 77))
+                includeFontPadding = false
+            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 15 else 17)))
             setOnClickListener { showMobileRemoteDialog() }
         }
-        val params = FrameLayout.LayoutParams(dp(128), dp(152), Gravity.END or Gravity.BOTTOM).apply {
-            rightMargin = dp(20)
-            bottomMargin = dp(76)
+        val params = FrameLayout.LayoutParams(panelWidth, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.END or Gravity.TOP).apply {
+            rightMargin = dp(10)
+            topMargin = dp(10)
         }
-        root.addView(box, params)
-        // 二维码浮层是展示型表面: 被焦点填充盖住会直接遮掉二维码。
+        container.addView(box, params)
+        box.bringToFront()
         TvFocusStyler.suppressFill(box)
         mobileQrOverlay = box
     }
@@ -3571,7 +3578,7 @@ class MainActivity : AppCompatActivity() {
         val container = fullScreenContainer ?: return
         fullScreenQrOverlay?.let { container.removeView(it) }
         fullScreenQrOverlay = null
-        if (!isFullScreen) return
+        if (!isFullScreen || prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, true) == false) return
         val url = remoteUrl()
         if (url.isBlank()) return
         val qrSize = dp(if (compactUi) 68 else 84)
@@ -3601,19 +3608,19 @@ class MainActivity : AppCompatActivity() {
         }
         container.addView(box, params)
         box.bringToFront()
-        // 跟随控制层显隐：控制层收起时二维码也不显示(新建时按当前状态初始化)。
-        box.visibility = if (fullScreenChromeVisible) View.VISIBLE else View.GONE
+        // 二维码独立于播放控制层，控制按钮自动隐藏后仍常驻右上角。
+        box.visibility = View.VISIBLE
         // 同手机点歌二维码: 展示型表面不做焦点填充。
         TvFocusStyler.suppressFill(box)
         fullScreenQrOverlay = box
     }
 
     private fun showMobileRemoteSettings() {
-        val enabled = prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, false) == true
+        val enabled = prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, true) != false
         AlertDialog.Builder(this)
             .setTitle("手机点歌")
-            .setSingleChoiceItems(arrayOf("仅在菜单中显示二维码", "播放页右下角显示二维码"), if (enabled) 1 else 0) { dialog, which ->
-                prefs()?.edit()?.putBoolean(KEY_SHOW_MOBILE_QR, which == 1)?.apply()
+            .setSingleChoiceItems(arrayOf("固定在 MV 右上角显示", "仅通过扫码点歌入口显示"), if (enabled) 0 else 1) { dialog, which ->
+                prefs()?.edit()?.putBoolean(KEY_SHOW_MOBILE_QR, which == 0)?.apply()
                 updateMobileQrOverlay()
                 dialog.dismiss()
             }
@@ -7544,7 +7551,11 @@ class MainActivity : AppCompatActivity() {
                 override fun beforeTextChanged(text: CharSequence?, start: Int, count: Int, after: Int) = Unit
                 override fun onTextChanged(text: CharSequence?, start: Int, before: Int, count: Int) = Unit
                 override fun afterTextChanged(text: Editable?) {
-                    if (!suppressSearchWatcher) scheduleKeyboardSearch()
+                    if (!suppressSearchWatcher && text != null &&
+                        android.view.inputmethod.BaseInputConnection.getComposingSpanStart(text) < 0 &&
+                        android.view.inputmethod.BaseInputConnection.getComposingSpanEnd(text) < 0) {
+                        scheduleKeyboardSearch()
+                    }
                 }
             })
         }
@@ -8397,7 +8408,14 @@ class MainActivity : AppCompatActivity() {
             renderKeyboard("abc")
         })
         if (key123 != null) key123.setOnClickListener(View.OnClickListener { v: View? ->
-            showSystemKeyboard()
+            hideSystemKeyboard()
+            key123.setBackgroundResource(R.drawable.bg_key_mode)
+            key123.setTextColor(Color.rgb(0x27, 0xCC, 0xA4))
+            if (keyAbc != null) {
+                keyAbc.setBackgroundResource(R.drawable.bg_key_mode_dim)
+                keyAbc.setTextColor(Color.argb(153, 255, 255, 255))
+            }
+            renderKeyboard("123")
         })
         if (keySpace != null) keySpace.setOnClickListener(View.OnClickListener { v: View? ->
             showSystemKeyboard()
@@ -8406,8 +8424,18 @@ class MainActivity : AppCompatActivity() {
             if (searchInput == null) return@OnClickListener
             val s = searchInput!!.getText().toString()
             if (!s.isEmpty()) {
-                searchInput!!.setText(s.substring(0, s.length - 1))
-                searchInput!!.setSelection(searchInput!!.getText().length)
+                val input = searchInput!!
+                val editable = input.text
+                val start = input.selectionStart.coerceAtLeast(0)
+                val end = input.selectionEnd.coerceAtLeast(start)
+                if (start != end) {
+                    editable.delete(start, end.coerceAtMost(editable.length))
+                    input.setSelection(start.coerceAtMost(editable.length))
+                } else if (start > 0) {
+                    val deleteStart = Character.offsetByCodePoints(editable, start, -1)
+                    editable.delete(deleteStart, start)
+                    input.setSelection(deleteStart)
+                }
                 scheduleKeyboardSearch()
             }
         })
@@ -8491,9 +8519,11 @@ class MainActivity : AppCompatActivity() {
      */
     private fun appendToSearch(key: String?) {
         if (searchInput == null) return
-        val s = searchInput!!.getText().toString()
-        searchInput!!.setText(s + key)
-        searchInput!!.setSelection(searchInput!!.getText().length)
+        val editable = searchInput!!.text
+        val start = searchInput!!.selectionStart.coerceAtLeast(0)
+        val end = searchInput!!.selectionEnd.coerceAtLeast(start)
+        editable.replace(start, end.coerceAtMost(editable.length), key.orEmpty())
+        searchInput!!.setSelection((start + key.orEmpty().length).coerceAtMost(editable.length))
         scheduleKeyboardSearch()
     }
 
