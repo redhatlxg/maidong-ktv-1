@@ -279,3 +279,209 @@ nav button.active{color:#e8ca8b}
 /* Queue collaboration hint and reliable multi-phone queue refresh. */
 .queue-tip{line-height:1.55}
 .queue-heading>span{white-space:nowrap}
+
+
+/* ===== 晓晓呀全站视觉统一：紫色霓虹 KTV 点歌大厅 ===== */
+:root{
+  color-scheme:dark;
+  --gold:#f4d48a;--gold2:#d7b66e;--violet:#9b62f4;--magenta:#d85de8;
+  --bg:#16052c;--glass:rgba(255,255,255,.105);--glass2:rgba(255,255,255,.16);
+  --line:rgba(220,190,255,.22);--muted:#c4b2d7;--green:#50e0ad;--danger:#ff769a
+}
+html,body{background:#17052e}
+body{
+  color:#fff;
+  background:
+    radial-gradient(ellipse at 12% 0%,rgba(158,36,220,.42),transparent 38%),
+    radial-gradient(ellipse at 92% 18%,rgba(95,42,202,.48),transparent 38%),
+    linear-gradient(145deg,#35105f 0%,#1b0637 48%,#0c092b 100%);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif
+}
+.aurora-one{background:#b331e8;opacity:.35}
+.aurora-two{background:#4e54e8;opacity:.3}
+.mesh{
+  opacity:.26;
+  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:24px 24px;
+  mask-image:linear-gradient(to bottom,#000,transparent 92%)
+}
+.app-shell{width:min(100%,560px);padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+.topbar{
+  height:82px;padding:14px 18px 10px;
+  background:linear-gradient(100deg,rgba(94,30,154,.68),rgba(49,20,104,.38));
+  border-bottom:1px solid rgba(224,190,255,.14);
+  box-shadow:0 10px 28px rgba(8,0,26,.2)
+}
+.brand-mark{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(145deg,#ff7ee8,#7a4cff);
+  border:1px solid rgba(255,255,255,.35);
+  box-shadow:0 0 22px rgba(195,90,255,.42)
+}
+.brand h1{font-size:21px;letter-spacing:.4px}
+.brand p{color:#d7c4ed}
+.queue-badge{
+  border:1px solid rgba(238,213,255,.38);
+  background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.06));
+  border-radius:24px;padding:7px 11px
+}
+.queue-badge b{
+  color:#fff;min-width:25px;height:25px;border-radius:50%;
+  background:linear-gradient(135deg,#ff637d,#d91e59)
+}
+.queue-badge span{color:#fff;font-size:11px}
+.page{padding:13px 16px 22px}
+.page-heading{padding:8px 2px 16px}
+.page-heading p{color:#d6a4ff;letter-spacing:1.6px}
+.page-heading h2{font-size:27px}
+.page-heading>span{color:#d3c2e5}
+.hero-card{
+  min-height:146px;padding:18px;border-radius:23px;
+  background:linear-gradient(120deg,rgba(129,54,198,.78),rgba(75,44,157,.7) 58%,rgba(184,60,171,.44));
+  border:1px solid rgba(238,216,255,.26);
+  box-shadow:0 16px 36px rgba(6,0,25,.32),inset 0 1px rgba(255,255,255,.18)
+}
+.album{border-radius:50%;width:88px;height:88px;flex-basis:88px;padding:5px}
+.disc{border-radius:50%}
+.hero-copy h2{font-size:22px}
+.controls{gap:10px;padding:17px 4px}
+.controls button{height:64px;border-radius:18px;background:rgba(255,255,255,.1);border:1px solid rgba(235,214,255,.17)}
+.controls .primary{
+  height:72px;border-radius:21px;
+  background:linear-gradient(135deg,#c56cff,#7448e8);
+  box-shadow:0 10px 25px rgba(122,52,220,.4),inset 0 1px rgba(255,255,255,.3)
+}
+.glass-card,.next-card,.song,.hot-block,.category-block,.ktv-welcome{
+  border:1px solid rgba(229,204,255,.18);
+  box-shadow:0 12px 28px rgba(7,0,25,.2),inset 0 1px rgba(255,255,255,.06)
+}
+.glass-card{
+  border-radius:21px;
+  background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.055))
+}
+.audio-panel{padding:16px}
+.panel-title b{color:#fff}
+.panel-title small{color:#c1add6}
+.seg{background:rgba(15,4,37,.48);border-color:rgba(255,255,255,.09)}
+.seg button.active{
+  color:#35104d;background:linear-gradient(135deg,#f7dfa1,#d5b1f5);
+  box-shadow:0 6px 18px rgba(208,156,255,.2)
+}
+.volume-icon{background:rgba(177,107,255,.22);color:#e2b7ff}
+input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,#9a55ef,#e15bd2)}
+input[type=range]::-moz-range-track{background:linear-gradient(90deg,#9a55ef,#e15bd2)}
+input[type=range]::-webkit-slider-thumb{border-color:#e5b8ff}
+input[type=range]::-moz-range-thumb{border-color:#e5b8ff}
+.next-card{background:rgba(255,255,255,.085);border-radius:17px}
+.next-number{background:rgba(220,173,255,.18);color:#e7c4ff}
+.next-card small{color:#c2add5}
+.next-card button{color:#e6c5ff}
+.ktv-welcome{
+  background:linear-gradient(115deg,rgba(130,54,195,.72),rgba(68,43,145,.78) 68%,rgba(178,62,169,.5));
+  border-radius:21px;padding:18px 16px
+}
+.ktv-welcome small{color:#f0d5ff}
+.ktv-welcome b{color:#fff;font-size:20px}
+.ktv-welcome p{color:#e1d1ef}
+.ktv-shortcuts button{
+  border:1px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.12);color:#fff;border-radius:12px
+}
+.ktv-shortcuts button:first-child{
+  background:linear-gradient(135deg,#f2d8a0,#cba2ed);color:#35134f
+}
+.search-mode{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  padding:5px;border-radius:16px;background:rgba(10,2,31,.42);
+  border:1px solid rgba(255,255,255,.12)
+}
+.search-mode button{
+  min-height:42px;border-radius:12px;background:transparent;color:#d4c2e7
+}
+.search-mode button.active{
+  background:linear-gradient(135deg,#a969f2,#6946d9);color:#fff;font-weight:800;
+  box-shadow:0 6px 16px rgba(120,60,220,.3)
+}
+.singer-groups{display:flex;gap:7px;overflow-x:auto;padding:13px 0 3px;scrollbar-width:none}
+.singer-groups button{
+  flex:0 0 auto;padding:8px 13px;border-radius:20px;
+  border:1px solid rgba(225,198,255,.2);background:rgba(255,255,255,.08);color:#e3d5f1
+}
+.singer-groups button.active{
+  background:linear-gradient(135deg,#b66cf2,#7750df);border-color:transparent;color:#fff
+}
+.search-box{
+  height:56px;margin-top:14px;border-radius:17px;
+  background:rgba(255,255,255,.13);border:1px solid rgba(230,205,255,.24);
+  box-shadow:0 10px 25px rgba(0,0,0,.18)
+}
+.search-box input{color:#fff}
+.search-box input::placeholder{color:#c3b2d4}
+.search-box button,.more{
+  background:linear-gradient(135deg,#b768f2,#7448df);color:#fff;border-radius:13px
+}
+.alphabet-toggle{
+  background:rgba(255,255,255,.09);border-color:rgba(230,205,255,.17);color:#eadcf7
+}
+.alphabet-toggle span{color:#edc5ff}
+.alphabet-panel{
+  background:rgba(35,12,65,.82);border-color:rgba(230,205,255,.17)
+}
+.alphabet-heading b{color:#f0d0ff}.alphabet-heading span{color:#c2add5}
+.alphabet-keys button{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.12);color:#fff}
+.alphabet-keys .alphabet-edit{background:rgba(192,119,255,.2);color:#f1d7ff}
+.category-block,.hot-block{
+  margin-top:19px;padding:15px 13px;border-radius:19px;
+  background:rgba(255,255,255,.075);border-color:rgba(230,205,255,.16)
+}
+.category-block .block-title h3,.hot-block .block-title h3{color:#fff}
+.block-title span{color:#c3b1d5}
+.category-chips button{
+  background:rgba(255,255,255,.09);border:1px solid rgba(230,205,255,.18);
+  color:#e8dcf3;border-radius:18px
+}
+.category-chips button.active{
+  background:linear-gradient(135deg,#b46af0,#7650dc);color:#fff
+}
+.song{
+  min-height:66px;padding:10px;border-radius:15px;
+  background:linear-gradient(110deg,rgba(255,255,255,.12),rgba(255,255,255,.055));
+  border-color:rgba(232,210,255,.14)
+}
+.song-index{
+  background:linear-gradient(135deg,rgba(173,104,241,.34),rgba(217,84,201,.22));
+  color:#f0d1ff
+}
+.song .info b{color:#fff}
+.song .info p{color:#c3b1d4}
+.song .order,.song .top,.song .delete,.singer-select{
+  border-radius:11px;background:linear-gradient(135deg,#bd72f1,#754bdc);color:#fff
+}
+.song .playing{color:#eec9ff}
+.ranking-list .song.podium .song-index{background:linear-gradient(135deg,#f2d69a,#b88be8);color:#35134c}
+.queue-heading{color:#fff}
+.queue-tip{color:#d2c1e2}
+nav{
+  background:rgba(24,7,47,.96);border-top:1px solid rgba(224,194,255,.22);
+  box-shadow:0 -10px 30px rgba(5,0,22,.28);backdrop-filter:blur(18px)
+}
+nav button{color:#bda9d1}
+nav button.active{color:#edc8ff}
+nav button.active:before{background:rgba(179,105,245,.18)}
+.nav-search:before,.nav-remote:before{border-color:currentColor}
+#toast{
+  background:linear-gradient(135deg,#a75de9,#6845cf);color:#fff;
+  border:1px solid rgba(255,255,255,.2);box-shadow:0 12px 30px rgba(0,0,0,.3)
+}
+.offline{background:#8f214d;color:#fff}
+@media(min-width:430px){
+  .app-shell{max-width:620px}
+  .page{padding-left:20px;padding-right:20px}
+  .hero-card{min-height:160px}
+}
+@media(max-width:380px){
+  .topbar{padding-left:14px;padding-right:14px}
+  .page{padding-left:13px;padding-right:13px}
+  .ktv-welcome{padding:14px 12px}
+  .ktv-welcome b{font-size:17px}
+}
