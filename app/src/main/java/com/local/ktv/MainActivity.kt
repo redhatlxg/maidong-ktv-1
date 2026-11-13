@@ -187,10 +187,12 @@ class MainActivity : AppCompatActivity() {
      * 同一「类型+关键词+页码」重复请求直接复用上次的 JSON，翻页（「更多」）与重复搜索不再查库。
      * TTL 60s + 曲库刷新时清空，保证隐藏/删除歌曲后结果及时跟上。
      */
-    private val remoteSearchCache = object : LinkedHashMap<String, Pair<String, Long>>(8, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<String, Long>>?): Boolean =
-            size > 24
-    }
+    private val remoteSearchCache = Collections.synchronizedMap(
+        object : LinkedHashMap<String, Pair<String, Long>>(8, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<String, Long>>?): Boolean =
+                size > 24
+        },
+    )
     private var mobileQrOverlay: View? = null
     private var fullScreenQrOverlay: View? = null
     /** 播放页面右上角「网络未连接」提示。 */
@@ -4168,6 +4170,17 @@ class MainActivity : AppCompatActivity() {
             remoteOk(equalizerJson().put("message", "均衡器已更新"))
         }
 
+    /** 多个手机请求可并发搜索；缓存写入和 LRU 淘汰必须作为一个原子操作。 */
+    private fun cacheRemoteSong(song: Song) {
+        synchronized(remoteSongCache) {
+            remoteSongCache[stableId(song)] = song
+            while (remoteSongCache.size > 500) {
+                val oldestId = remoteSongCache.keys.firstOrNull() ?: break
+                remoteSongCache.remove(oldestId)
+            }
+        }
+    }
+
     private fun remoteSearchJson(query: Map<String, String>): JSONObject {
         val keyword = query["q"].orEmpty().trim()
         val type = query["type"].orEmpty().lowercase(Locale.ROOT).let { if (it == "song") "song" else "singer" }
@@ -4197,10 +4210,9 @@ class MainActivity : AppCompatActivity() {
         val pageSongs = songs.take(pageSize)
         val array = JSONArray()
         pageSongs.forEach { song ->
-            remoteSongCache[stableId(song)] = song
+            cacheRemoteSong(song)
             array.put(songJson(song))
         }
-        while (remoteSongCache.size > 500) remoteSongCache.remove(remoteSongCache.keys.first())
         val payload = JSONObject().put("songs", array).put("page", page).put("pageSize", pageSize)
             .put("type", type).put("hasMore", hasMore)
         remoteSearchCache[cacheKey] = payload.toString() to System.currentTimeMillis()
@@ -4260,10 +4272,9 @@ class MainActivity : AppCompatActivity() {
         val hasMore = songs.size > pageSize
         val array = JSONArray()
         songs.take(pageSize).forEach { song ->
-            remoteSongCache[stableId(song)] = song
+            cacheRemoteSong(song)
             array.put(songJson(song))
         }
-        while (remoteSongCache.size > 500) remoteSongCache.remove(remoteSongCache.keys.first())
         return JSONObject().put("songs", array).put("page", page).put("pageSize", pageSize)
             .put("hasPrevious", page > 1).put("hasMore", hasMore)
     }
