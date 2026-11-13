@@ -3499,7 +3499,7 @@ class MainActivity : AppCompatActivity() {
         // 右列固定宽度: 横版布局下避免被压缩导致地址/文案被截断。
         val infoWidth = dp(if (compact) 196 else 240)
         info.addView(
-            label("扫码点歌", if (compact) 16 else 20, Color.WHITE).apply {
+            label("微信扫码点歌", if (compact) 16 else 20, Color.WHITE).apply {
                 gravity = Gravity.CENTER
                 includeFontPadding = false
                 setTypeface(typeface, Typeface.BOLD)
@@ -3513,7 +3513,7 @@ class MainActivity : AppCompatActivity() {
             LinearLayout.LayoutParams(-1, dp(2)).apply { topMargin = dp(5); bottomMargin = dp(6) },
         )
         val tip = label(
-            "手机连接同一局域网\n后扫码点歌",
+            "手机连接同一局域网\n使用微信扫一扫即可点歌",
             if (compact) 12 else 14,
             Color.argb(214, 255, 255, 255),
         )
@@ -3594,7 +3594,7 @@ class MainActivity : AppCompatActivity() {
             }
             UiCompat.setElevation(this, dp(10).toFloat())
             addView(TextView(this@MainActivity).apply {
-                text = "微信扫码"
+                text = "微信扫码点歌"
                 textSize = 9f
                 gravity = Gravity.CENTER
                 setTypeface(typeface, Typeface.BOLD)
@@ -3657,7 +3657,7 @@ class MainActivity : AppCompatActivity() {
             }
             UiCompat.setElevation(this, dp(12).toFloat())
             addView(TextView(this@MainActivity).apply {
-                text = "微信扫码"
+                text = "微信扫码点歌"
                 textSize = if (compactUi) 9f else 10f
                 gravity = Gravity.CENTER
                 setTypeface(typeface, Typeface.BOLD)
@@ -3702,7 +3702,7 @@ class MainActivity : AppCompatActivity() {
     private fun showMobileRemoteSettings() {
         prefs()?.edit()?.putBoolean(KEY_SHOW_MOBILE_QR, true)?.apply()
         AlertDialog.Builder(this)
-            .setTitle("扫码点歌")
+            .setTitle("微信扫码点歌")
             .setMessage("微信扫码点歌二维码已设为常驻显示，不会随播放控制栏收起或手机端访问状态而隐藏。")
             .setPositiveButton("知道了", null)
             .setNeutralButton("查看二维码") { _, _ -> showMobileRemoteDialog() }
