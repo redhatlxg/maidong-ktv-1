@@ -239,6 +239,7 @@ async function updateAudio(values) {
 
 async function search(reset = true) {
   if (reset) {
+    uiState.resultMode = "songs";
     const nextQuery = $("#query").value.trim();
     if (!nextQuery) {
       toast(`请输入${uiState.searchMode === "singer" ? "歌手" : "歌曲"}名称`);
