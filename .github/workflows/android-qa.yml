@@ -29,6 +29,15 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-35" "build-tools;36.0.0" "platform-tools"
 
+      - name: Validate mobile JavaScript
+        run: |
+          node --check app/src/main/assets/mobile/app.js
+          node --check app/src/main/assets/mobile/ktv_api.js
+          if grep -F '\$("[data-singer-group]").forEach' app/src/main/assets/mobile/app.js; then
+            echo "Invalid single-element selector used as a collection"
+            exit 1
+          fi
+
       - name: Run unit tests
         id: unit-tests
         continue-on-error: true
