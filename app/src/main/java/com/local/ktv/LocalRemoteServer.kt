@@ -10,6 +10,8 @@ import java.net.Socket
 import java.net.URLDecoder
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.Semaphore
 
 /**
  * Small, dependency-free HTTP server for the mobile song-request web app.
@@ -38,6 +40,8 @@ class LocalRemoteServer(private val context: Context) {
     }
 
     private var pool = Executors.newCachedThreadPool()
+    // 限制同时处理的手机端请求，避免异常客户端或突发并发耗尽线程资源。
+    private var requestSlots = Semaphore(MAX_CONCURRENT_REQUESTS)
     @Volatile private var running = false
     @Volatile private var boundAddress: String? = null
     @Volatile private var boundPort = -1
@@ -55,7 +59,10 @@ class LocalRemoteServer(private val context: Context) {
             lastError = "请先连接 Wi-Fi 或有线局域网"
             return false
         }
-        if (pool.isShutdown) pool = Executors.newCachedThreadPool()
+        if (pool.isShutdown) {
+            pool = Executors.newCachedThreadPool()
+            requestSlots = Semaphore(MAX_CONCURRENT_REQUESTS)
+        }
         var candidate: ServerSocket? = null
         for (port in 8765..8775) {
             try {
@@ -77,7 +84,29 @@ class LocalRemoteServer(private val context: Context) {
             try {
                 while (running) {
                     val socket = server?.accept() ?: break
-                    pool.execute { handle(socket) }
+                    val gate = requestSlots
+                    if (!gate.tryAcquire()) {
+                        runCatching {
+                            write(socket, ApiResponse(503, error("SERVER_BUSY", "点歌服务繁忙，请稍后重试")))
+                        }
+                        runCatching { socket.close() }
+                        continue
+                    }
+                    try {
+                        pool.execute {
+                            try {
+                                handle(socket)
+                            } finally {
+                                gate.release()
+                            }
+                        }
+                    } catch (_: RejectedExecutionException) {
+                        gate.release()
+                        runCatching {
+                            write(socket, ApiResponse(503, error("SERVER_BUSY", "点歌服务正在重启，请稍后重试")))
+                        }
+                        runCatching { socket.close() }
+                    }
                 }
             } catch (e: Exception) {
                 if (running) lastError = e.message ?: "本地服务异常"
@@ -221,7 +250,7 @@ class LocalRemoteServer(private val context: Context) {
         val bytes = response.bytes ?: response.body.toByteArray(Charsets.UTF_8)
         val reason = when (response.status) {
             200 -> "OK"; 201 -> "Created"; 204 -> "No Content"; 400 -> "Bad Request"
-            403 -> "Forbidden"; 404 -> "Not Found"; 409 -> "Conflict"; else -> "Error"
+            403 -> "Forbidden"; 404 -> "Not Found"; 409 -> "Conflict"; 503 -> "Service Unavailable"; else -> "Error"
         }
         val output = socket.getOutputStream()
         output.write(("HTTP/1.1 ${response.status} $reason\r\n" +
@@ -235,6 +264,8 @@ class LocalRemoteServer(private val context: Context) {
     }
 
     companion object {
+        private const val MAX_CONCURRENT_REQUESTS = 12
+
         fun isPrivateIpv4(value: String?): Boolean = runCatching {
             val address = InetAddress.getByName(value)
             address is Inet4Address && isPrivateAddress(address)
