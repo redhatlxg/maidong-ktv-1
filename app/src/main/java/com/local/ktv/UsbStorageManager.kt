@@ -17,7 +17,10 @@ object UsbStorageManager {
     private const val TAG = "UsbStorage"
     private const val SONG_DIR = "MaidongKTV/video/cloud-song"
     private const val INTERNAL_DIR = "video/cloud-song"
-    private const val MIN_FREE_BYTES = 10L * 1024L * 1024L * 1024L
+    // M411A has only 8GB internal flash; a 10GB threshold would force USB forever.
+    private const val INTERNAL_MIN_FREE_BYTES = 1536L * 1024L * 1024L
+    // Leave room for large catalog/song downloads without requiring an unrealistic 10GB USB stick.
+    private const val USB_MIN_FREE_BYTES = 2L * 1024L * 1024L * 1024L
 
     data class Volume(
         val root: File,
@@ -45,15 +48,22 @@ object UsbStorageManager {
     }
 
     private fun writeProbe(dir: File): Boolean {
-        val probe = File(dir, ".maidong_usb_probe")
-        return runCatching {
+        // Never overwrite or delete a user's existing file, even if it has our old probe name.
+        val probe = File(dir, ".maidong_usb_probe_${System.nanoTime()}")
+        if (!runCatching { probe.createNewFile() }.getOrDefault(false)) return false
+        return try {
             FileOutputStream(probe).use { out ->
                 out.write(byteArrayOf(0x4b, 0x54, 0x56))
                 out.flush()
                 out.fd.sync()
             }
-            probe.delete()
-        }.getOrDefault(false).also { runCatching { probe.delete() } }
+            true
+        } catch (error: Exception) {
+            Log.w(TAG, "USB write probe failed: ${error.message}")
+            false
+        } finally {
+            runCatching { probe.delete() }
+        }
     }
 
     /** Returns only mounted removable volumes that pass an actual write test. */
@@ -79,10 +89,10 @@ object UsbStorageManager {
     fun downloadDirectory(): File {
         val internal = File(AppPaths.videoDir, "cloud-song")
         val internalFree = runCatching { AppPaths.root.usableSpace }.getOrDefault(0L)
-        if (internalFree >= MIN_FREE_BYTES) return internal
+        if (internalFree >= INTERNAL_MIN_FREE_BYTES) return internal
 
         val usb = writableVolumes()
-            .filter { it.freeBytes > MIN_FREE_BYTES }
+            .filter { it.freeBytes >= USB_MIN_FREE_BYTES }
             .maxByOrNull { it.freeBytes }
         if (usb != null) {
             val dir = File(usb.root, SONG_DIR)
