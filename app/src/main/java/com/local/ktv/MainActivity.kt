@@ -177,6 +177,8 @@ class MainActivity : AppCompatActivity() {
     private val remoteServer by lazy { LocalRemoteServer(this) }
     @Volatile private var remoteStateVersion = 1L
     private val remoteSongCache = Collections.synchronizedMap(LinkedHashMap<String, Song>())
+    /** 正在由手机端提交、尚未进入队列的歌曲 ID；防止多台手机并发重复点歌。 */
+    private val remotePendingOrderIds: MutableSet<String> = Collections.synchronizedSet(mutableSetOf())
 
     /**
      * 远程搜索结果的短期缓存（LRU，最多 24 条 = 最近 4 个查询 × 6 页）。
@@ -4240,15 +4242,29 @@ class MainActivity : AppCompatActivity() {
         if (id.isEmpty()) return remoteError(400, "MISSING_SONG_ID", "缺少歌曲 ID")
         val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id }
             ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在或搜索结果已过期")
-        if (orderQueue?.any { stableId(it) == id } == true) {
-            return remoteError(409, "ALREADY_QUEUED", "歌曲已在已点列表中")
+        // 多台手机可能在同一瞬间提交同一首歌。先原子登记 pending，再投递主线程，
+        // 避免所有请求都在主线程真正入队前通过重复检查。
+        synchronized(remotePendingOrderIds) {
+            if (orderQueue?.any { stableId(it) == id } == true || !remotePendingOrderIds.add(id)) {
+                return remoteError(409, "ALREADY_QUEUED", "歌曲已在已点列表或正在提交")
+            }
         }
-        main.post {
-            addToQueue(song)
-            remoteStateVersion++
-            saveState()
+        val posted = main.post {
+            try {
+                if (orderQueue?.any { stableId(it) == id } != true) {
+                    addToQueue(song)
+                    remoteStateVersion++
+                    saveState()
+                }
+            } finally {
+                remotePendingOrderIds.remove(id)
+            }
         }
-        return remoteOk(JSONObject().put("message", "点歌成功"), 201)
+        if (!posted) {
+            remotePendingOrderIds.remove(id)
+            return remoteError(503, "QUEUE_BUSY", "点歌请求未能提交，请重试")
+        }
+        return remoteOk(JSONObject().put("message", "点歌请求已提交"), 201)
     }
 
     private fun remoteQueueMutation(method: String, id: String): LocalRemoteServer.ApiResponse {
