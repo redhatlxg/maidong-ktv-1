@@ -429,3 +429,132 @@ button{touch-action:manipulation}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+
+/* ── 晓晓呀视觉系统 2.0：分区层级、音乐卡片与设置中心 ── */
+:root{
+  --gold:#f4d18a;--gold2:#d9a85e;--violet:#9274ff;--magenta:#d77bc5;
+  --bg:#090f20;--glass:rgba(20,31,54,.78);--glass2:rgba(34,48,76,.84);
+  --line:rgba(190,205,235,.14);--muted:#aab6cc;--green:#72dfbd;--danger:#ff8297;
+}
+html{background:#090f20;scroll-behavior:smooth}
+body{
+  background:
+    radial-gradient(ellipse at 12% 0%,rgba(97,73,160,.28),transparent 36%),
+    radial-gradient(ellipse at 100% 32%,rgba(35,128,150,.13),transparent 34%),
+    linear-gradient(155deg,#111a31 0%,#090f20 58%,#070b16 100%);
+  overflow-x:hidden;
+}
+.mesh{opacity:.13;background-size:34px 34px}
+.aurora-one{background:#8b6fe5;opacity:.24}
+.aurora-two{background:#36a7a0;opacity:.16}
+.app-shell{max-width:1040px}
+.topbar{min-height:88px;border-bottom:1px solid rgba(210,222,246,.06);margin-bottom:8px}
+.brand-mark{background:linear-gradient(145deg,#f7e4b2,#c99a58);box-shadow:0 8px 25px rgba(218,174,104,.2)}
+.brand h1 em{color:#f2d49a}
+.queue-badge{background:linear-gradient(135deg,rgba(244,209,138,.14),rgba(105,126,170,.08));border-color:rgba(244,209,138,.25)}
+.page{padding-top:15px;padding-bottom:32px}
+.page-heading{padding:8px 3px 22px;align-items:center}
+.page-heading p{color:#c5a978;letter-spacing:2.6px;font-weight:700}
+.page-heading h2{font-size:clamp(24px,5vw,30px);letter-spacing:.4px}
+.hero-card,.glass-card,.next-card,.settings-download-card,.settings-profile,.settings-info-list{
+  border-color:rgba(205,218,241,.13);
+  box-shadow:0 18px 44px rgba(1,5,15,.22),inset 0 1px rgba(255,255,255,.055);
+}
+.hero-card{
+  background:linear-gradient(122deg,rgba(76,91,148,.58),rgba(39,61,96,.48) 58%,rgba(110,67,121,.34));
+  border-radius:26px;
+}
+.album{background:linear-gradient(145deg,#e9d4a4,#bd8b62 48%,#6b6db4);padding:6px}
+.disc{background:repeating-radial-gradient(circle,#121a2c 0 4px,#29334a 5px 8px)}
+.controls button{background:linear-gradient(155deg,rgba(68,84,117,.42),rgba(23,34,56,.8));border-color:rgba(198,211,237,.14)}
+.controls .primary{background:linear-gradient(145deg,#b9a1ff,#7663d8);box-shadow:0 12px 28px rgba(105,88,208,.28),inset 0 1px rgba(255,255,255,.3)}
+.glass-card{background:linear-gradient(145deg,rgba(36,50,78,.88),rgba(16,27,48,.88));border-radius:22px}
+.seg button.active{background:linear-gradient(135deg,#f5dfae,#d8ad6e);color:#302b35}
+.search-box{background:rgba(31,45,70,.86);border-color:rgba(199,213,239,.15);box-shadow:0 12px 28px rgba(0,0,0,.16)}
+.search-box button[type=submit],.more{background:linear-gradient(135deg,#9582ec,#6658b7);box-shadow:0 7px 17px rgba(92,80,174,.24)}
+.hot-tabs,.search-mode{gap:8px;padding:5px;border-radius:17px;background:rgba(5,11,24,.36);border:1px solid rgba(195,211,240,.08)}
+.hot-tabs button,.search-mode button{border-radius:12px;color:#b5c0d4}
+.hot-tabs button.active,.search-mode button.active{background:linear-gradient(135deg,rgba(244,209,138,.2),rgba(135,119,203,.18));color:#f4dfb5;box-shadow:inset 0 0 0 1px rgba(244,209,138,.16)}
+.block-title{padding:0 2px 4px}
+.block-title h3{letter-spacing:.2px}
+.song,.singer-card,.playlist-card{
+  background:linear-gradient(130deg,rgba(37,51,78,.88),rgba(19,30,51,.88));
+  border:1px solid rgba(190,207,237,.1);
+  box-shadow:0 7px 18px rgba(1,5,14,.13);
+  border-radius:17px;
+}
+.song-index{background:linear-gradient(145deg,rgba(151,132,229,.24),rgba(87,111,155,.18));color:#d0c4ff}
+.song .order,.song .top{background:linear-gradient(135deg,rgba(244,209,138,.18),rgba(210,166,99,.08));border-color:rgba(244,209,138,.22);color:#f2d69f}
+.song .delete{background:rgba(255,130,151,.12)}
+nav{
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  background:rgba(8,14,29,.96);
+  border-top:1px solid rgba(193,209,237,.14);
+  box-shadow:0 -10px 35px rgba(0,0,0,.28);
+  backdrop-filter:blur(18px);
+}
+nav button{color:#8795ad}
+nav button.active{color:#f1d49d}
+nav button.active:before{background:linear-gradient(90deg,#f1d49d,#9a8ce5)}
+nav .nav-settings{font-style:normal;font-size:18px;line-height:20px}
+.settings-profile{
+  display:flex;align-items:center;gap:13px;padding:18px;border-radius:22px;
+  background:linear-gradient(120deg,rgba(92,88,147,.28),rgba(27,53,77,.65));
+  border:1px solid rgba(204,215,240,.14);margin-bottom:24px;
+}
+.settings-emblem{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;border-radius:16px;
+  background:linear-gradient(145deg,#f1d8a5,#b88b5d);color:#253047;font-size:27px;font-weight:800}
+.settings-profile>div:nth-child(2){min-width:0;flex:1}
+.settings-profile b,.settings-profile small{display:block}
+.settings-profile b{font-size:16px;letter-spacing:.5px}
+.settings-profile small{margin-top:5px;color:#aab8cf;font-size:11px}
+.settings-version{font-size:10px;color:#e4c995;border:1px solid rgba(244,209,138,.2);padding:6px 9px;border-radius:20px}
+.settings-section-title{display:flex;align-items:center;gap:12px;margin:22px 2px 12px}
+.settings-section-title>span{width:31px;height:31px;display:grid;place-items:center;border-radius:10px;background:rgba(151,132,229,.16);color:#c7b9ff;font-size:11px;font-weight:800}
+.settings-section-title b,.settings-section-title small{display:block}
+.settings-section-title b{font-size:15px}
+.settings-section-title small{margin-top:4px;color:#8f9eb8;font-size:10px}
+.settings-download-card{padding:18px;border-radius:22px;background:linear-gradient(145deg,rgba(37,53,82,.92),rgba(17,29,49,.95));border:1px solid rgba(194,211,239,.13)}
+.download-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.download-metrics small,.download-metrics b{display:block}
+.download-metrics small{font-size:11px;color:#9baac3}
+.download-metrics b{margin-top:7px;font-size:23px;color:#f0d39a;font-variant-numeric:tabular-nums}
+.download-storage-track{height:7px;margin:17px 0 10px;background:rgba(4,9,20,.55);border-radius:10px;overflow:hidden}
+.download-storage-track i{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#8b7de3,#e7c68d);transition:width .25s ease}
+#downloadHint{margin:0 0 15px;color:#a6b4ca;font-size:11px;line-height:1.7}
+.settings-secondary,.settings-danger{width:100%;min-height:44px;border-radius:13px;font-size:12px;font-weight:700}
+.settings-secondary{background:rgba(145,162,197,.12);border:1px solid rgba(181,198,230,.13);color:#d5dfef}
+.settings-danger{margin-top:10px;background:linear-gradient(135deg,rgba(194,75,105,.24),rgba(111,39,71,.25));border:1px solid rgba(255,130,151,.26);color:#ffb2bf}
+.settings-danger:disabled{opacity:.45;cursor:not-allowed}
+.settings-info-list{border:1px solid rgba(190,207,237,.1);border-radius:18px;overflow:hidden;background:rgba(23,35,57,.7)}
+.settings-info-list>div{padding:14px 16px;border-bottom:1px solid rgba(190,207,237,.08)}
+.settings-info-list>div:last-child{border-bottom:0}
+.settings-info-list span,.settings-info-list small{display:block}
+.settings-info-list span{font-size:12px;color:#e6edf8}
+.settings-info-list small{margin-top:5px;font-size:10px;color:#92a1b9;line-height:1.6}
+#search .hot-tabs{display:flex;overflow-x:auto;white-space:nowrap;scrollbar-width:none;touch-action:pan-x}
+#search .hot-tabs::-webkit-scrollbar{display:none}
+#search .hot-tabs button{flex:1 0 42%;min-height:42px}
+#search .search-mode{touch-action:pan-x}
+.list{touch-action:pan-y;overscroll-behavior-y:contain}
+.song,.singer-card,.playlist-card{touch-action:pan-y}
+@media(min-width:600px){
+  .app-shell{max-width:900px}
+  nav{max-width:900px}
+  #settings.page.active{display:block}
+  .settings-download-card,.settings-info-list,.settings-profile{max-width:760px}
+}
+@media(min-width:900px){
+  .app-shell{max-width:1120px}
+  nav{max-width:1120px}
+  .page:not(#remote){padding-left:clamp(34px,5vw,64px);padding-right:clamp(34px,5vw,64px)}
+}
+@media(max-width:380px){
+  nav button{font-size:9px;gap:3px}
+  .settings-profile{padding:14px}
+  .download-metrics b{font-size:20px}
+}
+@supports (overflow:clip){
+  body{overflow-x:clip}
+}
