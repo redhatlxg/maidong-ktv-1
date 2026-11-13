@@ -22,13 +22,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android platform and build tools
+      - name: Configure Android SDK
         run: |
-          sdkmanager "platforms;android-35" "build-tools;36.0.0"
-          yes | sdkmanager --licenses
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          test -d "$ANDROID_HOME"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-35" "build-tools;36.0.0" "platform-tools"
 
       - name: Run unit tests
         run: ./gradlew --no-daemon :app:testDebugUnitTest
