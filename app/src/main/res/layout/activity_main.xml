@@ -735,24 +735,72 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent" />
 
+                    <!-- MV 左上角品牌标识，与右上角扫码点歌形成固定双入口 -->
                     <TextView
-                        android:id="@+id/home_player_song_title"
+                        android:id="@+id/home_mv_live_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="30dp"
+                        android:layout_gravity="top|start"
+                        android:layout_marginStart="14dp"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/bg_home_mv_chip"
+                        android:drawableStart="@drawable/ott_ic_wifi"
+                        android:drawablePadding="6dp"
+                        android:gravity="center_vertical"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="12dp"
+                        android:text="晓晓呀 · MV"
+                        android:textColor="#FFF7F3EA"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <!-- MV 底部信息渐隐区：显示当前/下一首与歌手 -->
+                    <LinearLayout
+                        android:id="@+id/home_mv_info_panel"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="top"
-                        android:background="#99000000"
-                        android:padding="8dp"
-                        android:text="当前：未播放    下一首：无"
-                        android:textColor="#FFFFFFFF"
-                        android:textSize="14sp"
-                        android:visibility="visible" />
+                        android:layout_gravity="bottom"
+                        android:background="@drawable/bg_home_mv_info"
+                        android:orientation="vertical"
+                        android:paddingStart="18dp"
+                        android:paddingTop="22dp"
+                        android:paddingEnd="150dp"
+                        android:paddingBottom="16dp">
 
-                    <TextView
-                        android:id="@+id/home_player_song_singer"
-                        android:layout_width="1dp"
-                        android:layout_height="1dp"
-                        android:text=""
-                        android:visibility="gone" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="正在播放"
+                            android:textColor="#FFD8B77E"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.12" />
+
+                        <TextView
+                            android:id="@+id/home_player_song_title"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="当前：未播放    下一首：无"
+                            android:textColor="#FFFFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:visibility="visible" />
+
+                        <TextView
+                            android:id="@+id/home_player_song_singer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text=""
+                            android:textColor="#BFE2E8EB"
+                            android:textSize="12sp"
+                            android:visibility="visible" />
+                    </LinearLayout>
                 </FrameLayout>
 
                 <LinearLayout
