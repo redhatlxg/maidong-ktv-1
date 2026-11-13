@@ -626,6 +626,29 @@ $("#douyinRefresh")?.addEventListener("click", () => loadDouyinMusicBoard(true))
 attachThumbOnlyDrag($("#musicVolume"));
 $("#musicVolume").addEventListener("input", (event) => { $("#musicValue").textContent = event.target.value; });
 $("#musicVolume").addEventListener("change", (event) => updateAudio({ musicVolume: Number(event.target.value) }));
+let lastAudibleVolume = 85;
+$("#volumeDown")?.addEventListener("click", () => {
+  const next = Math.max(0, Number($("#musicVolume").value) - 5);
+  $("#musicVolume").value = String(next);
+  $("#musicValue").textContent = String(next);
+  if (next > 0) lastAudibleVolume = next;
+  updateAudio({ musicVolume: next });
+});
+$("#volumeUp")?.addEventListener("click", () => {
+  const next = Math.min(100, Number($("#musicVolume").value) + 5);
+  $("#musicVolume").value = String(next);
+  $("#musicValue").textContent = String(next);
+  if (next > 0) lastAudibleVolume = next;
+  updateAudio({ musicVolume: next });
+});
+$("#volumeMute")?.addEventListener("click", () => {
+  const current = Number($("#musicVolume").value);
+  const next = current > 0 ? 0 : Math.max(5, lastAudibleVolume);
+  if (current > 0) lastAudibleVolume = current;
+  $("#musicVolume").value = String(next);
+  $("#musicValue").textContent = String(next);
+  updateAudio({ musicVolume: next });
+});
 // 均衡器入口(与设备端弹窗等价): 开关 / 恢复标准
 $("#eqToggle")?.addEventListener("click", () => updateEqualizer({ enabled: !uiState.eqEnabled }));
 $("#eqReset")?.addEventListener("click", () => updateEqualizer({ preset: "标准" }));
