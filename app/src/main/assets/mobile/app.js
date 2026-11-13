@@ -791,7 +791,7 @@ function parseRemoteVoiceCommand(transcript) {
   if (/^(继续|继续播放|播放|恢复播放)$/.test(phrase)) return { action: "resume" };
   if (/^(重唱|再唱一次|重新播放|从头播放)$/.test(phrase)) return { action: "replay" };
   const song = phrase.replace(/^(点一首|点首|来一首|唱一首|播放歌曲|播放|我想听|我要听|点歌)\s*/, "")
-    .replace(/[《》“”"']/g, "").replace(/(这首歌|这首歌曲)$/, "").trim();
+    .replace(/[《》“”"']/g, "").replace(/(这首歌|这首歌曲|的歌|的歌曲)$/, "").trim();
   if (song && song.length <= 40 && !/^(下一首|切歌|暂停|继续播放|重唱)$/.test(song)) return { action: "song", query: song };
   return null;
 }
