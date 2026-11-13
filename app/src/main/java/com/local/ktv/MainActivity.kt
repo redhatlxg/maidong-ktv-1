@@ -4134,43 +4134,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** 远程点歌页面：调节均衡器（与 App 内均衡器弹窗等价）。 */
-    private fun remoteEqualizer(json: JSONObject): LocalRemoteServer.ApiResponse {
-        if (json.has("globalMix")) {
-            if (!KtvEqualizer.globalMixSupported()) {
-                return remoteError(400, "GLOBAL_MIX_UNSUPPORTED", "本机不支持全局混音")
+    private fun remoteEqualizer(json: JSONObject): LocalRemoteServer.ApiResponse =
+        remoteOnMain {
+            if (json.has("globalMix")) {
+                if (!KtvEqualizer.globalMixSupported()) {
+                    return@remoteOnMain remoteError(400, "GLOBAL_MIX_UNSUPPORTED", "本机不支持全局混音")
+                }
+                KtvEqualizer.setGlobalMix(json.optBoolean("globalMix"))
             }
-            KtvEqualizer.setGlobalMix(json.optBoolean("globalMix"))
-        }
-        if (json.has("enabled")) {
-            KtvEqualizer.setEnabled(json.optBoolean("enabled"))
-        }
-        if (json.has("preset")) {
-            val name = json.optString("preset")
-            if (name !in KtvEqualizer.presetNames()) {
-                return remoteError(400, "BAD_PRESET", "预设不存在")
+            if (json.has("enabled")) {
+                KtvEqualizer.setEnabled(json.optBoolean("enabled"))
             }
-            KtvEqualizer.applyPreset(name)
-        }
-        if (json.has("levels")) {
-            val array = json.optJSONArray("levels")
-                ?: return remoteError(400, "BAD_LEVELS", "频段格式错误")
-            val caps = KtvEqualizer.capabilities(this)
-            val levels = FloatArray(caps.bandCount) { index ->
-                array.optDouble(index, 0.0).toFloat().coerceIn(caps.minDb, caps.maxDb)
+            if (json.has("preset")) {
+                val name = json.optString("preset")
+                if (name !in KtvEqualizer.presetNames()) {
+                    return@remoteOnMain remoteError(400, "BAD_PRESET", "预设不存在")
+                }
+                KtvEqualizer.applyPreset(name)
             }
-            KtvEqualizer.setLevels(levels)
-            KtvEqualizer.markCustomPreset()
-        }
-        main.post {
+            if (json.has("levels")) {
+                val array = json.optJSONArray("levels")
+                    ?: return@remoteOnMain remoteError(400, "BAD_LEVELS", "频段格式错误")
+                val caps = KtvEqualizer.capabilities(this)
+                val levels = FloatArray(caps.bandCount) { index ->
+                    array.optDouble(index, 0.0).toFloat().coerceIn(caps.minDb, caps.maxDb)
+                }
+                KtvEqualizer.setLevels(levels)
+                KtvEqualizer.markCustomPreset()
+            }
             syncEqualizerSessions()
             saveState()
             remoteStateVersion++
+            remoteOk(equalizerJson().put("message", "均衡器已更新"))
         }
-        return remoteOk(equalizerJson().put("message", "均衡器已更新"))
-    }
-
-    /** 远程搜索结果缓存有效期。 */
-    private val SEARCH_CACHE_TTL_MS = 60_000L
 
     private fun remoteSearchJson(query: Map<String, String>): JSONObject {
         val keyword = query["q"].orEmpty().trim()
@@ -4375,7 +4371,7 @@ class MainActivity : AppCompatActivity() {
         if (action !in arrayOf("pause", "resume", "next", "replay")) {
             return remoteError(400, "BAD_ACTION", "不支持的播放操作")
         }
-        main.post {
+        return remoteOnMain {
             when (action) {
                 "pause" -> if (player?.isPlaying == true) togglePlay()
                 "resume" -> if (player?.isPlaying != true) togglePlay()
@@ -4383,8 +4379,8 @@ class MainActivity : AppCompatActivity() {
                 "replay" -> replay()
             }
             remoteStateVersion++
+            remoteOk(JSONObject().put("message", "操作已执行"))
         }
-        return remoteOk(JSONObject().put("message", "操作已执行"))
     }
 
     private fun remoteAudio(json: JSONObject): LocalRemoteServer.ApiResponse {
@@ -4400,7 +4396,7 @@ class MainActivity : AppCompatActivity() {
         if ((music != null && music !in 0..100) || (mic != null && mic !in 0..100)) {
             return remoteError(400, "BAD_VOLUME", "音量必须在 0 到 100 之间")
         }
-        main.post {
+        return remoteOnMain {
             if (vocal.isNotEmpty()) originalVocal = vocal == "original"
             music?.let { musicVolume = it }
             mic?.let { micVolume = it }
@@ -4408,8 +4404,8 @@ class MainActivity : AppCompatActivity() {
             playerController?.setVocalMode(originalVocal)
             saveState()
             remoteStateVersion++
+            remoteOk(JSONObject().put("message", "音频设置已更新"))
         }
-        return remoteOk(JSONObject().put("message", "音频设置已更新"))
     }
 
     private fun remoteOk(data: JSONObject, statusCode: Int = 200): LocalRemoteServer.ApiResponse {
