@@ -4,13 +4,119 @@ const uiState = {
   page: 1, query: "", searchMode: "song", selectedSinger: "", voiceSingerFilter: "", busy: false,
   hotPage: 1, hotPageSize: 10, hotBusy: false, hotTab: "library", douyinHotLoaded: false, douyinHotBusy: false,
   visible: true, connected: false, eqEnabled: false, queueBusy: false, queueUpdatedAt: 0,
-  equalizer: null, searchAbort: null, searchKey: ""
+  equalizer: null, searchAbort: null, searchKey: "", interactionLastId: 0, interactionReady: false, interactionBusy: false, interactionAudio: null
 };
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
   }[char]));
+}
+
+function interactionSenderId() {
+  try {
+    let id = localStorage.getItem("xiaoxiaoya_interaction_id");
+    if (!id) {
+      id = "xy" + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(v => v.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem("xiaoxiaoya_interaction_id", id);
+    }
+    return id;
+  } catch (_) {
+    return "xy" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+}
+
+function interactionAudioContext() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return null;
+  if (!uiState.interactionAudio) uiState.interactionAudio = new AudioContext();
+  if (uiState.interactionAudio.state === "suspended") uiState.interactionAudio.resume().catch(() => {});
+  return uiState.interactionAudio;
+}
+
+// 轻量合成掌声/欢呼氛围声，不下载未知来源音频；音量受浏览器媒体音量控制。
+function playInteractionSound(kind) {
+  const ctx = interactionAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0.0001, now);
+  master.gain.exponentialRampToValueAtTime(0.18, now + 0.025);
+  master.gain.exponentialRampToValueAtTime(0.0001, now + (kind === "cheer" ? 1.25 : 0.72));
+  master.connect(ctx.destination);
+  const duration = kind === "cheer" ? 1.2 : 0.65;
+  const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
+  const channel = buffer.getChannelData(0);
+  for (let i = 0; i < channel.length; i++) channel[i] = (Math.random() * 2 - 1) * (0.35 + Math.random() * 0.65);
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = kind === "cheer" ? "bandpass" : "highpass";
+  filter.frequency.value = kind === "cheer" ? 850 : 1450;
+  filter.Q.value = kind === "cheer" ? 0.7 : 0.4;
+  noise.connect(filter);
+  filter.connect(master);
+  noise.start(now);
+  if (kind === "applause" || kind === "bravo") {
+    for (let i = 0; i < 9; i++) {
+      const clap = ctx.createOscillator();
+      const gain = ctx.createGain();
+      clap.type = "triangle";
+      clap.frequency.setValueAtTime(950 + Math.random() * 900, now + i * 0.065);
+      gain.gain.setValueAtTime(0.0001, now + i * 0.065);
+      gain.gain.exponentialRampToValueAtTime(0.07, now + i * 0.065 + 0.006);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.065 + 0.045);
+      clap.connect(gain); gain.connect(ctx.destination);
+      clap.start(now + i * 0.065); clap.stop(now + i * 0.065 + 0.05);
+    }
+  }
+}
+
+function renderInteractions(items) {
+  const feed = $("#interactionFeed");
+  if (!feed) return;
+  const recent = items.slice(-8).reverse();
+  $("#interactionCount").textContent = items.length ? items.length + " 条现场互动" : "等待互动…";
+  feed.innerHTML = recent.length ? recent.map(item => {
+    const icon = item.kind === "applause" ? "👏" : item.kind === "cheer" ? "🎉" : item.kind === "bravo" ? "✨" : "💬";
+    return '<div class="interaction-item ' + escapeHtml(item.kind) + '"><span>' + icon + '</span><div><b>' + escapeHtml(item.name || "KTV朋友") + '</b><p>' + escapeHtml(item.text || "") + '</p></div></div>';
+  }).join("") : '<div class="interaction-empty">还没有留言，来做第一个气氛担当吧！</div>';
+}
+
+async function refreshInteractions() {
+  if (!uiState.visible || uiState.interactionBusy) return;
+  uiState.interactionBusy = true;
+  try {
+    const data = await api("/api/v1/interactions");
+    const items = data.items || [];
+    if (uiState.interactionReady) {
+      items.filter(item => Number(item.id) > uiState.interactionLastId && item.kind !== "message")
+        .forEach(item => playInteractionSound(item.kind));
+    }
+    uiState.interactionLastId = Math.max(uiState.interactionLastId, ...items.map(item => Number(item.id) || 0));
+    uiState.interactionReady = true;
+    renderInteractions(items);
+  } catch (_) {
+    // 互动区暂时离线不影响点歌和遥控。
+  } finally {
+    uiState.interactionBusy = false;
+  }
+}
+
+async function sendInteraction(kind, text = "") {
+  const name = $("#interactionName")?.value.trim() || "KTV朋友";
+  try {
+    const data = await api("/api/v1/interactions", {
+      method: "POST",
+      body: JSON.stringify({ senderId: interactionSenderId(), name, kind, text })
+    });
+    if (kind !== "message") playInteractionSound(kind);
+    if (kind === "message") $("#interactionText").value = "";
+    toast(data.message || "已送出现场互动");
+    refreshInteractions();
+  } catch (error) {
+    toast(error.message || "发送失败");
+  }
 }
 
 function setConnected(connected) {
@@ -670,6 +776,14 @@ $("#hotPrev").addEventListener("click", () => loadHot(uiState.hotPage - 1));
 $("#hotNext").addEventListener("click", () => loadHot(uiState.hotPage + 1));
 $("#douyinRefresh")?.addEventListener("click", () => loadDouyinMusicBoard(true));
 $("#refreshDownloads")?.addEventListener("click", loadDownloads);
+$("#interactionForm")?.addEventListener("submit", event => {
+  event.preventDefault();
+  const value = $("#interactionText").value.trim();
+  if (!value) { toast("先写一句表扬或祝福吧"); return; }
+  sendInteraction("message", value);
+});
+$("[data-reaction]")?.forEach(button => button.addEventListener("click", () => sendInteraction(button.dataset.reaction)));
+
 $("#deleteAllDownloads")?.addEventListener("click", deleteAllDownloads);
 // 音乐音量可调; 麦克风音量由功放硬件控制, 不再向设备发送无效果请求。
 attachThumbOnlyDrag($("#musicVolume"));
@@ -715,10 +829,12 @@ document.addEventListener("visibilitychange", () => { uiState.visible = !documen
 window.setInterval(() => {
   if (!uiState.visible || uiState.busy) return;
   refresh();
+  refreshInteractions();
   // 队列页保持实时同步：多部手机点歌、置顶或删除后，其他手机约 2 秒内看到变化。
   if ($("#queue")?.classList.contains("active") && Date.now() - uiState.queueUpdatedAt >= 1800) {
     loadQueue(true);
   }
 }, 1000);
 refresh();
+refreshInteractions();
 loadHot(1);
