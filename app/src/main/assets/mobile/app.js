@@ -1,3 +1,6 @@
+// QR 配对令牌已由本地服务写入 HttpOnly Cookie；从地址栏移除一次性入口参数。
+if (location.search.includes("pair=")) history.replaceState(null, "", "/mobile");
+
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 const uiState = {
