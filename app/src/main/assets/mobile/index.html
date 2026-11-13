@@ -2,9 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#17052f">
-  <title>麦动 KTV 手机点歌</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#18064b">
+  <title>晓晓呀KTV 手机点歌</title>
   <link rel="stylesheet" href="/mobile/app.css">
   <link rel="stylesheet" href="/mobile/logo.css">
 </head>
@@ -14,8 +14,8 @@
   <div class="app-shell">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark"><img src="/res/drawable-nodpi/ktv_logo.png" alt="麦动 KTV"></div>
-        <div><h1>麦动 <em>KTV</em></h1><p id="connection"><span></span>正在连接麦动 KTV…</p></div>
+        <div class="brand-mark"><img src="/mobile/xiaoxiaoya-logo.svg" alt="晓晓呀KTV"></div>
+        <div><h1>晓晓呀 <em>KTV</em></h1><p id="connection"><span></span>正在连接晓晓呀KTV…</p></div>
       </div>
       <button id="queueBadge" class="queue-badge" data-page="queue"><b>0</b><span>已点歌曲</span></button>
     </header>
@@ -33,10 +33,17 @@
           <button data-action="next"><span class="control-icon">›|</span><span>切歌</span></button>
         </div>
 
+        <article class="glass-card voice-command-card">
+          <div class="panel-title"><div><span class="tiny-icon">🎙</span><b>语音遥控</b></div><small id="voiceCommandState">点击麦克风说指令</small></div>
+          <button type="button" id="voiceCommand" class="voice-command-button" aria-label="开始语音遥控"><span>🎙</span><b>按住说话</b><small>下一首、暂停、重唱，或直接说歌名</small></button>
+          <p class="voice-command-hint">例如：“下一首”“暂停”“继续播放”“重唱”“点一首睡睡睡”</p>
+        </article>
+
         <article class="glass-card audio-panel">
           <div class="panel-title"><div><span class="tiny-icon">♪</span><b>声音控制</b></div><small>即时生效</small></div>
           <div class="seg"><button id="accompany" data-vocal="accompany"><span>伴</span>伴唱</button><button id="original" data-vocal="original"><span>原</span>原唱</button></div>
           <div class="audio-row"><span><i class="volume-icon">♪</i>音乐音量</span><b><em id="musicValue">85</em>%</b><input id="musicVolume" type="range" min="0" max="100" value="85"></div>
+          <div class="remote-volume-keys" aria-label="音乐音量快捷按键"><button type="button" id="volumeDown" aria-label="音量减小">−</button><button type="button" id="volumeMute" aria-label="静音切换">静音</button><button type="button" id="volumeUp" aria-label="音量增大">＋</button></div>
           <div class="audio-row mic-hw"><span><i class="volume-icon mic">●</i>麦克风音量</span><small>由功放/混音器硬件调节</small><input id="micVolume" type="range" min="0" max="100" value="70" disabled></div>
         </article>
 
@@ -56,6 +63,22 @@
           </div>
         </article>
 
+        <article class="glass-card live-interaction-card">
+          <div class="panel-title"><div><span class="tiny-icon">✦</span><b>现场互动</b></div><small><i class="live-dot"></i> 全场同步</small></div>
+          <p class="interaction-caption">给正在唱歌的朋友送上掌声，也可以写一句鼓励</p>
+          <div class="interaction-actions">
+            <button type="button" data-reaction="applause"><span>👏</span><b>掌声</b></button>
+            <button type="button" data-reaction="cheer"><span>🎉</span><b>欢呼</b></button>
+            <button type="button" data-reaction="bravo"><span>✨</span><b>喝彩</b></button>
+          </div>
+          <form id="interactionForm" class="interaction-compose">
+            <input id="interactionName" maxlength="12" placeholder="昵称（可选）" aria-label="昵称">
+            <div><input id="interactionText" maxlength="40" placeholder="写一句表扬或祝福…" aria-label="互动文字" autocomplete="off"><button type="submit">发送</button></div>
+            <small>文明互动 · 最多40字 · 发送间隔约2秒</small>
+          </form>
+          <div class="interaction-feed-heading"><b>现场留言</b><span id="interactionCount">等待互动…</span></div>
+          <div id="interactionFeed" class="interaction-feed"><div class="interaction-empty">还没有留言，来做第一个气氛担当吧！</div></div>
+        </article>
         <article class="next-card"><div class="next-number">02</div><div><small>下一首</small><b id="nextSong">队列为空</b></div><button data-page="queue">查看队列 <span>›</span></button></article>
       </section>
 
@@ -65,16 +88,41 @@
           <button type="button" data-search-mode="song" class="active">歌曲</button>
           <button type="button" data-search-mode="singer">歌手</button>
         </div>
-        <form id="searchForm" class="search-box"><span class="search-icon"></span><input id="query" autocomplete="off" placeholder="输入歌曲名或拼音"><button type="submit">搜索</button></form>
+        <form id="searchForm" class="search-box"><span class="search-icon"></span><input id="query" type="text" inputmode="text" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入歌曲名、歌手或说出歌名"><button id="voiceSearch" class="voice-search" type="button" aria-label="语音点歌" title="语音点歌"><span aria-hidden="true">🎙</span><small>语音</small></button><button type="submit">搜索</button></form>
         <div id="searchResultBlock" class="search-result-block hidden">
           <div class="block-title"><h3 id="resultTitle">歌手搜索结果</h3><span id="resultSummary"></span></div>
           <div id="results" class="list"></div><button id="more" class="more hidden">加载更多歌曲</button>
         </div>
+        <div class="hot-tabs" role="tablist" aria-label="热歌榜单">
+          <button type="button" class="active" data-hot-tab="library">曲库热歌</button>
+          <button type="button" data-hot-tab="douyin">抖音音乐榜</button>
+        </div>
         <div id="hot" class="hot-block">
-          <div class="block-title"><h3>热歌排行</h3><span id="hotSummary">正在加载…</span></div>
+          <div class="block-title"><h3>曲库热歌排行</h3><span id="hotSummary">正在加载…</span></div>
           <div id="hotList" class="list ranking-list"></div>
           <div class="rank-pager"><button id="hotPrev" type="button">上一页</button><b id="hotPage">第 1 页</b><button id="hotNext" type="button">下一页</button></div>
         </div>
+        <div id="douyinHot" class="hot-block douyin-hot hidden">
+          <div class="block-title"><h3>抖音音乐榜</h3><span id="douyinUpdated">等待获取数据</span></div>
+          <p class="douyin-note">免费公开归档数据 · 非官方实时榜单</p>
+          <div id="douyinHotList" class="list ranking-list"><div class="empty compact">正在获取抖音音乐榜…</div></div>
+          <div class="douyin-footer"><span>数据来源：douyin-hot-hub</span><button id="douyinRefresh" type="button">刷新榜单</button></div>
+        </div>
+      </section>
+
+      <section id="playlists" class="page">
+        <div class="page-heading queue-heading"><div><p>MY PLAYLISTS</p><h2>我的歌单</h2></div><button type="button" id="createPlaylist" class="playlist-create">＋ 新建</button></div>
+        <div id="playlistList" class="playlist-list"></div>
+        <div id="playlistSongsBlock" class="hidden">
+          <div class="playlist-detail-heading"><button type="button" id="playlistBack">‹ 全部歌单</button><b id="playlistDetailName"></b><button type="button" id="deletePlaylist">删除</button></div>
+          <div id="playlistSongs" class="list"></div>
+        </div>
+      </section>
+
+      <section id="favorites" class="page">
+        <div class="page-heading queue-heading"><div><p>MY FAVORITES</p><h2>我的收藏</h2></div><span id="favoriteCount">0 首</span></div>
+        <p class="queue-tip">收藏保存在 KTV 设备上，扫码的手机共享同一份收藏</p>
+        <div id="favoriteList" class="list"></div>
       </section>
 
       <section id="queue" class="page">
@@ -83,8 +131,32 @@
       </section>
     </main>
 
-    <nav><button data-page="remote" class="active"><i class="nav-remote"></i><span>遥控</span></button><button data-page="search"><i class="nav-search"></i><span>搜歌</span></button><button data-page="queue"><i class="nav-queue"></i><span>已点</span><b id="navCount" class="hidden">0</b></button></nav>
+          <section id="settings" class="page">
+        <div class="page-heading"><div><p>PERSONAL SPACE</p><h2>设置与管理</h2></div><span>晓晓呀 KTV</span></div>
+        <article class="settings-profile">
+          <div class="settings-emblem">♫</div>
+          <div><b>晓晓呀 KTV</b><small>让每一次点歌都更顺手</small></div>
+          <span class="settings-version">设备设置</span>
+        </article>
+        <div class="settings-section-title"><span>01</span><div><b>下载空间</b><small>管理保存在 KTV 主机上的歌曲</small></div></div>
+        <article class="settings-download-card">
+          <div class="download-metrics"><div><small>已下载歌曲</small><b id="downloadCount">读取中…</b></div><div><small>占用空间</small><b id="downloadSize">—</b></div></div>
+          <p id="downloadHint">仅清理下载缓存，不会删除在线曲库、收藏和歌单</p>
+          <button type="button" id="refreshDownloads" class="settings-secondary">刷新下载信息</button>
+          <button type="button" id="deleteAllDownloads" class="settings-danger">一键删除全部下载歌曲</button>
+        </article>
+        <div class="settings-section-title"><span>02</span><div><b>使用说明</b><small>操作更安心</small></div></div>
+        <div class="settings-info-list">
+          <div><span>触屏浏览</span><small>歌曲列表上下滑动，分类栏左右滑动</small></div>
+          <div><span>点歌方式</span><small>点击“点歌”加入队列，滑动不会误点</small></div>
+          <div><span>数据保护</span><small>收藏、歌单和在线曲库不会因清理下载而改变</small></div>
+        </div>
+      </section>
+    </main>
+
+    <nav><button data-page="remote" class="active"><i class="nav-remote"></i><span>遥控</span></button><button data-page="search"><i class="nav-search"></i><span>点歌</span></button><button data-page="favorites"><i class="nav-fav">♥</i><span>收藏</span></button><button data-page="playlists"><i class="nav-fav">♫</i><span>歌单</span></button><button data-page="queue"><i class="nav-queue"></i><span>队列</span><b id="navCount" class="hidden">0</b></button><button data-page="settings"><i class="nav-settings">⚙</i><span>设置</span></button></nav>
   </div>
+  <section id="detailModal" class="detail-modal hidden" role="dialog" aria-modal="true"><div class="detail-sheet"><button type="button" id="detailClose" class="detail-close" aria-label="关闭">×</button><p class="detail-kicker">歌曲 / 歌手资料</p><h2 id="detailTitle">详情</h2><p id="detailMeta" class="detail-meta"></p><pre id="detailLyrics" class="detail-content">正在加载…</pre></div></section>
   <div id="toast"></div>
   <script src="/mobile/app.js"></script>
 </body>

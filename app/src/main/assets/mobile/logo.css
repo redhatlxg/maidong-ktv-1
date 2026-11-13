@@ -1,2 +1,5 @@
-.brand-mark{padding:0;overflow:hidden;background:#46126d;border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 25px rgba(178,63,255,.28)}
+.brand-mark{padding:0;overflow:hidden;background:#101a36;border:1px solid rgba(246,201,107,.72);box-shadow:0 0 0 3px rgba(246,201,107,.08),0 8px 26px rgba(0,0,0,.36);border-radius:15px}
 .brand-mark img{display:block;width:100%;height:100%;object-fit:cover}
+.brand h1{letter-spacing:.06em;text-shadow:0 2px 14px rgba(0,0,0,.38)}
+.brand h1 em{color:#f6c96b;font-style:normal;letter-spacing:.12em}
+.brand p span{background:#75dfc8;box-shadow:0 0 10px rgba(117,223,200,.7)}

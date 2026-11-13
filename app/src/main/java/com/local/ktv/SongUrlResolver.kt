@@ -122,7 +122,7 @@ object SongUrlResolver {
                     MiliLog.warn("NATIVE-SONG do.php 异常 源=$host ${it.javaClass.simpleName}: ${it.message}")
                     null
                 }
-            if (!url.isNullOrEmpty()) {
+            if (!url.isNullOrEmpty() && isValidSongUrl(url, musicno)) {
                 promote(host)
                 lastHost = host
                 val elapsed = System.currentTimeMillis() - startedAt
@@ -202,7 +202,18 @@ object SongUrlResolver {
         }
     }
 
-    // 广告过滤已按需求全部移除: 原生取址结果(原 isTrustedSongUrl/wb66/IP/R2/文件名校验)不再拦截。
+    /** 原生取址的补充校验：覆盖 JS 规则中的 demo、IP 与 R2 测试资源。 */
+    private fun isValidSongUrl(url: String, musicno: String): Boolean {
+        if (!AdVideoFilter.isTrustedSongUrl(url, musicno)) return false
+        val lower = url.toLowerCase(java.util.Locale.ROOT)
+        if (lower.contains("wb66") || lower.contains("demo")) return false
+        if (IP_URL.containsMatchIn(url)) return false
+        if (R2_DEMO.containsMatchIn(url)) return false
+        return true
+    }
+
+    private val IP_URL = Regex("^https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(?::\\d+)?/", RegexOption.IGNORE_CASE)
+    private val R2_DEMO = Regex("pub-[a-z0-9]+\\.r2\\.dev/ss/", RegexOption.IGNORE_CASE)
 
     private fun md5(text: String): String =
         MessageDigest.getInstance("MD5").digest(text.toByteArray(Charsets.UTF_8))

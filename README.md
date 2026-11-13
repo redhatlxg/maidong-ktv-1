@@ -1,24 +1,24 @@
 <p align="center">
-  <img src="app/src/main/res/drawable-nodpi/ktv_logo.png" width="132" alt="麦动 KTV Logo">
+  <img src="app/src/main/assets/mobile/xiaoxiaoya-logo.svg" width="132" alt="晓晓呀KTV Logo">
 </p>
 
-<h1 align="center">麦动 KTV · Maidong KTV</h1>
+<h1 align="center">晓晓呀KTV</h1>
 
 <p align="center"><b>电视大屏当舞台，手机扫码当点歌台 —— 开机即唱的开源 KTV</b></p>
 
 <p align="center">
-  <a href="https://github.com/ktv668899/maidong-ktv/releases"><img src="https://img.shields.io/github/v/tag/ktv668899/maidong-ktv?label=release&amp;style=flat-square&amp;color=2f81f7&amp;sort=semver" alt="release"></a>
+  <a href="https://github.com/redhatlxg/maidong-ktv-1/releases"><img src="https://img.shields.io/github/v/tag/ktv668899/maidong-ktv?label=release&amp;style=flat-square&amp;color=2f81f7&amp;sort=semver" alt="release"></a>
   <img src="https://img.shields.io/badge/platform-Android%20TV%20%7C%20Mobile-3DDC84?style=flat-square&amp;logo=android&amp;logoColor=white" alt="platform">
-  <img src="https://img.shields.io/badge/Android-5.0%2B%20(API%2021)-3DDC84?style=flat-square" alt="minSdk">
+  <img src="https://img.shields.io/badge/Android-4.4%2B%20(API%2019)-3DDC84?style=flat-square" alt="minSdk">
   <img src="https://img.shields.io/badge/Kotlin-1.9.22-7F52FF?style=flat-square&amp;logo=kotlin&amp;logoColor=white" alt="kotlin">
   <img src="https://img.shields.io/badge/Gradle-8.13-02303A?style=flat-square&amp;logo=gradle&amp;logoColor=white" alt="gradle">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-学习交流%20%2F%20禁止商用-orange?style=flat-square" alt="license"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/ktv668899/maidong-ktv/stargazers"><img src="https://img.shields.io/github/stars/ktv668899/maidong-ktv?style=flat-square&amp;logo=github&amp;label=stars" alt="stars"></a>
-  <a href="https://github.com/ktv668899/maidong-ktv/forks"><img src="https://img.shields.io/github/forks/ktv668899/maidong-ktv?style=flat-square&amp;logo=github&amp;label=forks" alt="forks"></a>
-  <a href="https://github.com/ktv668899/maidong-ktv/issues"><img src="https://img.shields.io/github/issues/ktv668899/maidong-ktv?style=flat-square&amp;color=e05d44" alt="issues"></a>
+  <a href="https://github.com/redhatlxg/maidong-ktv-1/stargazers"><img src="https://img.shields.io/github/stars/ktv668899/maidong-ktv?style=flat-square&amp;logo=github&amp;label=stars" alt="stars"></a>
+  <a href="https://github.com/redhatlxg/maidong-ktv-1/forks"><img src="https://img.shields.io/github/forks/ktv668899/maidong-ktv?style=flat-square&amp;logo=github&amp;label=forks" alt="forks"></a>
+  <a href="https://github.com/redhatlxg/maidong-ktv-1/issues"><img src="https://img.shields.io/github/issues/ktv668899/maidong-ktv?style=flat-square&amp;color=e05d44" alt="issues"></a>
   <img src="https://img.shields.io/github/last-commit/ktv668899/maidong-ktv?style=flat-square&amp;color=6f42c1" alt="last commit">
   <a href="https://gitee.com/weishilong/maidong-ktv"><img src="https://img.shields.io/badge/Gitee-weishilong%2Fmaidong--ktv-C71D23?style=flat-square&amp;logo=gitee&amp;logoColor=white" alt="gitee"></a>
 </p>
@@ -29,7 +29,7 @@
 
 ## 🎤 这是什么
 
-**麦动 KTV** 是一套跑在 Android TV / 电视盒子 / 横屏一体机上的**本地 KTV 点歌应用**：电视负责出画面与声音，手机扫一下屏幕上的二维码就变成点歌台 —— 不用机顶盒、不用点歌机、不用另买曲库硬盘。
+**晓晓呀KTV** 是一套跑在 Android TV / 电视盒子 / 横屏一体机上的**本地 KTV 点歌应用**：电视负责出画面与声音，手机扫一下屏幕上的二维码就变成点歌台 —— 不用机顶盒、不用点歌机、不用另买曲库硬盘。
 
 - **电视端**：遥控器方向键 + 确认键走完全程，点歌 → 排队 → 下载 → 播放 → 切歌，全程不碰鼠标。
 - **手机端**：同一局域网内打开内置网页，搜歌、点歌、置顶、切原伴唱、调均衡器，比遥控器打字快十倍。
@@ -69,6 +69,8 @@
 
 ### 手机点歌（局域网）
 - 电视端启动本地 HTTP 服务并生成二维码，手机扫码即用，**无需安装 App**。
+
+> **网络安全提示**：手机点歌服务面向可信家庭局域网使用。当前 Host/Origin 校验不是用户身份认证；不要把服务端口映射到公网，也不要在不可信的公共 Wi-Fi 中使用。
 - 手机端可搜歌、点歌、切歌、切原伴唱、调均衡器、查看已点队列。
 - 与服务端同源，操作结果与电视端界面**实时互相同步**。
 
@@ -103,11 +105,11 @@
 
 **方式一：装现成 APK**
 
-到 [Releases](https://github.com/ktv668899/maidong-ktv/releases)（或 [Gitee Releases](https://gitee.com/weishilong/maidong-ktv/releases)）下载最新 `.apk`，U 盘拷到电视安装，或用 adb：
+到 [Releases](https://github.com/redhatlxg/maidong-ktv-1/releases)（或 [Gitee Releases](https://gitee.com/weishilong/maidong-ktv/releases)）下载最新 `.apk`，U 盘拷到电视安装，或用 adb：
 
 ```bash
 adb connect 192.168.1.x:5555            # 电视需先开启「网络调试」
-adb install -r maidong-ktv-release.apk
+adb install -r xiaoxiaoya-ktv.apk
 ```
 
 **方式二：自己编译源码** —— 见下一节。
@@ -121,7 +123,7 @@ adb install -r maidong-ktv-release.apk
 | 项目 | 要求 |
 |---|---|
 | JDK | OpenJDK **17** |
-| Android SDK | `compileSdk 35` · `minSdk 21` · `targetSdk 25` |
+| Android SDK | `compileSdk 35` · `minSdk 19` · `targetSdk 25` |
 | Gradle | 使用仓库自带 wrapper（**8.13**），无需单独安装 |
 | 系统 | Linux / macOS / Windows 命令行均可 |
 
@@ -134,23 +136,22 @@ sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 
 ### 配置签名
 
-`app/build.gradle` 默认读取**仓库上一级目录**的密钥文件：
+`app/build.gradle` 不包含签名密码或密钥路径。Release 签名只从本机 Gradle 属性或环境变量读取：
 
-```groovy
-storeFile file("../../ktv_keystore.jks")
-storePassword "123456"
-keyAlias "ktv"
-keyPassword "123456"
-```
+- `RELEASE_STORE_FILE`
+- `RELEASE_STORE_PASSWORD`
+- `RELEASE_KEY_ALIAS`
+- `RELEASE_KEY_PASSWORD`
 
-没有密钥就自己生成一份，或临时把 `signingConfigs.release` 换成 `signingConfigs.debug`：
+请在本机的 `~/.gradle/gradle.properties` 或安全的环境变量中配置这些值，不要把密码、密钥文件或真实凭据提交到仓库。没有签名配置时可先构建 Debug 包进行功能测试。
 
 ```bash
 keytool -genkeypair -v -keystore ../ktv_keystore.jks \
   -alias ktv -keyalg RSA -keysize 2048 -validity 10000 \
-  -storepass 123456 -keypass 123456 \
   -dname "CN=Maidong KTV, OU=Dev, O=Maidong, L=Beijing, ST=Beijing, C=CN"
 ```
+
+执行时按提示输入并确认密码；不要使用示例弱密码，也不要把密钥文件提交到 Git。
 
 ### 编译与安装
 
@@ -160,7 +161,7 @@ export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64   # 按本机实际路径调
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
-产物为已签名 release APK，内含 `armeabi-v7a` 与 `arm64-v8a` 双 ABI。
+配置上述 Release 签名参数后，产物为已签名 Release APK，内含 `armeabi-v7a` 与 `arm64-v8a` 双 ABI；未配置签名时请先构建 Debug 包。
 
 ## 📁 目录结构
 
@@ -188,7 +189,7 @@ maidong-ktv/
 |---|---|
 | 曲库初始化失败 | 确认电视能访问 `mconn.cherryonline.cn`；设置页提供「重置数据库」 |
 | 点歌提示 403 / 拿不到播放地址 | 多为歌曲源对陌生出口 IP 的试用窗口到期，重启光猫更换公网 IP 后恢复 |
-| 热更新脚本不生效 | 远端 `ktv_api.js` 必须保留 `KTV_BRIDGE_API: 8` 标记，否则内置版本优先 |
+| 热更新脚本不生效 | 远端 `ktv_api.js` 必须保留 `KTV_BRIDGE_API: 9` 标记，否则内置版本优先 |
 | 安装报 `NO_MATCHING_ABIS` | 用的是裁剪过 ABI 的包；本项目已同时打包 v7a 与 arm64 |
 | 想改签名 / 精简 ABI | 编辑 `app/build.gradle` 的 `signingConfigs` 与 `ndk.abiFilters` 后重编 |
 

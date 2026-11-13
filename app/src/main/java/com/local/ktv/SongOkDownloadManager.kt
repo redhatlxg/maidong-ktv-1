@@ -48,7 +48,10 @@ object SongOkDownloadManager {
     @JvmStatic
     fun getLocalFile(song: Song): File {
         val fileName = song.filename?.takeIf(String::isNotEmpty) ?: "${song.id}.ts"
-        return File("${MuseDatabase.VIDEO_ROOT}/${MuseDatabase.CLOUD_SONG_DIR}", fileName)
+        // Reuse an existing copy first. New downloads can use writable USB when internal
+        // storage is low and the device firmware exposes the mounted filesystem.
+        return UsbStorageManager.findExistingSong(fileName)
+            ?: File(UsbStorageManager.downloadDirectory(), File(fileName).name)
     }
 
     @JvmStatic
@@ -74,16 +77,9 @@ object SongOkDownloadManager {
     }
 
     /**
-     * 历史上的"注入广告副本清理"入口（MainActivity 启动时调用）。
-     * 广告过滤已按需求全部移除: 现为 no-op, 不再扫描/删除任何本地文件。
-     *
-     * @return 恒为 0
+     * 已停用自动重复文件清理：仅凭文件大小和前 4MB 指纹无法证明文件是广告，
+     * 可能误删合法的重复曲目或共享媒体。需要基于明确的广告特征建立可验证规则后再恢复。
      */
-    @JvmStatic
-    fun purgeInjectedAdDuplicatesOnce(context: android.content.Context): Int {
-        return 0
-    }
-
     @JvmStatic
     fun isDownloading(song: Song): Boolean {
         val key = songKey(song)
@@ -143,6 +139,57 @@ object SongOkDownloadManager {
         totalLengths.remove(key)
     }
 
+    /** 删除本机已下载歌曲；保留正在播放的文件，并清理下载任务与下载记录。 */
+    @JvmStatic
+    fun deleteAllDownloaded(keepFile: File?): Pair<Int, Long> {
+        val active = tasks.entries.toList()
+        active.forEach { (key, task) ->
+            manuallyCanceled.add(key)
+            task.cancel()
+        }
+        tasks.clear()
+        pending.clear()
+        callbacks.clear()
+        progress.clear()
+        totalLengths.clear()
+        forcedRetryReasons.clear()
+        synchronized(networkFailed) { networkFailed.clear() }
+
+        // Clean only the app-managed song cache folders on internal storage and writable USB.
+        // Never recurse into the USB root or touch unrelated user files.
+        val directories = LinkedHashMap<String, File>()
+        val candidates = buildList {
+            add(File(AppPaths.videoDir, "cloud-song"))
+            UsbStorageManager.writableVolumes().forEach { volume ->
+                add(File(volume.root, "MaidongKTV/video/cloud-song"))
+            }
+        }
+        candidates.forEach { directory ->
+            val key = runCatching { directory.canonicalPath }.getOrNull() ?: directory.absolutePath
+            directories[key] = directory
+        }
+        val keep = keepFile?.let { runCatching { it.canonicalPath }.getOrNull() }
+        var deleted = 0
+        var bytes = 0L
+        directories.values.forEach { directory ->
+            directory.listFiles()?.forEach fileLoop@{ file ->
+                val canonical = runCatching { file.canonicalPath }.getOrNull()
+                if (canonical == null || canonical == keep || !file.isFile) return@fileLoop
+                val name = file.name.lowercase()
+                val isSong = name.endsWith(".ts") || name.endsWith(".ls")
+                val isPartial = name.endsWith(".download") || name.endsWith(".tmp")
+                if (!isSong && !isPartial) return@fileLoop
+                val size = file.length()
+                if (runCatching { file.delete() }.getOrDefault(false)) {
+                    if (isSong) deleted++
+                    bytes += size
+                    SongFileValidator.forget(file)
+                }
+            }
+        }
+        return deleted to bytes
+    }
+
     @JvmStatic
     fun getDownloadProgress(song: Song): Int = progress[songKey(song)] ?: 0
 
@@ -188,17 +235,27 @@ object SongOkDownloadManager {
         val musicNoFromFile = song.filename?.removeSuffix(".ts")?.removeSuffix(".ls")?.takeIf { it.isNotBlank() }
         val musicNo = musicNoFromFile ?: song.id
         if (!forceRefresh) {
-            song.downloadUrl?.takeIf(String::isNotBlank)?.let { cached -> return cached }
+            song.downloadUrl?.takeIf(String::isNotBlank)?.let { cached ->
+                if (AdVideoFilter.isTrustedSongUrl(cached, musicNoFromFile)) return cached
+                Log.w(TAG, "丢弃不可信缓存地址: ${song.title} -> $cached")
+                song.downloadUrl = null
+                purgeCachedSongFile(song, "untrusted-cached-url")
+            }
         }
         return SongApiClient.getSongDownloadUrl(musicNo).orEmpty().also { url ->
             // 请求源 = 本次点歌实际命中的源(JS 上报); 取不到时留空。
             val srcHost = SongApiClient.lastSongSourceHost()
-            if (url.isNotEmpty()) {
+            if (url.isNotEmpty() && AdVideoFilter.isTrustedSongUrl(url, musicNoFromFile)) {
                 song.downloadUrl = url
                 val cdnHost = runCatching { java.net.URI(url).host }.getOrNull() ?: "unknown"
                 MiliLog.info(
                     "点歌编号=$musicNo 标题=${song.title} 请求源=$srcHost 状态=成功 urlHost=$cdnHost",
                 )
+            } else if (url.isNotEmpty()) {
+                Log.w(TAG, "拒绝不可信歌曲地址: ${song.title} -> $url")
+                MiliLog.error("SONG-AD 拒绝不可信地址 编号=$musicNo url=$url")
+                purgeCachedSongFile(song, "untrusted-resolved-url")
+                ""
             } else {
                 Log.w(TAG, "Unable to get download URL: ${song.title}")
                 MiliLog.error(
@@ -209,12 +266,25 @@ object SongOkDownloadManager {
         }
     }
 
+    private fun purgeCachedSongFile(song: Song, reason: String) {
+        runCatching {
+            val file = getLocalFile(song)
+            if (file.exists()) {
+                SongFileValidator.forget(file)
+                file.delete()
+                MiliLog.warn("SONG-AD 清除可疑歌曲缓存 编号=${song.id} 原因=$reason")
+            }
+            song.path = null
+        }.onFailure { Log.w(TAG, "purge cached file failed: ${it.message}") }
+    }
+
     private fun startDownloadTask(song: Song, url: String, callback: DownloadCallback?, attempt: Int) {
         val key = songKey(song)
         val target = getLocalFile(song)
         val partial = File(target.parentFile, "${target.name}.download")
         target.parentFile?.mkdirs()
-        if (attempt > 0) partial.delete()
+        // Do not delete the partial file here: a same-URL retry must let OkDownload
+        // validate and reuse its persisted breakpoint. Fresh-URL retries clear it first.
         val task = OkDownloadTask.Builder(url, partial.parentFile!!)
             .setFilename(partial.name)
             .setPassIfAlreadyCompleted(false)
@@ -273,9 +343,19 @@ object SongOkDownloadManager {
                 if (cause != EndCause.COMPLETED) {
                     val retryable = forcedReason != null || cause != EndCause.CANCELED
                     if (retryable && attempt < MAX_RETRY_COUNT) {
-                        clearBrokenDownload(task, target)
                         val response = if (httpResponseCode > 0) " HTTP $httpResponseCode" else ""
-                        retry(song, cb, attempt + 1, forcedReason ?: "${cause.name}$response")
+                        val reason = forcedReason ?: "${cause.name}$response"
+                        if (attempt == 0) {
+                            // Keep the partial file and breakpoint record for one same-URL retry.
+                            // OkDownload rechecks Range, ETag and remote length before resuming;
+                            // if the server cannot safely resume, it falls back to a fresh download.
+                            retry(song, cb, attempt + 1, reason, url)
+                        } else {
+                            // The same-URL resume attempt also failed. Drop its checkpoint before
+                            // refreshing the signed URL so bytes from different objects never mix.
+                            clearBrokenDownload(task, target)
+                            retry(song, cb, attempt + 1, reason)
+                        }
                     } else {
                         pending.remove(key)
                         progress.remove(key)
@@ -408,17 +488,29 @@ object SongOkDownloadManager {
         File(partial.parentFile, "${partial.name}.decrypted").delete()
     }
 
-    private fun retry(song: Song, callback: DownloadCallback?, attempt: Int, reason: String) {
-        Log.w(TAG, "Retrying ${song.title}, attempt=$attempt, reason=$reason")
+    private fun retry(
+        song: Song,
+        callback: DownloadCallback?,
+        attempt: Int,
+        reason: String,
+        resumeUrl: String? = null,
+    ) {
+        Log.w(TAG, "Retrying ${song.title}, attempt=$attempt, reason=$reason, resume=${resumeUrl != null}")
         val key = songKey(song)
         pending.add(key)
         progress[key] = 0
         callback?.onDownloadProgress(song, 0)
-        song.downloadUrl = null
-        SongApiClient.clearTokenCache()
         io.execute {
             Thread.sleep((attempt * 750L).coerceAtMost(2_250L))
-            val url = runCatching { buildDownloadUrl(song, forceRefresh = true) }.getOrDefault("")
+            val url = if (!resumeUrl.isNullOrBlank()) {
+                // Reuse the identical URL once: OkDownload's task id is URL + destination,
+                // allowing its persisted breakpoint to be found and remotely validated.
+                resumeUrl
+            } else {
+                song.downloadUrl = null
+                SongApiClient.clearTokenCache()
+                runCatching { buildDownloadUrl(song, forceRefresh = true) }.getOrDefault("")
+            }
             if (url.isEmpty()) {
                 if (attempt < MAX_RETRY_COUNT) {
                     retry(song, callback, attempt + 1, "refresh download URL failed")

@@ -1,5 +1,6 @@
 package com.local.ktv
 
+import android.database.sqlite.SQLiteDatabase
 import android.util.Base64
 import android.util.Log
 import org.json.JSONObject
@@ -45,9 +46,7 @@ object MuseDbSync {
 
     /** 取远端曲库版本；失败返回 null。版本取自 files[0].date(毫秒时间戳)。 */
     fun fetchVersion(): String? = runCatching {
-        val cookie = login() ?: return null
-        val file = sync(cookie) ?: return null
-        file.version
+        acquireCatalogFile()?.version
     }.getOrNull()
 
     /**
@@ -56,14 +55,13 @@ object MuseDbSync {
      *        因为解压/校验阶段很慢，只给百分比会让界面长时间不动、看着像卡死。
      */
     fun download(onProgress: (Int, String?) -> Unit): File {
-        val cookie = login() ?: error("登录曲库服务失败")
-        val file = sync(cookie) ?: error("曲库同步失败或无可用文件")
+        val file = acquireCatalogFile() ?: error("曲库服务登录或同步失败，已重试3次")
         val version = file.version
 
         val gzFile = File(target.parentFile, "${target.name}.gz.download")
         val tmpDb = File(target.parentFile, "${target.name}.download")
         try {
-            downloadFile(file.url, gzFile) { pct -> onProgress((pct * 80 / 100).coerceIn(0, 80), null) }
+            retryCatalogDownload(file.url, gzFile) { pct -> onProgress((pct * 80 / 100).coerceIn(0, 80), null) }
             onProgress(80, "正在校验曲库文件")
             if (file.md5.isNotEmpty()) {
                 check(md5(gzFile).equals(file.md5, ignoreCase = true)) { "曲库文件校验失败" }
@@ -88,6 +86,8 @@ object MuseDbSync {
                     }
                 }
             }
+            onProgress(94, "正在检查数据库完整性")
+            validateDatabase(tmpDb)
             onProgress(96, "正在安装曲库")
             val backup = File(target.parentFile, "${target.name}.backup")
             backup.delete()
@@ -109,8 +109,60 @@ object MuseDbSync {
         }
     }
 
+    private fun retryCatalogDownload(url: String, dest: File, onProgress: (Int) -> Unit) {
+        var last: Throwable? = null
+        for (attempt in 1..3) {
+            try { downloadFile(url, dest, onProgress); return }
+            catch (error: Throwable) {
+                last = error
+                runCatching { dest.delete() }
+                MiliLog.warn("MUSE-DB download retry failed")
+                if (attempt < 3) Thread.sleep(1500L * attempt)
+            }
+        }
+        throw IllegalStateException("曲库下载失败，已重试3次", last)
+    }
+
+    private fun validateDatabase(file: File) {
+        check(file.isFile && file.length() > 16L) { "曲库数据库文件无效" }
+        val header = ByteArray(16)
+        file.inputStream().use { input -> check(input.read(header) == 16) }
+        check(String(header, Charsets.US_ASCII) == "SQLite format 3\u0000") { "下载内容不是 SQLite 数据库" }
+        val db = SQLiteDatabase.openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+        try { db.rawQuery("PRAGMA quick_check", null).use { cursor ->
+            check(cursor.moveToFirst() && cursor.getString(0).equals("ok", ignoreCase = true)) { "曲库数据库完整性检查失败" }
+        } } finally { db.close() }
+    }
+
     private fun saveVersion(version: String) {
         runCatching { File(target.parentFile, "db_version.txt").writeText(version) }
+    }
+
+    /**
+     * 登录与同步作为一个完整会话重试。登录成功但同步请求瞬时失败时，
+     * 下一轮会重新登录取得新 cookie，避免复用过期会话。
+     */
+    private fun acquireCatalogFile(): DbFile? {
+        var lastFailure: String? = null
+        for (attempt in 1..3) {
+            val result = runCatching {
+                val cookie = login() ?: error("login returned no session cookie")
+                sync(cookie) ?: error("sync returned no catalog file")
+            }
+            if (result.isSuccess) return result.getOrNull()
+            lastFailure = result.exceptionOrNull()?.message
+            MiliLog.warn("MUSE-DB session attempt $attempt/3 failed: ${lastFailure ?: "unknown"}")
+            if (attempt < 3) {
+                try {
+                    Thread.sleep(1_000L * attempt)
+                } catch (interrupted: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    throw IllegalStateException("曲库同步重试被中断", interrupted)
+                }
+            }
+        }
+        MiliLog.warn("MUSE-DB session failed after 3 attempts: ${lastFailure ?: "unknown"}")
+        return null
     }
 
     private fun login(): String? {
@@ -253,6 +305,14 @@ object MuseDbSync {
                             }
                         }
                     }
+                }
+            }
+            // A 2xx response can still be truncated by a proxy or interrupted connection.
+            // When the server supplies Content-Length, reject the partial file so the outer
+            // retry wrapper removes it and downloads a fresh copy.
+            if (total > 0L) {
+                check(dest.isFile && dest.length() == total) {
+                    "曲库下载不完整：收到 ${dest.length()} / ${total} 字节"
                 }
             }
         } finally {

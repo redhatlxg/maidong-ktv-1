@@ -1,27 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 首页"收藏"卡片: 紫→蓝紫渐变, 取色自原 home_card_favorite.webp -->
+<!-- 晓晓呀KTV首页分类卡片：统一霓虹紫蓝舞台配色 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="rectangle">
-            <gradient
-                android:angle="45"
-                android:startColor="#FFBB59ED"
-                android:centerColor="#FF9C6CF8"
-                android:endColor="#FF7D77FE"
-                android:type="linear" />
-            <corners android:radius="10dp" />
-        </shape>
-    </item>
-    <item android:left="0dp" android:gravity="right|bottom">
-        <shape android:shape="rectangle">
-            <size android:width="120dp" android:height="120dp" />
-            <gradient
-                android:angle="135"
-                android:startColor="#33FFFFFF"
-                android:centerColor="#11FFFFFF"
-                android:endColor="#00000000"
-                android:type="linear" />
-            <corners android:radius="10dp" />
-        </shape>
-    </item>
+ <item><shape android:shape="rectangle">
+  <gradient android:angle="45" android:startColor="#FFB47BFF" android:centerColor="#FF895AE0" android:endColor="#FF4C348F" android:type="linear"/>
+  <corners android:radius="16dp"/>
+ </shape></item>
+ <item android:gravity="right|bottom">
+  <shape android:shape="rectangle">
+   <size android:width="150dp" android:height="150dp"/>
+   <gradient android:angle="135" android:startColor="#40FFFFFF" android:centerColor="#16FFFFFF" android:endColor="#00000000"/>
+   <corners android:radius="16dp"/>
+  </shape>
+ </item>
 </layer-list>

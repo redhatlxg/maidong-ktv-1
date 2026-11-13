@@ -109,18 +109,26 @@ object SongApiClient {
             .onFailure { Log.w(TAG, "native resolver failed", it) }
             .getOrNull()
 
-    /** DB cloud_url fallback —— 广告过滤已移除, 直接返回库内地址。 */
-    private fun fetchFromDb(musicno: String): String? {        try {
+    /** DB cloud_url fallback：与 JS/原生取址使用同一套可信校验。 */
+    private fun fetchFromDb(musicno: String): String? {
+        try {
             val db = MuseDatabase()
             if (db.open()) {
                 val url = db.getCloudUrl(musicno)
                 db.close()
-                if (url != null) {
+                if (url != null && !isLikelyDemoUrl(url) && AdVideoFilter.isTrustedSongUrl(url, musicno)) {
                     return url
                 }
             }
         } catch (_: Exception) {}
         return null
+    }
+
+    private fun isLikelyDemoUrl(url: String): Boolean {
+        val host = runCatching { java.net.URI(url).host }.getOrNull() ?: return true
+        return host.matches(Regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$")) ||
+            host.matches(Regex("^pub-[a-z0-9]+\\.r2\\.dev$")) ||
+            url.contains("wb66", ignoreCase = true) || url.contains("demo", ignoreCase = true)
     }
 
     /**

@@ -36,7 +36,7 @@
 
     <!-- 加载进度条样式:基于 AppCompat ProgressBar,使用 loading_anim 作为 indeterminate drawable -->
     <style name="LoadingProgressBar" parent="@style/Widget.AppCompat.ProgressBar">
-        <item name="android:indeterminateDrawable">@anim/loading_anim</item>
+        <item name="android:indeterminateDrawable">@drawable/loading_anim</item>
         <item name="android:indeterminateDuration">1000</item>
         <item name="android:indeterminateBehavior">repeat</item>
     </style>

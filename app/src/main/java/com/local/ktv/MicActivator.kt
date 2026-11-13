@@ -4,6 +4,10 @@ import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import android.util.Log
 
 /**
@@ -22,7 +26,8 @@ import android.util.Log
  * 因此对外暴露 [restart] 供设备变化监听调用; [setPreferredInput] 支持 Android 8.0+
  * 的 AudioRecord.setPreferredDevice 直接把输入锁定到指定麦克风(优先外接)。
  */
-class MicActivator {
+class MicActivator(context: Context) {
+    private val appContext = context.applicationContext
     private val tag = "MicActivator"
     private var record: AudioRecord? = null
     private var thread: Thread? = null
@@ -99,6 +104,11 @@ class MicActivator {
         while (running && !paused) {
             var recorder: AudioRecord? = null
             try {
+                // 权限可能在后台被用户撤销；在每次创建 AudioRecord 前重新检查，避免崩溃。
+                if (ContextCompat.checkSelfPermission(appContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    sleepQuietly(5000)
+                    continue
+                }
                 val minBuffer = AudioRecord.getMinBufferSize(
                     16000,
                     AudioFormat.CHANNEL_IN_MONO,

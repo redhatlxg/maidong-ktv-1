@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:left="7dp" android:top="7dp" android:right="7dp" android:bottom="7dp">
-        <bitmap android:gravity="fill" android:src="@drawable/ic_launcher_art" />
-    </item>
-</layer-list>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFE08A" android:pathData="M23,28 L31,38 L42,20 L53,36 L68,18 L67,42 L27,42 Z"/>
+    <path android:fillColor="#FFF8F2FF" android:pathData="M43,34 C35,34 30,40 30,49 L30,68 C30,78 38,85 48,85 C58,85 66,78 66,68 L66,49 C66,40 59,34 51,34 Z"/>
+    <path android:fillColor="#FF4C2B8E" android:pathData="M37,48 L59,48 L59,53 L37,53 Z M37,58 L59,58 L59,63 L37,63 Z M40,68 L56,68 L56,72 L40,72 Z"/>
+    <path android:fillColor="#FFFFD56A" android:pathData="M23,61 L23,67 C23,82 34,93 48,93 C62,93 73,82 73,67 L73,61 L66,61 L66,67 C66,78 58,86 48,86 C38,86 30,78 30,67 L30,61 Z M45,91 L52,91 L52,99 L45,99 Z M35,98 L62,98 L62,104 L35,104 Z"/>
+    <path android:fillColor="#FFF36BD2" android:pathData="M79,29 L83,39 L93,43 L83,47 L79,57 L75,47 L65,43 L75,39 Z"/>
+</vector>

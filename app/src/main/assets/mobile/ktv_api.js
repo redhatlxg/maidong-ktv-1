@@ -130,6 +130,21 @@
     return JSON.parse(body.slice(start));
   }
 
+  // 统一拦截 demo/广告/测试资源，避免错误视频被缓存成歌曲。
+  function isDemoUrl(url, musicno) {
+    var s = String(url || '');
+    if (/(?:wb66|demo)/i.test(s)) return true;
+    if (/^https?:\/\/(?:[^\/]+\.)?ac16\.vip(?::\d+)?\//i.test(s)) return true;
+    if (/\/ad_files\/|my_ad_video/i.test(s)) return true;
+    if (/^https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\//i.test(s)) return true;
+    if (/pub-[a-z0-9]+\.r2\.dev\/ss\//i.test(s)) return true;
+    if (musicno) {
+      var m = s.match(/\/([^\/?]+)\.ts(?:\?|$)/i);
+      if (m && m[1] !== String(musicno)) return true;
+    }
+    return false;
+  }
+
   // 任务3: 点歌结果上报(成功/失败 + 实际命中的源) → Android 侧写入远程日志。
   function reportSongResult(ok, host, musicno, detail) {
     try {
@@ -355,8 +370,8 @@
         return self._fetchSongUrl(host, musicno, token, ls, resolution, h265).then(function(data) {
           // token 恒定不变; do.php 403"检测到异常行为"是风控限流, 与 token 过期无关。
           // 失败时同 token 短退避重试一次, 不再清 token 重取 i.php。
-          if (data.code !== 200) {
-            state.hostDetail = 'do.php code=' + data.code + ' http=' + (data.httpStatus || 0);
+          if (data.code !== 200 || (data.code === 200 && isDemoUrl(data.data || '', musicno))) {
+            state.hostDetail = data.code === 200 ? 'ad-or-mismatched-url' : 'do.php code=' + data.code + ' http=' + (data.httpStatus || 0);
             self._log(state.hostDetail + ' for ' + musicno + ' ls=' + ls + '; retry once with same token');
             return sleep(3000).then(function() {
               return self._fetchSongUrl(host, musicno, token, ls, resolution, h265);
@@ -366,7 +381,7 @@
         }).then(function(data) {
           if (data && data.code === 200) {
             var songUrl = data.data || '';
-            if (songUrl && /^https?:\/\//i.test(songUrl)) {
+            if (songUrl && /^https?:\/\//i.test(songUrl) && !isDemoUrl(songUrl, musicno)) {
               self._log('URL OK: ' + musicno + ' ls=' + ls + ' via ' + host);
               self.promoteSource(host);
               state.hostOk = true;

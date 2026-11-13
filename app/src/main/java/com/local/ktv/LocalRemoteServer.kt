@@ -1,6 +1,10 @@
 package com.local.ktv
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import androidx.appcompat.content.res.AppCompatResources
+import java.io.ByteArrayOutputStream
 import java.io.BufferedInputStream
 import java.net.Inet4Address
 import java.net.InetAddress
@@ -140,15 +144,36 @@ class LocalRemoteServer(private val context: Context) {
                     write(client, ApiResponse(403, error("BAD_ORIGIN", "请求来源无效")))
                     return
                 }
-                val length = headers["content-length"]?.toIntOrNull()?.coerceIn(0, 65536) ?: 0
+                // 本地 API 不支持分块请求体；拒绝不明确或超限的长度，不能静默截断。
+                if (!headers["transfer-encoding"].isNullOrBlank()) {
+                    write(client, ApiResponse(400, error("BAD_REQUEST", "不支持分块请求体")))
+                    return
+                }
+                val rawLength = headers["content-length"]
+                val length = if (rawLength.isNullOrBlank()) 0 else rawLength.toIntOrNull()
+                    ?: run {
+                        write(client, ApiResponse(400, error("BAD_CONTENT_LENGTH", "请求长度无效")))
+                        return
+                    }
+                if (length < 0) {
+                    write(client, ApiResponse(400, error("BAD_CONTENT_LENGTH", "请求长度无效")))
+                    return
+                }
+                if (length > 65536) {
+                    write(client, ApiResponse(413, error("BODY_TOO_LARGE", "请求内容超过 64 KB")))
+                    return
+                }
                 val bodyBytes = ByteArray(length)
                 var offset = 0
                 while (offset < length) {
                     val count = input.read(bodyBytes, offset, length - offset)
-                    if (count < 0) break
+                    if (count < 0) {
+                        write(client, ApiResponse(400, error("INCOMPLETE_BODY", "请求内容不完整")))
+                        return
+                    }
                     offset += count
                 }
-                val body = String(bodyBytes, 0, offset, Charsets.UTF_8)
+                val body = String(bodyBytes, Charsets.UTF_8)
                 // 手机端已成功建立会话并访问页面/接口 → 记录活跃(用于控制二维码显隐)。
                 lastActivityAtMs = System.currentTimeMillis()
                 val response = when {
@@ -174,8 +199,18 @@ class LocalRemoteServer(private val context: Context) {
     }
 
     private fun logoAsset(): ApiResponse = try {
-        val bytes = context.resources.openRawResource(R.drawable.ktv_logo).use { it.readBytes() }
-        ApiResponse(200, contentType = "image/png", bytes = bytes)
+        // ktv_logo 是 VectorDrawable，不是 raw 资源；渲染为 PNG 后再通过局域网接口返回。
+        val drawable = AppCompatResources.getDrawable(context, R.drawable.ktv_logo) ?: error("Logo resource unavailable")
+        val width = drawable.intrinsicWidth.coerceAtLeast(1)
+        val height = drawable.intrinsicHeight.coerceAtLeast(1)
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        val output = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+        bitmap.recycle()
+        ApiResponse(200, contentType = "image/png", bytes = output.toByteArray())
     } catch (_: Exception) {
         ApiResponse(404, error("ASSET_NOT_FOUND", "Logo 资源缺失"))
     }
@@ -183,17 +218,21 @@ class LocalRemoteServer(private val context: Context) {
     private fun validHost(host: String?): Boolean {
         if (host.isNullOrBlank()) return false
         val expected = boundAddress ?: return false
-        val name = host.substringBefore(':')
-        return name == expected || isPrivateIpv4(name)
+        return runCatching {
+            val uri = URI("http://$host")
+            uri.host == expected && (uri.port == boundPort && uri.userInfo == null)
+        }.getOrDefault(false)
     }
 
     private fun validOrigin(origin: String?): Boolean {
-        if (origin.isNullOrBlank() || origin == "null") return true
+        // GET 等简单请求可能没有 Origin；若浏览器提供 Origin，则必须与本机服务地址完全一致。
+        if (origin.isNullOrBlank()) return true
         return runCatching {
             val uri = URI(origin)
-            if (uri.scheme != "http") return@runCatching false
-            val host = uri.host ?: return@runCatching false
-            uri.port == boundPort && isPrivateIpv4(host)
+            uri.scheme == "http" &&
+                uri.host == boundAddress &&
+                uri.port == boundPort &&
+                uri.userInfo == null
         }.getOrDefault(false)
     }
 
@@ -205,6 +244,7 @@ class LocalRemoteServer(private val context: Context) {
             if (b == '\n'.code) break
             if (b != '\r'.code) bytes.add(b.toByte())
         }
+        if (bytes.size >= 8192) throw java.io.IOException("HTTP 请求行或请求头过长")
         return bytes.toByteArray().toString(Charsets.UTF_8)
     }
 
@@ -228,7 +268,7 @@ class LocalRemoteServer(private val context: Context) {
             "Content-Type: ${response.contentType}\r\n" +
             "Cache-Control: no-store\r\n" +
             "X-Content-Type-Options: nosniff\r\n" +
-            "Content-Security-Policy: default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'\r\n" +
+            "Content-Security-Policy: default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self' https://raw.githubusercontent.com\r\n" +
             "Content-Length: ${bytes.size}\r\nConnection: close\r\n\r\n").toByteArray())
         output.write(bytes)
         output.flush()

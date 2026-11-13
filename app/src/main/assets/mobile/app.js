@@ -1,10 +1,10 @@
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 const uiState = {
-  page: 1, query: "", searchMode: "song", busy: false,
-  hotPage: 1, hotPageSize: 10, hotBusy: false,
-  visible: true, connected: false, eqEnabled: false,
-  equalizer: null, searchAbort: null, searchKey: ""
+  page: 1, query: "", searchMode: "song", selectedSinger: "", voiceSingerFilter: "", busy: false,
+  hotPage: 1, hotPageSize: 10, hotBusy: false, hotTab: "library", douyinHotLoaded: false, douyinHotBusy: false,
+  visible: true, connected: false, eqEnabled: false, queueBusy: false, queueUpdatedAt: 0,
+  equalizer: null, searchAbort: null, searchKey: "", interactionLastId: 0, interactionReady: false, interactionBusy: false, interactionAudio: null
 };
 
 function escapeHtml(value) {
@@ -13,12 +13,119 @@ function escapeHtml(value) {
   }[char]));
 }
 
+function interactionSenderId() {
+  try {
+    let id = localStorage.getItem("xiaoxiaoya_interaction_id");
+    if (!id) {
+      id = "xy" + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(v => v.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem("xiaoxiaoya_interaction_id", id);
+    }
+    return id;
+  } catch (_) {
+    return "xy" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+}
+
+function interactionAudioContext() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return null;
+  if (!uiState.interactionAudio) uiState.interactionAudio = new AudioContext();
+  if (uiState.interactionAudio.state === "suspended") uiState.interactionAudio.resume().catch(() => {});
+  return uiState.interactionAudio;
+}
+
+// 轻量合成掌声/欢呼氛围声，不下载未知来源音频；音量受浏览器媒体音量控制。
+function playInteractionSound(kind) {
+  const ctx = interactionAudioContext();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0.0001, now);
+  master.gain.exponentialRampToValueAtTime(0.18, now + 0.025);
+  master.gain.exponentialRampToValueAtTime(0.0001, now + (kind === "cheer" ? 1.25 : 0.72));
+  master.connect(ctx.destination);
+  const duration = kind === "cheer" ? 1.2 : 0.65;
+  const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
+  const channel = buffer.getChannelData(0);
+  for (let i = 0; i < channel.length; i++) channel[i] = (Math.random() * 2 - 1) * (0.35 + Math.random() * 0.65);
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = kind === "cheer" ? "bandpass" : "highpass";
+  filter.frequency.value = kind === "cheer" ? 850 : 1450;
+  filter.Q.value = kind === "cheer" ? 0.7 : 0.4;
+  noise.connect(filter);
+  filter.connect(master);
+  noise.start(now);
+  if (kind === "applause" || kind === "bravo") {
+    for (let i = 0; i < 9; i++) {
+      const clap = ctx.createOscillator();
+      const gain = ctx.createGain();
+      clap.type = "triangle";
+      clap.frequency.setValueAtTime(950 + Math.random() * 900, now + i * 0.065);
+      gain.gain.setValueAtTime(0.0001, now + i * 0.065);
+      gain.gain.exponentialRampToValueAtTime(0.07, now + i * 0.065 + 0.006);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.065 + 0.045);
+      clap.connect(gain); gain.connect(ctx.destination);
+      clap.start(now + i * 0.065); clap.stop(now + i * 0.065 + 0.05);
+    }
+  }
+}
+
+function renderInteractions(items) {
+  const feed = $("#interactionFeed");
+  if (!feed) return;
+  const recent = items.slice(-8).reverse();
+  $("#interactionCount").textContent = items.length ? items.length + " 条现场互动" : "等待互动…";
+  feed.innerHTML = recent.length ? recent.map(item => {
+    const icon = item.kind === "applause" ? "👏" : item.kind === "cheer" ? "🎉" : item.kind === "bravo" ? "✨" : "💬";
+    return '<div class="interaction-item ' + escapeHtml(item.kind) + '"><span>' + icon + '</span><div><b>' + escapeHtml(item.name || "KTV朋友") + '</b><p>' + escapeHtml(item.text || "") + '</p></div></div>';
+  }).join("") : '<div class="interaction-empty">还没有留言，来做第一个气氛担当吧！</div>';
+}
+
+async function refreshInteractions() {
+  if (!uiState.visible || uiState.interactionBusy) return;
+  uiState.interactionBusy = true;
+  try {
+    const data = await api("/api/v1/interactions");
+    const items = data.items || [];
+    if (uiState.interactionReady) {
+      items.filter(item => Number(item.id) > uiState.interactionLastId && item.kind !== "message")
+        .forEach(item => playInteractionSound(item.kind));
+    }
+    uiState.interactionLastId = Math.max(uiState.interactionLastId, ...items.map(item => Number(item.id) || 0));
+    uiState.interactionReady = true;
+    renderInteractions(items);
+  } catch (_) {
+    // 互动区暂时离线不影响点歌和遥控。
+  } finally {
+    uiState.interactionBusy = false;
+  }
+}
+
+async function sendInteraction(kind, text = "") {
+  const name = $("#interactionName")?.value.trim() || "KTV朋友";
+  try {
+    const data = await api("/api/v1/interactions", {
+      method: "POST",
+      body: JSON.stringify({ senderId: interactionSenderId(), name, kind, text })
+    });
+    if (kind !== "message") playInteractionSound(kind);
+    uiState.interactionLastId = Math.max(uiState.interactionLastId, Number(data.id) || 0);
+    if (kind === "message") $("#interactionText").value = "";
+    toast(data.message || "已送出现场互动");
+    refreshInteractions();
+  } catch (error) {
+    toast(error.message || "发送失败");
+  }
+}
+
 function setConnected(connected) {
   uiState.connected = connected;
   $("#offline").classList.toggle("hidden", connected);
   $("#connection").innerHTML = connected
-    ? "<span></span>已连接麦动 KTV"
-    : "<span></span>正在连接麦动 KTV…";
+    ? "<span></span>已连接晓晓呀 KTV"
+    : "<span></span>正在连接晓晓呀 KTV…";
 }
 
 async function api(path, options = {}) {
@@ -48,16 +155,31 @@ function songRow(song, queue = false, current = false, index = 0, ranking = fals
   return `<div class="song${ranking && index < 3 ? " podium" : ""}" data-id="${escapeHtml(song.id)}">
     <div class="song-index">${number}</div>
     <div class="info">${current ? '<span class="playing">正在播放</span>' : ""}<b>${escapeHtml(song.title)}</b><p>${escapeHtml(song.singer)}${song.language ? " · " + escapeHtml(song.language) : ""}</p></div>
-    ${actions}
+    <button type="button" class="song-detail">详情/歌词</button>${!queue ? `<button type="button" class="favorite${song.favorite ? " active" : ""}" aria-label="${song.favorite ? "取消收藏" : "收藏"}">${song.favorite ? "♥" : "♡"}</button><button type="button" class="playlist-add" aria-label="加入歌单">＋歌单</button>` : ""}${actions}
   </div>`;
 }
 
+function singerCard(singer, count) {
+  const name = String(singer || "").trim();
+  if (!name) return "";
+  const initial = Array.from(name)[0] || "♪";
+  return '<button type="button" class="singer-card" data-singer="' + escapeHtml(name) + '"><span class="singer-avatar" aria-hidden="true">' + escapeHtml(initial) + '</span><span class="singer-card-info"><b>' + escapeHtml(name) + '</b><small>' + count + ' 首相关歌曲</small></span><span class="singer-card-arrow" aria-hidden="true">›</span></button>';
+}
+
+function singerCardsFromSongs(songs) {
+  const counts = new Map();
+  (songs || []).forEach((song) => { const name = String(song.singer || "").trim(); if (name) counts.set(name, (counts.get(name) || 0) + 1); });
+  return Array.from(counts, ([name, count]) => singerCard(name, count)).join("");
+}
 function openPage(name) {
   $$("nav button,.page").forEach((element) => element.classList.remove("active"));
   $(`nav button[data-page="${name}"]`)?.classList.add("active");
   $("#" + name)?.classList.add("active");
   if (name === "queue") loadQueue();
+  if (name === "favorites") loadFavorites();
+  if (name === "playlists") loadPlaylists();
   if (name === "search" && !$("#hotList").children.length) loadHot(1);
+  if (name === "settings") loadDownloads();
 }
 
 async function refresh() {
@@ -74,6 +196,7 @@ async function refresh() {
     $("#playButton").dataset.action = data.playing ? "pause" : "resume";
     $("#playButton .control-icon").textContent = data.playing ? "Ⅱ" : "▶";
     $("#musicVolume").value = data.musicVolume ?? 85;
+    if (Number(data.musicVolume) > 0) lastAudibleVolume = Number(data.musicVolume);
     $("#micVolume").value = data.micVolume ?? 70;
     $("#musicValue").textContent = data.musicVolume ?? 85;
     // 麦克风音量由功放/混音器硬件调节(滑杆已禁用), 仅保留显示值。
@@ -202,7 +325,12 @@ async function updateAudio(values) {
   } catch (error) { toast(error.message); }
 }
 
-async function search(reset = true) {
+async function search(reset = true, preserveVoiceSingerFilter = false) {
+  if (reset && !preserveVoiceSingerFilter && uiState.voiceSingerFilter) {
+    uiState.voiceSingerFilter = "";
+    // 同一关键词的手动搜索必须重新取完整结果，不能复用上一次语音筛选后的缓存。
+    uiState.searchKey = "";
+  }
   if (reset) {
     const nextQuery = $("#query").value.trim();
     if (!nextQuery) {
@@ -217,6 +345,7 @@ async function search(reset = true) {
       return;
     }
     uiState.page = 1;
+    uiState.selectedSinger = "";
     uiState.query = nextQuery;
     uiState.searchKey = key;
     $("#results").innerHTML = "";
@@ -232,10 +361,21 @@ async function search(reset = true) {
   uiState.busy = true;
   try {
     const data = await api(`/api/v1/songs?q=${encodeURIComponent(uiState.query)}&type=${uiState.searchMode}&page=${requestedPage}&pageSize=20`, { signal });
-    const rows = (data.songs || []).map((song, index) => songRow(song, false, false, (requestedPage - 1) * 20 + index)).join("");
-    if (rows) $("#results").insertAdjacentHTML("beforeend", rows);
-    else if (reset) $("#results").innerHTML = '<div class="empty">没有找到相关歌曲<br><small>请更换关键词后重试</small></div>';
-    $("#resultSummary").textContent = `“${uiState.query}”${data.hasMore ? "，还有更多" : ""}`;
+    let resultSongs = data.songs || [];
+    if (uiState.voiceSingerFilter) {
+      const wantedSinger = uiState.voiceSingerFilter.toLocaleLowerCase();
+      resultSongs = resultSongs.filter((song) => String(song.singer || "").toLocaleLowerCase().includes(wantedSinger));
+    }
+    const rows = uiState.searchMode === "singer" && !uiState.selectedSinger ? singerCardsFromSongs(resultSongs) : resultSongs.map((song, index) => songRow(song, false, false, (requestedPage - 1) * 20 + index)).join("");
+    if (rows) {
+      if (uiState.searchMode === "singer" && !uiState.selectedSinger && requestedPage > 1) {
+        const existing = new Set(Array.from($("#results").querySelectorAll("[data-singer]")).map((item) => item.dataset.singer));
+        const wrapper = document.createElement("div"); wrapper.innerHTML = rows;
+        Array.from(wrapper.children).forEach((card) => { if (!existing.has(card.dataset.singer)) $("#results").appendChild(card); });
+      } else $("#results").insertAdjacentHTML("beforeend", rows);
+    } else if (reset) $("#results").innerHTML = '<div class="empty">没有找到相关内容<br><small>请更换关键词后重试</small></div>';
+    $("#resultSummary").textContent = uiState.selectedSinger ? uiState.selectedSinger + " 的歌曲" + (data.hasMore ? "，还有更多" : "") : `“${uiState.query}”${data.hasMore ? "，还有更多" : ""}`;
+    $("#more").textContent = uiState.searchMode === "singer" && !uiState.selectedSinger ? "加载更多歌手" : "加载更多歌曲";
     $("#more").classList.toggle("hidden", !data.hasMore);
     uiState.page = requestedPage + 1;
     // 预热下一页: 设备端会把它缓存下来, 用户点「更多」时基本瞬时。
@@ -249,6 +389,63 @@ async function search(reset = true) {
     // 被下一次搜索取消属于正常情况, 不弹提示。
     if (error && error.name !== "AbortError") toast(error.message);
   } finally { uiState.busy = false; }
+}
+
+
+const DOUYIN_MUSIC_README = "https://raw.githubusercontent.com/SnailDev/douyin-hot-hub/main/README.md";
+
+function parseDouyinMusicBoard(markdown) {
+  const update = (markdown.match(/`更新时间：([^\`]+)`/) || [])[1] || "更新时间未知";
+  const heading = markdown.indexOf("## 音乐榜");
+  if (heading < 0) throw new Error("公开数据中没有找到音乐榜");
+  const afterHeading = markdown.slice(heading + "## 音乐榜".length);
+  const nextHeading = afterHeading.search(/^## /m);
+  const section = nextHeading < 0 ? afterHeading : afterHeading.slice(0, nextHeading);
+  const items = [];
+  for (const line of section.split(/\r?\n/)) {
+    const match = line.match(/^\s*\d+\.\s+\[([^\]]+)\]\((https?:\/\/[^)]+)\)\s+-\s+(.+)\s*$/);
+    if (match) items.push({ title: match[1].trim(), artist: match[3].trim(), url: match[2] });
+  }
+  if (!items.length) throw new Error("音乐榜暂时没有可展示的歌曲");
+  return { update, items };
+}
+
+function renderDouyinMusicBoard(items) {
+  $("#douyinHotList").innerHTML = items.map((item, index) => `
+    <div class="douyin-song">
+      <span class="douyin-rank ${index < 3 ? "top" : ""}">${String(index + 1).padStart(2, "0")}</span>
+      <div class="douyin-song-info"><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.artist)}</small></div>
+      <button type="button" class="douyin-find" data-douyin-search="${escapeHtml(item.title)}">曲库查找</button>
+    </div>`).join("");
+}
+
+async function loadDouyinMusicBoard(force = false) {
+  if (uiState.douyinHotBusy || (uiState.douyinHotLoaded && !force)) return;
+  uiState.douyinHotBusy = true;
+  $("#douyinUpdated").textContent = "正在获取…";
+  $("#douyinHotList").innerHTML = '<div class="empty compact">正在获取免费公开榜单…</div>';
+  try {
+    const response = await fetch(DOUYIN_MUSIC_README, { cache: force ? "no-store" : "default" });
+    if (!response.ok) throw new Error("免费数据源暂时无法访问（HTTP " + response.status + "）");
+    const board = parseDouyinMusicBoard(await response.text());
+    renderDouyinMusicBoard(board.items);
+    $("#douyinUpdated").textContent = board.update + " · " + board.items.length + " 首";
+    uiState.douyinHotLoaded = true;
+  } catch (error) {
+    $("#douyinUpdated").textContent = "获取失败";
+    $("#douyinHotList").innerHTML = '<div class="empty compact">暂时无法获取抖音音乐榜<br><small>' + escapeHtml(error.message) + '<br>可稍后点击刷新重试</small></div>';
+    toast("抖音音乐榜加载失败");
+  } finally {
+    uiState.douyinHotBusy = false;
+  }
+}
+
+function switchHotTab(tab) {
+  uiState.hotTab = tab;
+  $$("[data-hot-tab]").forEach((button) => button.classList.toggle("active", button.dataset.hotTab === tab));
+  $("#hot").classList.toggle("hidden", tab !== "library");
+  $("#douyinHot").classList.toggle("hidden", tab !== "douyin");
+  if (tab === "douyin") loadDouyinMusicBoard();
 }
 
 async function loadHot(page) {
@@ -278,23 +475,128 @@ async function loadHot(page) {
   } finally { uiState.hotBusy = false; }
 }
 
-async function loadQueue() {
+async function loadPlaylists() {
+  try {
+    const data = await api("/api/v1/playlists");
+    const rows = data.playlists || [];
+    $("#playlistList").innerHTML = rows.map(item => `<button type="button" class="playlist-card" data-playlist="${escapeHtml(item.name)}"><b>${escapeHtml(item.name)}</b><small>${item.count} 首歌曲</small><span>›</span></button>`).join("")
+      || '<div class="empty">还没有歌单</div>';
+    $("#playlistSongsBlock").classList.add("hidden");
+    $("#playlistList").classList.remove("hidden");
+  } catch (error) { toast(error.message); }
+}
+
+async function openPlaylist(name) {
+  try {
+    const data = await api("/api/v1/playlists/" + encodeURIComponent(name));
+    $("#playlistDetailName").textContent = name;
+    $("#playlistSongs").innerHTML = (data.songs || []).map((song, index) => songRow(song, false, false, index)).join("")
+      || '<div class="empty">这个歌单还是空的</div>';
+    $("#playlistList").classList.add("hidden");
+    $("#playlistSongsBlock").classList.remove("hidden");
+    $("#deletePlaylist").dataset.playlist = name;
+  } catch (error) { toast(error.message); }
+}
+
+async function loadFavorites() {
+  try {
+    const data = await api("/api/v1/favorites");
+    const songs = data.songs || [];
+    $("#favoriteCount").textContent = `${songs.length} 首`;
+    $("#favoriteList").innerHTML = songs.map((song, index) => songRow(song, false, false, index)).join("")
+      || '<div class="empty">还没有收藏歌曲<br><small>在搜歌页面点击 ♡ 即可收藏</small></div>';
+  } catch (error) { toast(error.message); }
+}
+
+async function loadQueue(silent = false) {
+  // 所有扫码手机读取设备端同一份队列；防止轮询重叠导致旧响应覆盖新状态。
+  if (uiState.queueBusy || !uiState.visible) return;
+  uiState.queueBusy = true;
   try {
     const data = await api("/api/v1/queue");
     const queue = data.queue || [];
     $("#queueCount").textContent = `${queue.length} 首`;
     $("#queueList").innerHTML = queue.map((song, index) => songRow(song, true, index === 0, index)).join("") || '<div class="empty">还没有点歌<br><small>去曲库选一首喜欢的歌吧</small></div>';
-  } catch (error) { toast(error.message); }
+    uiState.queueUpdatedAt = Date.now();
+  } catch (error) { if (!silent) toast(error.message); }
+  finally { uiState.queueBusy = false; }
+}
+
+function formatDownloadSize(bytes) {
+  const value = Number(bytes || 0);
+  if (value < 1024 * 1024) return (value / 1024).toFixed(1) + " KB";
+  if (value < 1024 * 1024 * 1024) return (value / 1024 / 1024).toFixed(2) + " MB";
+  return (value / 1024 / 1024 / 1024).toFixed(2) + " GB";
+}
+
+async function loadDownloads() {
+  const count = $("#downloadCount");
+  const size = $("#downloadSize");
+  if (!count || !size) return;
+  count.textContent = "读取中…";
+  try {
+    const data = await api("/api/v1/downloads");
+    count.textContent = String(data.count || 0) + " 首";
+    size.textContent = formatDownloadSize(data.bytes || 0);
+    $("#downloadHint").textContent = data.count
+      ? "共 " + data.count + " 首；清理时会保留正在播放的歌曲，其余下载缓存将删除"
+      : "当前没有已下载歌曲；在线曲库、收藏和歌单不会受到影响";
+    $("#deleteAllDownloads").disabled = !data.count;
+  } catch (error) {
+    count.textContent = "暂不可用";
+    size.textContent = "—";
+    $("#downloadHint").textContent = "无法连接 KTV 主机，请确认设备在线后重试";
+    $("#deleteAllDownloads").disabled = true;
+    toast(error.message);
+  }
+}
+
+async function deleteAllDownloads() {
+  if (!window.confirm("确定删除 KTV 主机上的全部已下载歌曲吗？\n正在播放的歌曲会保留；在线曲库、收藏和歌单不会删除。")) return;
+  const button = $("#deleteAllDownloads");
+  button.disabled = true;
+  button.textContent = "正在清理…";
+  try {
+    const data = await api("/api/v1/downloads", { method: "DELETE" });
+    toast(data.message || "下载歌曲清理完成");
+    await loadDownloads();
+  } catch (error) {
+    toast(error.message || "清理失败");
+  } finally {
+    button.textContent = "一键删除全部下载歌曲";
+  }
 }
 
 document.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button) return;
   if (button.dataset.page) openPage(button.dataset.page);
+  if (button.dataset.hotTab) { switchHotTab(button.dataset.hotTab); return; }
+  if (button.id === "douyinRefresh") { loadDouyinMusicBoard(true); return; }
+  if (button.dataset.douyinSearch) {
+    switchHotTab("library");
+    openPage("search");
+    uiState.searchMode = "song";
+    $("[data-search-mode]").forEach((item) => item.classList.toggle("active", item.dataset.searchMode === "song"));
+    $("#query").value = button.dataset.douyinSearch;
+    search();
+    toast("正在本地曲库查找：" + button.dataset.douyinSearch);
+    return;
+  }
   if (button.dataset.action) playerAction(button.dataset.action);
-  if (button.dataset.vocal) updateAudio({ vocalMode: button.dataset.vocal });
+  if (button.dataset.vocal) { updateAudio({ vocalMode: button.dataset.vocal }); return; }
+
+async function showSongDetail(songId) { try { const row = Array.from(document.querySelectorAll(".song")).find((item) => item.dataset.id === songId); const data = await api("/api/v1/lyrics/" + encodeURIComponent(songId)); $("#detailTitle").textContent = row?.querySelector(".info b")?.textContent || "歌曲详情"; $("#detailMeta").textContent = row?.querySelector(".info p")?.textContent || ""; $("#detailLyrics").textContent = data.available ? data.lyrics : (data.message || "暂无歌词"); $("#detailModal").classList.remove("hidden"); } catch (error) { toast(error.message); } }
+async function showSingerDetail(name) { try { const data = await api("/api/v1/singer?q=" + encodeURIComponent(name)); const singer = (data.singers || []).find((item) => item.name === name) || (data.singers || [])[0] || {}; $("#detailTitle").textContent = data.name || name; $("#detailMeta").textContent = [singer.area, singer.type].filter(Boolean).join(" · ") || "歌手资料"; $("#detailLyrics").textContent = "曲库收录歌曲：" + (data.songCount ?? 0) + " 首\n歌手：" + (singer.name || name) + "\n地区：" + (singer.area || "曲库未标注") + "\n类型：" + (singer.type || "曲库未标注") + "\n\n这里只展示曲库已有资料，不会编造个人简介。"; $("#detailModal").classList.remove("hidden"); } catch (error) { toast(error.message); } }
+  if (button.dataset.singer) {
+    uiState.voiceSingerFilter = "";
+    uiState.selectedSinger = button.dataset.singer; uiState.query = button.dataset.singer; uiState.page = 1;
+    uiState.searchKey = "singer|" + uiState.query; $("#query").value = button.dataset.singer; showSingerDetail(button.dataset.singer);
+    $("#results").innerHTML = ""; $("#resultTitle").textContent = button.dataset.singer + " 的歌曲";
+    $("#resultSummary").textContent = "正在加载歌曲…"; $("#more").classList.add("hidden"); search(false); return;
+  }
   if (button.dataset.searchMode) {
-    uiState.searchMode = button.dataset.searchMode;
+    uiState.selectedSinger = ""; uiState.voiceSingerFilter = ""; uiState.searchMode = button.dataset.searchMode;
     $$('[data-search-mode]').forEach((item) => item.classList.toggle("active", item === button));
     $("#query").placeholder = uiState.searchMode === "singer" ? "输入歌手名或拼音" : "输入歌曲名或拼音";
     $("#query").value = "";
@@ -304,6 +606,45 @@ document.addEventListener("click", async (event) => {
     $("#query").focus();
   }
   const row = button.closest(".song");
+  if (row && button.classList.contains("song-detail")) { showSongDetail(row.dataset.id); return; }
+  if (button.dataset.playlist) { openPlaylist(button.dataset.playlist); return; }
+  if (button.id === "createPlaylist") {
+    const name = window.prompt("请输入新歌单名称（最多 24 个字符）");
+    if (name && name.trim()) {
+      try { await api("/api/v1/playlists", { method: "POST", body: JSON.stringify({ name: name.trim() }) }); toast("歌单已创建"); loadPlaylists(); }
+      catch (error) { toast(error.message); }
+    }
+    return;
+  }
+  if (button.id === "playlistBack") { loadPlaylists(); return; }
+  if (button.id === "deletePlaylist") {
+    const name = button.dataset.playlist;
+    if (name && window.confirm("确定删除歌单“" + name + "”？")) {
+      try { await api("/api/v1/playlists/" + encodeURIComponent(name), { method: "DELETE" }); toast("歌单已删除"); loadPlaylists(); }
+      catch (error) { toast(error.message); }
+    }
+    return;
+  }
+  if (row && button.classList.contains("playlist-add")) {
+    const name = window.prompt("输入要加入的歌单名称（可在“我的歌单”中新建）");
+    if (name && name.trim()) {
+      try {
+        const data = await api("/api/v1/playlists/" + encodeURIComponent(name.trim()) + "/songs", { method: "POST", body: JSON.stringify({ songId: row.dataset.id }) });
+        toast(data.message || "歌单已更新");
+      } catch (error) { toast(error.message); }
+    }
+    return;
+  }
+  if (row && button.classList.contains("favorite")) {
+    try {
+      const data = await api("/api/v1/favorites", { method: "POST", body: JSON.stringify({ songId: row.dataset.id }) });
+      button.classList.toggle("active", !!data.favorite);
+      button.textContent = data.favorite ? "♥" : "♡";
+      button.setAttribute("aria-label", data.favorite ? "取消收藏" : "收藏");
+      toast(data.message || (data.favorite ? "已加入收藏" : "已取消收藏"));
+    } catch (error) { toast(error.message); }
+    return;
+  }
   if (row && button.classList.contains("order")) {
     try {
       await api("/api/v1/queue", { method: "POST", body: JSON.stringify({ songId: row.dataset.id }) });
@@ -324,14 +665,246 @@ document.addEventListener("click", async (event) => {
   }
 });
 
+// ─── 手机语音点歌：使用浏览器原生语音识别，不占用电视端演唱麦克风 ───
+let voiceRecognition = null;
+let voiceListening = false;
+
+function parseVoiceSongCommand(transcript) {
+  let phrase = String(transcript || "").trim().replace(/[，。！？、,.!?；;：:]+$/g, "");
+  phrase = phrase.replace(/^(请|麻烦)?(帮我)?(点歌|播放|我要听|我想听|我想点|来一首|唱一首|搜索|找一下)\s*/i, "").trim();
+  phrase = phrase.replace(/^(请|帮我)\s*/, "").trim();
+  if (!phrase) return null;
+  const singerOnly = phrase.match(/^(.+?)(?:的)?(?:所有)?(?:歌|歌曲)$/);
+  if (singerOnly && singerOnly[1].trim()) return { mode: "singer", query: singerOnly[1].trim(), spoken: transcript };
+  const split = phrase.match(/^(.{1,20}?)的(.{1,30})$/);
+  if (split && split[1].trim() && split[2].trim()) {
+    const title = split[2].replace(/^(那首|歌曲)?/, "").trim();
+    if (title) return { mode: "song", query: title, singer: split[1].trim(), spoken: transcript };
+  }
+  phrase = phrase.replace(/^(那首|歌曲|歌名是)/, "").trim();
+  return phrase ? { mode: "song", query: phrase, spoken: transcript } : null;
+}
+
+function setVoiceButtonState(listening) {
+  voiceListening = listening;
+  const button = $("#voiceSearch");
+  if (!button) return;
+  button.classList.toggle("listening", listening);
+  button.setAttribute("aria-pressed", listening ? "true" : "false");
+  button.title = listening ? "正在聆听，点击停止" : "语音点歌";
+  const label = button.querySelector("small");
+  if (label) label.textContent = listening ? "聆听中" : "语音";
+}
+
+function applyVoiceSearch(command) {
+  const modeButton = document.querySelector(`[data-search-mode="${command.mode}"]`);
+  if (modeButton) modeButton.click();
+  $("#query").value = command.query;
+  uiState.searchMode = command.mode;
+  $("[data-search-mode]").forEach((item) => item.classList.toggle("active", item.dataset.searchMode === command.mode));
+  uiState.searchKey = "";
+  uiState.selectedSinger = "";
+  uiState.voiceSingerFilter = command.singer || "";
+  search(true, true);
+  if (command.singer) toast("识别到歌手：" + command.singer + "、歌曲：" + command.query + "，正在筛选匹配结果");
+  else if (command.mode === "singer") toast("正在搜索歌手：" + command.query);
+  else toast("已识别：" + command.query + "，请选择匹配歌曲加入点歌单");
+}
+
+function useKeyboardVoiceInput(reason) {
+  const input = $("#query");
+  if (input) {
+    input.focus();
+    try { input.click(); } catch (_) {}
+  }
+  toast(reason || "请点击手机输入法键盘上的麦克风，说出歌名后点击搜索");
+}
+
+function startVoiceSearch() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const localSecureHost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  if (!window.isSecureContext && !localSecureHost) {
+    useKeyboardVoiceInput("当前扫码页面是局域网 HTTP，浏览器可能禁止网页直接录音；请用键盘上的麦克风语音输入");
+    return;
+  }
+  if (!SpeechRecognition) {
+    useKeyboardVoiceInput("当前浏览器没有网页语音识别功能，请使用手机输入法键盘上的麦克风");
+    return;
+  }
+  if (voiceListening && voiceRecognition) {
+    voiceRecognition.stop();
+    setVoiceButtonState(false);
+    return;
+  }
+  try {
+    voiceRecognition = new SpeechRecognition();
+    voiceRecognition.lang = "zh-CN";
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = false;
+    voiceRecognition.maxAlternatives = 3;
+    voiceRecognition.onstart = () => { setVoiceButtonState(true); toast("请说出歌名，例如：周杰伦的晴天"); };
+    voiceRecognition.onresult = (event) => {
+      const result = event.results && event.results[0] && event.results[0][0];
+      const transcript = result ? result.transcript : "";
+      const command = parseVoiceSongCommand(transcript);
+      if (!command) { toast("没有识别出歌曲名称，请再试一次"); return; }
+      applyVoiceSearch(command);
+    };
+    voiceRecognition.onerror = (event) => {
+      const messages = { "not-allowed": "麦克风权限被拒绝，请在浏览器设置中允许麦克风", "service-not-allowed": "语音识别服务不可用", "no-speech": "没有听到声音，请靠近手机再说一次", "audio-capture": "没有检测到可用麦克风", "network": "语音识别网络连接失败" };
+      const message = messages[event.error] || "语音识别失败";
+      if (["not-allowed", "service-not-allowed", "network", "audio-capture"].includes(event.error)) {
+        useKeyboardVoiceInput(message + "；可以改用手机键盘麦克风语音输入");
+      } else {
+        toast(message + "，请再试一次或使用键盘麦克风");
+      }
+    };
+    voiceRecognition.onend = () => setVoiceButtonState(false);
+    voiceRecognition.start();
+  } catch (error) {
+    setVoiceButtonState(false);
+    useKeyboardVoiceInput("无法启动网页语音识别，请使用手机键盘麦克风输入");
+  }
+}
+
+
+let remoteVoiceRecognition = null;
+let remoteVoiceListening = false;
+
+function setRemoteVoiceState(listening, message) {
+  remoteVoiceListening = listening;
+  const button = $("#voiceCommand");
+  const label = $("#voiceCommandState");
+  if (button) {
+    button.classList.toggle("listening", listening);
+    button.setAttribute("aria-pressed", listening ? "true" : "false");
+    button.querySelector("b").textContent = listening ? "正在聆听…" : "按住说话";
+  }
+  if (label && message) label.textContent = message;
+}
+
+function parseRemoteVoiceCommand(transcript) {
+  const raw = String(transcript || "").trim().replace(/[，。！？、,.!?；;：:]+$/g, "");
+  const phrase = raw.replace(/^(请|麻烦)?(帮我)?\s*/, "").trim();
+  if (/^(切歌|下一首|换一首|跳过这首|跳到下一首)$/.test(phrase)) return { action: "next" };
+  if (/^(暂停|停一下|先暂停|停止播放)$/.test(phrase)) return { action: "pause" };
+  if (/^(继续|继续播放|播放|恢复播放)$/.test(phrase)) return { action: "resume" };
+  if (/^(重唱|再唱一次|重新播放|从头播放)$/.test(phrase)) return { action: "replay" };
+  const song = phrase.replace(/^(点一首|点首|来一首|唱一首|播放歌曲|播放|我想听|我要听|点歌)\s*/, "")
+    .replace(/[《》“”"']/g, "").replace(/(这首歌|这首歌曲|的歌|的歌曲)$/, "").trim();
+  if (song && song.length <= 40 && !/^(下一首|切歌|暂停|继续播放|重唱)$/.test(song)) return { action: "song", query: song };
+  return null;
+}
+
+async function executeRemoteVoiceCommand(command) {
+  if (command.action !== "song") {
+    await playerAction(command.action);
+    toast(({ next: "已切换下一首", pause: "已暂停", resume: "继续播放", replay: "重新播放当前歌曲" })[command.action] || "操作成功");
+    return;
+  }
+  const data = await api("/api/v1/songs?q=" + encodeURIComponent(command.query) + "&type=song&page=1&pageSize=20");
+  const songs = data.songs || [];
+  if (!songs.length) { toast("曲库没有找到《" + command.query + "》，请换个说法"); return; }
+  const normalized = value => String(value || "").toLocaleLowerCase().replace(/[\s《》“”'"]/g, "");
+  const exact = songs.find(song => normalized(song.title) === normalized(command.query));
+  const chosen = exact || songs[0];
+  await api("/api/v1/queue", { method: "POST", body: JSON.stringify({ songId: chosen.id }) });
+  await loadQueue();
+  toast("已点歌：" + chosen.title + " · " + (chosen.singer || "未知歌手"));
+}
+
+function startVoiceRemoteCommand() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    toast("浏览器暂不支持语音识别，请使用搜索页语音点歌或键盘麦克风");
+    return;
+  }
+  if (remoteVoiceListening && remoteVoiceRecognition) {
+    remoteVoiceRecognition.stop();
+    setRemoteVoiceState(false, "已停止聆听");
+    return;
+  }
+  try {
+    remoteVoiceRecognition = new SpeechRecognition();
+    remoteVoiceRecognition.lang = "zh-CN";
+    remoteVoiceRecognition.continuous = false;
+    remoteVoiceRecognition.interimResults = false;
+    remoteVoiceRecognition.maxAlternatives = 3;
+    remoteVoiceRecognition.onstart = () => {
+      setRemoteVoiceState(true, "正在听，请说出指令");
+      toast("请说：下一首、暂停、继续播放、重唱，或点歌名");
+    };
+    remoteVoiceRecognition.onresult = async event => {
+      const transcript = event.results?.[0]?.[0]?.transcript || "";
+      const command = parseRemoteVoiceCommand(transcript);
+      if (!command) { toast("没听懂：“" + transcript + "”，请再说一次"); return; }
+      setRemoteVoiceState(false, "识别到：" + transcript);
+      try { await executeRemoteVoiceCommand(command); }
+      catch (error) { toast(error.message || "语音指令执行失败"); }
+    };
+    remoteVoiceRecognition.onerror = event => {
+      const message = event.error === "not-allowed" ? "麦克风权限未开启" :
+        event.error === "no-speech" ? "没有听到声音，请靠近手机再说" :
+        event.error === "network" ? "语音识别网络不可用" : "语音识别失败，请重试";
+      setRemoteVoiceState(false, message);
+      toast(message);
+    };
+    remoteVoiceRecognition.onend = () => setRemoteVoiceState(false, "点击麦克风说指令");
+    remoteVoiceRecognition.start();
+  } catch (_) {
+    setRemoteVoiceState(false, "无法启动麦克风");
+    toast("无法启动语音识别，请检查浏览器麦克风权限");
+  }
+}
+
+$("#voiceCommand")?.addEventListener("click", startVoiceRemoteCommand);
+
+$("#playlistBack")?.addEventListener("click", () => loadPlaylists());
+$("#detailClose")?.addEventListener("click", () => $("#detailModal").classList.add("hidden"));
+$("#detailModal")?.addEventListener("click", (event) => { if (event.target.id === "detailModal") $("#detailModal").classList.add("hidden"); });
+$("#voiceSearch")?.addEventListener("click", startVoiceSearch);
 $("#searchForm").addEventListener("submit", (event) => { event.preventDefault(); search(); });
 $("#more").addEventListener("click", () => search(false));
 $("#hotPrev").addEventListener("click", () => loadHot(uiState.hotPage - 1));
 $("#hotNext").addEventListener("click", () => loadHot(uiState.hotPage + 1));
+$("#douyinRefresh")?.addEventListener("click", () => loadDouyinMusicBoard(true));
+$("#refreshDownloads")?.addEventListener("click", loadDownloads);
+$("#interactionForm")?.addEventListener("submit", event => {
+  event.preventDefault();
+  const value = $("#interactionText").value.trim();
+  if (!value) { toast("先写一句表扬或祝福吧"); return; }
+  sendInteraction("message", value);
+});
+$("[data-reaction]")?.forEach(button => button.addEventListener("click", () => sendInteraction(button.dataset.reaction)));
+
+$("#deleteAllDownloads")?.addEventListener("click", deleteAllDownloads);
 // 音乐音量可调; 麦克风音量由功放硬件控制, 不再向设备发送无效果请求。
 attachThumbOnlyDrag($("#musicVolume"));
 $("#musicVolume").addEventListener("input", (event) => { $("#musicValue").textContent = event.target.value; });
 $("#musicVolume").addEventListener("change", (event) => updateAudio({ musicVolume: Number(event.target.value) }));
+let lastAudibleVolume = 85;
+$("#volumeDown")?.addEventListener("click", () => {
+  const next = Math.max(0, Number($("#musicVolume").value) - 5);
+  $("#musicVolume").value = String(next);
+  $("#musicValue").textContent = String(next);
+  if (next > 0) lastAudibleVolume = next;
+  updateAudio({ musicVolume: next });
+});
+$("#volumeUp")?.addEventListener("click", () => {
+  const next = Math.min(100, Number($("#musicVolume").value) + 5);
+  $("#musicVolume").value = String(next);
+  $("#musicValue").textContent = String(next);
+  if (next > 0) lastAudibleVolume = next;
+  updateAudio({ musicVolume: next });
+});
+$("#volumeMute")?.addEventListener("click", () => {
+  const current = Number($("#musicVolume").value);
+  const next = current > 0 ? 0 : Math.max(5, lastAudibleVolume);
+  if (current > 0) lastAudibleVolume = current;
+  $("#musicVolume").value = String(next);
+  $("#musicValue").textContent = String(next);
+  updateAudio({ musicVolume: next });
+});
 // 均衡器入口(与设备端弹窗等价): 开关 / 恢复标准
 $("#eqToggle")?.addEventListener("click", () => updateEqualizer({ enabled: !uiState.eqEnabled }));
 $("#eqReset")?.addEventListener("click", () => updateEqualizer({ preset: "标准" }));
@@ -346,6 +919,15 @@ $("#eqCollapse")?.addEventListener("click", () => {
 });
 document.addEventListener("visibilitychange", () => { uiState.visible = !document.hidden; if (uiState.visible) refresh(); });
 // 搜索进行中暂停状态轮询: 避免与设备端 1GB 曲库查询抢 I/O。
-window.setInterval(() => { if (uiState.visible && !uiState.busy) refresh(); }, 1000);
+window.setInterval(() => {
+  if (!uiState.visible || uiState.busy) return;
+  refresh();
+  refreshInteractions();
+  // 队列页保持实时同步：多部手机点歌、置顶或删除后，其他手机约 2 秒内看到变化。
+  if ($("#queue")?.classList.contains("active") && Date.now() - uiState.queueUpdatedAt >= 1800) {
+    loadQueue(true);
+  }
+}, 1000);
 refresh();
+refreshInteractions();
 loadHot(1);

@@ -8,6 +8,7 @@ import android.content.DialogInterface.OnShowListener
 import android.content.Intent
 import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.ComponentCallbacks2
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.res.ColorStateList
@@ -18,6 +19,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
+import android.media.ToneGenerator
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.MediaPlayer.OnCompletionListener
@@ -176,7 +178,21 @@ class MainActivity : AppCompatActivity() {
     val store: KtvStore = KtvStore()
     private val remoteServer by lazy { LocalRemoteServer(this) }
     @Volatile private var remoteStateVersion = 1L
-    private val remoteSongCache = Collections.synchronizedMap(LinkedHashMap<String, Song>())
+    private val liveInteractions = java.util.concurrent.CopyOnWriteArrayList<JSONObject>()
+    private val interactionRate = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    @Volatile private var interactionSequence = 0L
+    private var danmakuOverlay: FrameLayout? = null
+    private var danmakuRows: LinearLayout? = null
+    private var lastTvInteractionId = 0L
+    private var interactionTone: ToneGenerator? = null
+    private val interactionRefresh = object : Runnable {
+        override fun run() {
+            refreshTvInteractions()
+            main.postDelayed(this, 900L)
+        }
+    }
+
+    private val remoteSongCache = Collections.synchronizedMap(LinkedHashMap<String, Song>(64, 0.75f, true))
 
     /**
      * 远程搜索结果的短期缓存（LRU，最多 24 条 = 最近 4 个查询 × 6 页）。
@@ -187,7 +203,7 @@ class MainActivity : AppCompatActivity() {
      */
     private val remoteSearchCache = object : LinkedHashMap<String, Pair<String, Long>>(8, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<String, Long>>?): Boolean =
-            size > 24
+            size > 8
     }
     private var mobileQrOverlay: View? = null
     private var fullScreenQrOverlay: View? = null
@@ -296,6 +312,7 @@ class MainActivity : AppCompatActivity() {
             // 播放界面左上角的「当前播放 / 下一首」实时刷新: 无论队列是本地点歌、
             // 手机扫码点歌还是自动切歌而变化, 500ms 内必然同步到界面。
             refreshNowPlayingLabels()
+            updateNextSongMarquee()
             main.postDelayed(this, 500)
         }
     }
@@ -308,7 +325,7 @@ class MainActivity : AppCompatActivity() {
     private var audioManager: AudioManager? = null
     private var recorder: MediaRecorder? = null
     /** 电视/投影等设备需 App 占用麦克风输入后才会启用麦克风声音输出(供演唱)。 */
-    private val micActivator = MicActivator()
+    private val micActivator by lazy(LazyThreadSafetyMode.NONE) { MicActivator(applicationContext) }
     private var currentRecording: File? = null
     private var currentPage = "首页"
 
@@ -367,12 +384,12 @@ class MainActivity : AppCompatActivity() {
         val pageSize: Int,
     )
     private data class BrowsePageResult(val songs: List<Song>, val total: Int)
-    private val browsePageCache = object : LinkedHashMap<BrowseCacheKey, BrowsePageResult>(48, 0.75f, true) {
+    private val browsePageCache = object : LinkedHashMap<BrowseCacheKey, BrowsePageResult>(24, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<BrowseCacheKey, BrowsePageResult>?): Boolean =
-            size > 48
+            size > 24
     }
-    private val browseCountCache = object : LinkedHashMap<String, Int>(24, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Int>?): Boolean = size > 24
+    private val browseCountCache = object : LinkedHashMap<String, Int>(12, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Int>?): Boolean = size > 12
     }
     private val browseRequestsInFlight = HashSet<BrowseCacheKey>()
     private val browseDisplayRequests = HashMap<BrowseCacheKey, Int>()
@@ -430,7 +447,7 @@ class MainActivity : AppCompatActivity() {
     private var recordEnabled = true
     private var scoreEnabled = true
     private var marqueeEnabled = true
-    private var marqueeText: String? = "欢迎使用麦动"
+    private var marqueeText: String? = "欢迎使用晓晓呀KTV"
     private var playWhileDownloading = false
     private var clearDownloadsOnBoot = false
     private var autoFullscreenSeconds = 30
@@ -556,7 +573,7 @@ class MainActivity : AppCompatActivity() {
         initializeDatabase()
         startRemoteServer()
         updateMobileQrOverlay()
-        // 广告过滤已按需求全部移除: 启动时不再清理任何"注入广告副本"本地文件。
+        // 不按文件指纹自动删除媒体：重复内容也可能是合法曲目，避免误删用户缓存。
         // 预热公放候选缓存（独立守护线程 + 内部超时），让之后的「切歌 → 公放」零 I/O。
         // 延后一点避开曲库加载/启动高峰，但不影响正确性：预热完成前切歌会走安全兜底路径。
         main.postDelayed({ primeRandomCandidates() }, 5_000L)
@@ -781,6 +798,31 @@ class MainActivity : AppCompatActivity() {
     @Deprecated("Deprecated in Android")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    /**
+     * 2GB RAM boxes: discard only rebuildable search/browse/interaction caches when Android
+     * signals memory pressure. Playback state, current song, queue and library DB are untouched.
+     */
+    private fun clearTransientMemoryCaches() {
+        runCatching { remoteSongCache.clear() }
+        synchronized(remoteSearchCache) { remoteSearchCache.clear() }
+        synchronized(browsePageCache) { browsePageCache.clear() }
+        synchronized(browseCountCache) { browseCountCache.clear() }
+        synchronized(liveInteractions) { liveInteractions.clear() }
+        interactionRate.clear()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            clearTransientMemoryCaches()
+        }
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        clearTransientMemoryCaches()
     }
 
     override fun onDestroy() {
@@ -1070,7 +1112,7 @@ class MainActivity : AppCompatActivity() {
         nav!!.setPadding(dp(10), dp(10), dp(10), dp(10))
         navScroll.addView(nav, FrameLayout.LayoutParams(-1, -2))
 
-        val brand = label("麦动", 26, GOLD)
+        val brand = label("晓晓呀KTV", 26, GOLD)
         brand.setGravity(Gravity.CENTER)
         nav!!.addView(brand, LinearLayout.LayoutParams(-1, dp(64)))
         // 导航项(图标 + 文字),选中态由 selectNav() 维护
@@ -2046,7 +2088,7 @@ class MainActivity : AppCompatActivity() {
     private fun showExitDialog() {
         AlertDialog.Builder(this)
             .setTitle("退出确认")
-            .setMessage("确定要退出麦动吗?")
+            .setMessage("确定要退出晓晓呀KTV吗?")
             .setPositiveButton(
                 "确定退出",
                 DialogInterface.OnClickListener { d: DialogInterface?, w: Int -> finish() })
@@ -2195,7 +2237,7 @@ class MainActivity : AppCompatActivity() {
                 // 跑马灯
                 addSettingsTitle(content, "跑马灯")
                 addSettingsItem(content, "跑马灯状态", "关", null)
-                addSettingsItem(content, "跑马灯内容", "麦动 欢迎光临", null)
+                addSettingsItem(content, "跑马灯内容", "晓晓呀KTV 欢迎光临", null)
                 addSettingsItem(content, "滚动速度", "正常", null)
             }
 
@@ -2210,7 +2252,7 @@ class MainActivity : AppCompatActivity() {
             7 -> {
                 // 关于
                 addSettingsTitle(content, "关于")
-                addSettingsItem(content, "应用名称", "麦动", null)
+                addSettingsItem(content, "应用名称", "晓晓呀KTV", null)
                 addSettingsItem(content, "框架来源", "杨家三郎/麦动KTV", null)
                 addSettingsItem(content, "内核", "由 DSH 重构数据库源", null)
                 addSettingsItem(content, "版本号", BuildConfig.VERSION_NAME, null)
@@ -2457,7 +2499,7 @@ class MainActivity : AppCompatActivity() {
         header.setPadding(dp(12), dp(4), dp(12), dp(4))
         header.setBackgroundColor(Color.TRANSPARENT)
         val logo = ImageView(this)
-        logo.setImageResource(R.drawable.ktv_logo)
+        logo.setImageDrawable(AppCompatResources.getDrawable(this@MainActivity, R.drawable.ktv_logo))
         logo.setScaleType(ImageView.ScaleType.FIT_CENTER)
         header.addView(logo, LinearLayout.LayoutParams(dp(42), dp(42)))
         val song = label(currentAndNextText(), 18, Color.WHITE)
@@ -2664,6 +2706,9 @@ class MainActivity : AppCompatActivity() {
         fullScreenNetworkBadge = null
         fullScreenChromeVisible = false
         main.removeCallbacks(hideFullScreenChromeRunnable)
+        main.removeCallbacks(hideNextSongMarquee)
+        nextSongMarquee?.visibility = View.GONE
+        nextSongNoticeKey = null
         scheduleAutoFullscreen()
     }
 
@@ -2672,8 +2717,8 @@ class MainActivity : AppCompatActivity() {
         fullScreenChromeVisible = visible
         fullScreenControls?.visibility = if (visible) View.VISIBLE else View.GONE
         fullScreenProgressRow?.visibility = if (visible) View.VISIBLE else View.GONE
-        // 右上角二维码跟随控制层一起出现/隐藏（不再按"手机是否在点歌"自动隐藏）。
-        fullScreenQrOverlay?.visibility = if (visible) View.VISIBLE else View.GONE
+        // 扫码点歌二维码必须常驻；控制层自动收起时也不能隐藏二维码。
+        fullScreenQrOverlay?.visibility = View.VISIBLE
         main.removeCallbacks(hideFullScreenChromeRunnable)
         if (visible && isFullScreen) {
             val controls = fullScreenControls
@@ -3529,35 +3574,65 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateMobileQrOverlay() {
-        val root = findViewById<FrameLayout?>(R.id.layout_root) ?: return
-        mobileQrOverlay?.let { root.removeView(it) }
+        // 二维码只作为 MV 播放窗口内的覆盖层，绝不添加到首页根布局/宣传海报区域。
+        val playerContainer = findViewById<FrameLayout?>(R.id.player_container) ?: return
+        mobileQrOverlay?.let { old ->
+            (old.parent as? ViewGroup)?.removeView(old)
+        }
         mobileQrOverlay = null
-        if (prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, false) != true) return
+
         val url = remoteUrl()
-        if (url.isBlank()) return
+        val qrSize = dp(if (compactUi) 62 else 76)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(dp(6), dp(6), dp(6), dp(4))
-            setBackgroundColor(Color.argb(205, 255, 255, 255))
-            addView(ImageView(this@MainActivity).apply {
-                setImageBitmap(qrBitmap(url, dp(112)))
-                contentDescription = "手机点歌二维码"
-            }, LinearLayout.LayoutParams(dp(116), dp(116)))
+            setPadding(dp(4), dp(4), dp(4), dp(3))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(8).toFloat()
+                setStroke(dp(2), Color.rgb(7, 193, 96))
+            }
+            UiCompat.setElevation(this, dp(10).toFloat())
+            addView(TextView(this@MainActivity).apply {
+                text = "微信扫码"
+                textSize = 9f
+                gravity = Gravity.CENTER
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(Color.rgb(7, 193, 96))
+                includeFontPadding = false
+            }, LinearLayout.LayoutParams(-1, dp(14)))
+            if (url.isNotBlank()) {
+                addView(ImageView(this@MainActivity).apply {
+                    setImageBitmap(qrBitmap(url, qrSize))
+                    contentDescription = "微信扫码点歌二维码"
+                }, LinearLayout.LayoutParams(qrSize, qrSize))
+            } else {
+                addView(TextView(this@MainActivity).apply {
+                    text = "连接局域网"
+                    textSize = 9f
+                    gravity = Gravity.CENTER
+                    setTextColor(Color.DKGRAY)
+                }, LinearLayout.LayoutParams(qrSize, qrSize))
+            }
             addView(TextView(this@MainActivity).apply {
                 text = "手机点歌"
-                textSize = 13f
+                textSize = 9f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(59, 18, 92))
-            }, LinearLayout.LayoutParams(-1, dp(24)))
+                setTextColor(Color.rgb(7, 193, 96))
+                includeFontPadding = false
+            }, LinearLayout.LayoutParams(-1, dp(14)))
             setOnClickListener { showMobileRemoteDialog() }
         }
-        val params = FrameLayout.LayoutParams(dp(128), dp(152), Gravity.END or Gravity.BOTTOM).apply {
-            rightMargin = dp(20)
-            bottomMargin = dp(76)
+        val params = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            Gravity.END or Gravity.TOP
+        ).apply {
+            topMargin = dp(7)
+            rightMargin = dp(7)
         }
-        root.addView(box, params)
-        // 二维码浮层是展示型表面: 被焦点填充盖住会直接遮掉二维码。
+        playerContainer.addView(box, params)
+        box.bringToFront()
         TvFocusStyler.suppressFill(box)
         mobileQrOverlay = box
     }
@@ -3569,26 +3644,46 @@ class MainActivity : AppCompatActivity() {
         fullScreenQrOverlay = null
         if (!isFullScreen) return
         val url = remoteUrl()
-        if (url.isBlank()) return
         val qrSize = dp(if (compactUi) 68 else 84)
-        val totalWidth = dp(if (compactUi) 78 else 96)
+        val totalWidth = dp(if (compactUi) 86 else 104)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(dp(4), dp(4), dp(4), dp(3))
-            setBackgroundColor(Color.argb(218, 255, 255, 255))
+            setPadding(dp(5), dp(5), dp(5), dp(4))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(9).toFloat()
+                setStroke(dp(2), Color.rgb(7, 193, 96))
+            }
             UiCompat.setElevation(this, dp(12).toFloat())
-            addView(ImageView(this@MainActivity).apply {
-                setImageBitmap(qrBitmap(url, qrSize))
-                contentDescription = "扫码手机点歌"
-            }, LinearLayout.LayoutParams(qrSize, qrSize))
             addView(TextView(this@MainActivity).apply {
-                text = "扫码点歌"
+                text = "微信扫码"
                 textSize = if (compactUi) 9f else 10f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(59, 18, 92))
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(Color.rgb(7, 193, 96))
                 includeFontPadding = false
-            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 16 else 18)))
+            }, LinearLayout.LayoutParams(-1, dp(16)))
+            if (url.isNotBlank()) {
+                addView(ImageView(this@MainActivity).apply {
+                    setImageBitmap(qrBitmap(url, qrSize))
+                    contentDescription = "微信扫码点歌"
+                }, LinearLayout.LayoutParams(qrSize, qrSize))
+            } else {
+                addView(TextView(this@MainActivity).apply {
+                    text = "连接局域网"
+                    textSize = 9f
+                    gravity = Gravity.CENTER
+                    setTextColor(Color.DKGRAY)
+                }, LinearLayout.LayoutParams(qrSize, qrSize))
+            }
+            addView(TextView(this@MainActivity).apply {
+                text = "手机点歌"
+                textSize = if (compactUi) 9f else 10f
+                gravity = Gravity.CENTER
+                setTextColor(Color.rgb(7, 193, 96))
+                includeFontPadding = false
+            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 15 else 17)))
             setOnClickListener { showMobileRemoteDialog() }
         }
         val params = FrameLayout.LayoutParams(totalWidth, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.END or Gravity.TOP).apply {
@@ -3597,28 +3692,27 @@ class MainActivity : AppCompatActivity() {
         }
         container.addView(box, params)
         box.bringToFront()
-        // 跟随控制层显隐：控制层收起时二维码也不显示(新建时按当前状态初始化)。
-        box.visibility = if (fullScreenChromeVisible) View.VISIBLE else View.GONE
+        // 常驻显示：播放控制栏自动隐藏时，二维码仍保持可见。
+        box.visibility = View.VISIBLE
         // 同手机点歌二维码: 展示型表面不做焦点填充。
         TvFocusStyler.suppressFill(box)
         fullScreenQrOverlay = box
     }
 
     private fun showMobileRemoteSettings() {
-        val enabled = prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, false) == true
+        prefs()?.edit()?.putBoolean(KEY_SHOW_MOBILE_QR, true)?.apply()
         AlertDialog.Builder(this)
-            .setTitle("手机点歌")
-            .setSingleChoiceItems(arrayOf("仅在菜单中显示二维码", "播放页右下角显示二维码"), if (enabled) 1 else 0) { dialog, which ->
-                prefs()?.edit()?.putBoolean(KEY_SHOW_MOBILE_QR, which == 1)?.apply()
-                updateMobileQrOverlay()
-                dialog.dismiss()
-            }
+            .setTitle("扫码点歌")
+            .setMessage("微信扫码点歌二维码已设为常驻显示，不会随播放控制栏收起或手机端访问状态而隐藏。")
+            .setPositiveButton("知道了", null)
             .setNeutralButton("查看二维码") { _, _ -> showMobileRemoteDialog() }
             .setNegativeButton("关闭", null)
             .create().showForTv()
     }
 
     private fun startRemoteServer() {
+        main.removeCallbacks(interactionRefresh)
+        main.post(interactionRefresh)
         val address = localIp().takeIf { LocalRemoteServer.isPrivateIpv4(it) }
         remoteServer.start(
             address,
@@ -4070,9 +4164,20 @@ class MainActivity : AppCompatActivity() {
         return try {
             when {
                 method == "GET" && path == "/api/v1/state" -> remoteOk(remoteStateJson())
+                method == "GET" && path == "/api/v1/interactions" -> remoteInteractionsJson()
+                method == "POST" && path == "/api/v1/interactions" -> remotePostInteraction(JSONObject(body))
                 method == "GET" && path == "/api/v1/songs" -> remoteOk(remoteSearchJson(query))
+                method == "GET" && path == "/api/v1/singer" -> remoteSingerJson(query)
+                method == "GET" && path.startsWith("/api/v1/lyrics/") -> remoteLyricsJson(URLDecoder.decode(path.substringAfterLast('/'), "UTF-8"))
                 method == "GET" && path == "/api/v1/hot" -> remoteOk(remoteHotJson(query))
                 method == "GET" && path == "/api/v1/queue" -> remoteOk(remoteQueueJson())
+                method == "GET" && path == "/api/v1/downloads" -> remoteOk(remoteDownloadsJson())
+                method == "DELETE" && path == "/api/v1/downloads" -> remoteDeleteAllDownloads()
+                method == "GET" && path == "/api/v1/favorites" -> remoteOk(remoteFavoritesJson())
+                method == "POST" && path == "/api/v1/favorites" -> remoteToggleFavorite(JSONObject(body))
+                method == "GET" && path == "/api/v1/playlists" -> remoteOk(remotePlaylistsJson())
+                method == "POST" && path == "/api/v1/playlists" -> remoteCreatePlaylist(JSONObject(body))
+                path.startsWith("/api/v1/playlists/") -> remotePlaylistRoute(method, path.removePrefix("/api/v1/playlists/"), if (body.isBlank()) JSONObject() else JSONObject(body))
                 method == "POST" && path == "/api/v1/queue" -> remoteOrder(JSONObject(body))
                 method == "POST" && path == "/api/v1/player/actions" -> remotePlayerAction(JSONObject(body))
                 method == "PATCH" && path == "/api/v1/player/audio" -> remoteAudio(JSONObject(body))
@@ -4085,6 +4190,155 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             remoteError(400, "BAD_REQUEST", e.message ?: "请求参数错误")
         }
+    }
+
+    /** 手机端下载管理：只统计歌曲缓存目录，不扫描曲库数据库或外接 U 盘。 */
+    private fun remoteDownloadsJson(): JSONObject {
+        val directory = File("${MuseDatabase.VIDEO_ROOT}/${MuseDatabase.CLOUD_SONG_DIR}")
+        val files = directory.listFiles()?.filter { file ->
+            file.isFile && (file.name.endsWith(".ts", true) || file.name.endsWith(".ls", true))
+        }.orEmpty()
+        return JSONObject().apply {
+            put("count", files.size)
+            put("bytes", files.sumOf { it.length() })
+            put("directoryAvailable", directory.exists() || directory.parentFile?.exists() == true)
+        }
+    }
+
+    /** 批量删除已下载歌曲；正在播放的本地缓存保留，避免删除中断当前演唱。 */
+    private fun remoteDeleteAllDownloads(): LocalRemoteServer.ApiResponse {
+        val keep = currentSong?.let { SongOkDownloadManager.getLocalFile(it) }
+        val result = SongOkDownloadManager.deleteAllDownloaded(keep)
+        stateDatabase.clearDownloads()
+        main.post {
+            downloads.clear()
+            if (browseMode == "downloads") loadDownloadedList()
+            remoteStateVersion++
+            toast("已清理 ${result.first} 首下载歌曲")
+        }
+        return remoteOk(JSONObject().apply {
+            put("deletedCount", result.first)
+            put("freedBytes", result.second)
+            put("keptPlaying", keep?.exists() == true)
+            put("message", if (result.first == 0) "没有可删除的已下载歌曲" else "已删除 ${result.first} 首下载歌曲")
+        })
+    }
+
+    /** Shared LAN room feed: short-lived messages/reactions are broadcast to every connected phone and TV. */
+    private fun remoteInteractionsJson(): LocalRemoteServer.ApiResponse {
+        val now = System.currentTimeMillis()
+        synchronized(liveInteractions) {
+            liveInteractions.removeAll { now - it.optLong("createdAt", now) > 25_000L }
+            val items = JSONArray()
+            liveInteractions.forEach { items.put(JSONObject(it.toString())) }
+            return remoteOk(JSONObject().put("items", items).put("serverTime", now))
+        }
+    }
+
+    private fun remotePostInteraction(json: JSONObject): LocalRemoteServer.ApiResponse {
+        val sender = json.optString("senderId").trim().take(64)
+        val name = json.optString("name").trim().replace(Regex("[\\r\\n\\t]"), " ").take(12).ifBlank { "KTV朋友" }
+        val kind = json.optString("kind").trim()
+        if (sender.length < 8) return remoteError(400, "BAD_SENDER", "请刷新页面后重试")
+        if (kind !in setOf("message", "applause", "cheer", "bravo")) {
+            return remoteError(400, "BAD_KIND", "不支持的互动类型")
+        }
+        val text = json.optString("text").trim().replace(Regex("[\\r\\n\\t]"), " ").take(40)
+        if (kind == "message" && text.isBlank()) return remoteError(400, "EMPTY_MESSAGE", "先写一句祝福吧")
+        val now = System.currentTimeMillis()
+        val previous = interactionRate[sender] ?: 0L
+        if (now - previous < 1800L) return remoteError(429, "TOO_FAST", "慢一点哦，给大家留出展示时间")
+        interactionRate[sender] = now
+        val item = JSONObject().apply {
+            put("id", maxOf(++interactionSequence, now).also { interactionSequence = it })
+            put("kind", kind)
+            put("name", name)
+            put("text", if (kind == "message") text else when (kind) {
+                "applause" -> "👏 掌声送给正在唱歌的朋友"
+                "cheer" -> "🎉 欢呼声送给舞台上的你"
+                else -> "✨ 太棒了！喝彩！"
+            })
+            put("createdAt", now)
+        }
+        synchronized(liveInteractions) {
+            liveInteractions.add(item)
+            while (liveInteractions.size > 60) liveInteractions.removeAt(0)
+        }
+        main.post {
+            if (kind != "message") playInteractionCue(kind)
+            refreshTvInteractions()
+        }
+        return remoteOk(JSONObject().put("message", "已发送").put("id", item.optLong("id")), 201)
+    }
+
+    private fun playInteractionCue(kind: String) {
+        runCatching {
+            if (interactionTone == null) interactionTone = ToneGenerator(AudioManager.STREAM_MUSIC, 55)
+            val tone = when (kind) {
+                "applause" -> ToneGenerator.TONE_PROP_ACK
+                "cheer" -> ToneGenerator.TONE_PROP_PROMPT
+                else -> ToneGenerator.TONE_PROP_BEEP
+            }
+            interactionTone?.startTone(tone, 180)
+        }
+    }
+
+    private fun ensureDanmakuOverlay() {
+        val root = playerLayerRoot ?: return
+        if (danmakuOverlay != null) return
+        val rows = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.BOTTOM or Gravity.START
+            setPadding(dp(20), dp(8), dp(20), dp(12))
+            isClickable = false
+            isFocusable = false
+        }
+        val overlay = FrameLayout(this).apply {
+            isClickable = false
+            isFocusable = false
+            clipChildren = false
+            clipToPadding = false
+            setBackgroundColor(Color.TRANSPARENT)
+            addView(rows, FrameLayout.LayoutParams(-1, -1, Gravity.BOTTOM))
+            UiCompat.setElevation(this, dp(28).toFloat())
+        }
+        root.addView(overlay, FrameLayout.LayoutParams(-1, dp(190), Gravity.BOTTOM))
+        danmakuOverlay = overlay
+        danmakuRows = rows
+    }
+
+    private fun refreshTvInteractions() {
+        val root = playerLayerRoot ?: return
+        ensureDanmakuOverlay()
+        val rows = danmakuRows ?: return
+        val now = System.currentTimeMillis()
+        val recent = synchronized(liveInteractions) {
+            liveInteractions.filter { now - it.optLong("createdAt", now) < 12_000L }.takeLast(5)
+        }
+        rows.removeAllViews()
+        recent.forEach { item ->
+            val label = TextView(this).apply {
+                text = "  " + item.optString("name", "KTV朋友") + "  " + item.optString("text")
+                textSize = 17f
+                setTextColor(Color.WHITE)
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
+                setPadding(dp(12), dp(7), dp(14), dp(7))
+                background = GradientDrawable().apply {
+                    cornerRadius = dp(18).toFloat()
+                    setColor(Color.argb(178, 19, 24, 48))
+                    setStroke(dp(1), Color.argb(125, 244, 209, 138))
+                }
+                alpha = 0.96f
+            }
+            rows.addView(label, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(6) })
+            if (item.optLong("id") > lastTvInteractionId) {
+                label.translationX = dp(90).toFloat()
+                label.animate().translationX(0f).setDuration(420L).start()
+                lastTvInteractionId = item.optLong("id")
+            }
+        }
+        danmakuOverlay?.visibility = if (recent.isEmpty()) View.GONE else View.VISIBLE
     }
 
     private fun remoteStateJson(): JSONObject {
@@ -4182,7 +4436,7 @@ class MainActivity : AppCompatActivity() {
                 runCatching { JSONObject(json) }.getOrNull()?.let { return it }
             }
         }
-        val songs = if (library.muse.isAvailable() && keyword.isNotBlank()) {
+        val rawSongs = if (library.muse.isAvailable() && keyword.isNotBlank()) {
             if (type == "singer") library.muse.searchSongsBySingerKeyword(keyword, offset, pageSize + 1)
             else library.muse.searchSongs(keyword, offset, pageSize + 1)
         } else {
@@ -4194,31 +4448,53 @@ class MainActivity : AppCompatActivity() {
                 }
             }.drop(offset).take(pageSize + 1).toMutableList()
         }
-        val hasMore = songs.size > pageSize
+        val hasMore = rawSongs.size > pageSize
+        val songs = rawSongs.filter(::isVisibleSong)
         val pageSongs = songs.take(pageSize)
         val array = JSONArray()
         pageSongs.forEach { song ->
             remoteSongCache[stableId(song)] = song
             array.put(songJson(song))
         }
-        while (remoteSongCache.size > 500) remoteSongCache.remove(remoteSongCache.keys.first())
+        while (remoteSongCache.size > 200) remoteSongCache.remove(remoteSongCache.keys.first())
         val payload = JSONObject().put("songs", array).put("page", page).put("pageSize", pageSize)
             .put("type", type).put("hasMore", hasMore)
         remoteSearchCache[cacheKey] = payload.toString() to System.currentTimeMillis()
         return payload
     }
 
+    private fun remoteSingerJson(query: Map<String, String>): LocalRemoteServer.ApiResponse {
+        val name = query["q"].orEmpty().trim()
+        if (name.isBlank()) return remoteError(400, "MISSING_SINGER", "缺少歌手名称")
+        val matches = if (library.muse.isAvailable()) library.muse.searchSingers(name, "", "", 0, 5) else mutableListOf()
+        val singers = JSONArray()
+        matches.forEach { row -> singers.put(JSONObject().apply { put("id", row.getOrNull(0) ?: ""); put("name", row.getOrNull(1) ?: name); put("type", row.getOrNull(2) ?: ""); put("area", row.getOrNull(3) ?: ""); put("hotScore", row.getOrNull(4)?.toIntOrNull() ?: 0); put("image", row.getOrNull(5) ?: "") }) }
+        val count = if (library.muse.isAvailable()) library.muse.countSongsBySingerName(name) else library.allSongs().count { isVisibleSong(it) && it.singer.orEmpty().contains(name, true) }
+        return remoteOk(JSONObject().put("name", name).put("songCount", count).put("singers", singers))
+    }
+
+    private fun remoteLyricsJson(id: String): LocalRemoteServer.ApiResponse {
+        val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id } ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在，请重新搜索")
+        if (!isVisibleSong(song)) return remoteError(404, "SONG_NOT_FOUND", "歌曲已隐藏")
+        val path = song.lyricPath.orEmpty()
+        if (path.isBlank()) return remoteOk(JSONObject().put("available", false).put("lyrics", "").put("message", "曲库没有歌词文件"))
+        val file = java.io.File(path)
+        if (!file.isFile || !file.name.endsWith(".lrc", true) || file.length() > 1024 * 1024) return remoteOk(JSONObject().put("available", false).put("lyrics", "").put("message", "暂时没有可查看的 LRC 歌词"))
+        val text = runCatching { file.readText(Charsets.UTF_8) }.getOrElse { return remoteError(500, "LYRIC_READ_FAILED", "歌词读取失败") }
+        return remoteOk(JSONObject().put("available", true).put("lyrics", text).put("format", "LRC"))
+    }
     private fun remoteHotJson(query: Map<String, String>): JSONObject {
         val page = (query["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
         val pageSize = (query["pageSize"]?.toIntOrNull() ?: 10).coerceIn(1, 30)
         val offset = (page - 1) * pageSize
-        val songs = if (library.muse.isAvailable()) {
+        val rawSongs = if (library.muse.isAvailable()) {
             library.muse.hotSongs(offset, pageSize + 1)
         } else {
             library.allSongs().asSequence().filter(::isVisibleSong)
                 .sortedByDescending { it.playCount }.drop(offset).take(pageSize + 1).toMutableList()
         }
-        val hasMore = songs.size > pageSize
+        val hasMore = rawSongs.size > pageSize
+        val songs = rawSongs.filter(::isVisibleSong)
         val array = JSONArray()
         songs.take(pageSize).forEach { song ->
             remoteSongCache[stableId(song)] = song
@@ -4227,6 +4503,86 @@ class MainActivity : AppCompatActivity() {
         while (remoteSongCache.size > 500) remoteSongCache.remove(remoteSongCache.keys.first())
         return JSONObject().put("songs", array).put("page", page).put("pageSize", pageSize)
             .put("hasPrevious", page > 1).put("hasMore", hasMore)
+    }
+
+    /** 手机远程歌单：读取名称和歌曲数量。 */
+    private fun remotePlaylistsJson(): JSONObject {
+        val rows = JSONArray()
+        store.playlists.forEach { name ->
+            rows.put(JSONObject().put("name", name).put("count", store.songsInPlaylist(name).size))
+        }
+        return JSONObject().put("playlists", rows)
+    }
+
+    /** 创建自定义歌单；内置歌单不可覆盖，名称与数量均有限制。 */
+    private fun remoteCreatePlaylist(json: JSONObject): LocalRemoteServer.ApiResponse {
+        val name = json.optString("name").trim()
+        if (name.isBlank() || name.length > 24 || name.any { it.isISOControl() }) {
+            return remoteError(400, "BAD_PLAYLIST_NAME", "歌单名称须为 1 到 24 个字符")
+        }
+        if (store.playlists.any { it.equals(name, ignoreCase = true) }) {
+            return remoteError(409, "PLAYLIST_EXISTS", "歌单名称已存在")
+        }
+        if (store.playlists.size >= 20) return remoteError(409, "PLAYLIST_LIMIT", "最多创建 20 个歌单")
+        store.playlists += name
+        store.songsInPlaylist(name)
+        main.post { saveState(); remoteStateVersion++ }
+        return remoteOk(JSONObject().put("name", name).put("message", "歌单已创建"), 201)
+    }
+
+    /** 歌单详情、添加/移除歌曲与删除自定义歌单。 */
+    private fun remotePlaylistRoute(method: String, encoded: String, body: JSONObject): LocalRemoteServer.ApiResponse {
+        val parts = encoded.split("/")
+        val name = runCatching { URLDecoder.decode(parts.firstOrNull().orEmpty(), "UTF-8") }.getOrDefault("")
+        if (name.isBlank() || name !in store.playlists) return remoteError(404, "PLAYLIST_NOT_FOUND", "歌单不存在")
+        if (parts.size == 1 && method == "GET") {
+            val ids = store.songsInPlaylist(name)
+            val songs = JSONArray()
+            library.allSongs().filter { isVisibleSong(it) && stableId(it) in ids }.forEach { songs.put(songJson(it)) }
+            return remoteOk(JSONObject().put("name", name).put("songs", songs))
+        }
+        if (parts.size == 2 && parts[1] == "songs" && method == "POST") {
+            val id = body.optString("songId").trim()
+            if (id.isEmpty()) return remoteError(400, "MISSING_SONG_ID", "缺少歌曲 ID")
+            val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id }
+                ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在或搜索结果已过期")
+            if (!isVisibleSong(song)) return remoteError(404, "SONG_NOT_FOUND", "歌曲已隐藏")
+            val added = store.togglePlaylistSong(name, song)
+            main.post { saveState(); remoteStateVersion++ }
+            return remoteOk(JSONObject().put("added", added).put("message", if (added) "已加入歌单" else "已从歌单移除"))
+        }
+        if (parts.size == 1 && method == "DELETE") {
+            if (name == "我的收藏" || name == "常唱歌曲") {
+                return remoteError(409, "BUILTIN_PLAYLIST", "内置歌单不能删除")
+            }
+            store.playlists.remove(name)
+            store.playlistSongs.remove(name)
+            main.post { saveState(); remoteStateVersion++ }
+            return remoteOk(JSONObject().put("message", "歌单已删除"))
+        }
+        return remoteError(405, "METHOD_NOT_ALLOWED", "不支持的歌单操作")
+    }
+
+    /** 返回设备端持久化收藏列表；所有扫码手机共享同一份收藏数据。 */
+    private fun remoteFavoritesJson(): JSONObject {
+        val songs = JSONArray()
+        val ids = store.favoriteIds.toSet()
+        library.allSongs().asSequence().filter { isVisibleSong(it) && stableId(it) in ids }.forEach { songs.put(songJson(it)) }
+        return JSONObject().put("songs", songs)
+    }
+
+    /** 按曲库稳定 ID 切换收藏，避免客户端传入文件路径或歌曲对象。 */
+    private fun remoteToggleFavorite(json: JSONObject): LocalRemoteServer.ApiResponse {
+        val id = json.optString("songId").trim()
+        if (id.isEmpty()) return remoteError(400, "MISSING_SONG_ID", "缺少歌曲 ID")
+        val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id }
+            ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在或搜索结果已过期")
+        val added = store.toggleFavorite(song)
+        main.post {
+            saveState()
+            remoteStateVersion++
+        }
+        return remoteOk(JSONObject().put("favorite", added).put("message", if (added) "已加入收藏" else "已取消收藏"))
     }
 
     private fun remoteQueueJson(): JSONObject {
@@ -4240,6 +4596,7 @@ class MainActivity : AppCompatActivity() {
         if (id.isEmpty()) return remoteError(400, "MISSING_SONG_ID", "缺少歌曲 ID")
         val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id }
             ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在或搜索结果已过期")
+        if (!isVisibleSong(song)) return remoteError(404, "SONG_NOT_FOUND", "歌曲已隐藏")
         if (orderQueue?.any { stableId(it) == id } == true) {
             return remoteError(409, "ALREADY_QUEUED", "歌曲已在已点列表中")
         }
@@ -4484,7 +4841,7 @@ class MainActivity : AppCompatActivity() {
                 "保存",
                 DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
                     marqueeText = input.getText().toString().trim { it <= ' ' }
-                    if (marqueeText!!.isEmpty()) marqueeText = "欢迎使用麦动"
+                    if (marqueeText!!.isEmpty()) marqueeText = "欢迎使用晓晓呀KTV"
                     saveState()
                     toast("跑马灯已保存")
                 })
@@ -5434,7 +5791,6 @@ class MainActivity : AppCompatActivity() {
 
                 val buf = ByteArray(262144) // 256KB buffer for speed
                 var downloaded: kotlin.Long = 0
-                var lastPct = 0
                 var lastTime = System.currentTimeMillis()
                 var lastBytes: kotlin.Long = 0
 
@@ -5449,7 +5805,6 @@ class MainActivity : AppCompatActivity() {
                     if (now - lastTime > 1000) {
                         val pct = if (totalSize > 0) (downloaded * 100 / totalSize).toInt() else 0
                         val speed = downloaded - lastBytes
-                        lastPct = pct
                         lastTime = now
                         lastBytes = downloaded
                         val p = pct
@@ -7057,6 +7412,9 @@ class MainActivity : AppCompatActivity() {
     }
     private var playbackModeNotice: TextView? = null
     private var songIntroNotice: TextView? = null
+    private var nextSongMarquee: TextView? = null
+    private var nextSongNoticeKey: String? = null
+    private val hideNextSongMarquee = Runnable { nextSongMarquee?.visibility = View.GONE }
     private var songIntroIcon: TextView? = null
     private val hidePlaybackModeNotice = Runnable {
         playbackModeNotice?.animate()?.alpha(0f)?.setDuration(180L)?.withEndAction {
@@ -7354,6 +7712,25 @@ class MainActivity : AppCompatActivity() {
                 alpha = 0f
                 UiCompat.setElevation(this, dp(7).toFloat())
             }.also { root.addView(it, insertionIndex + 1, FrameLayout.LayoutParams(dp(330), dp(92))) }
+            nextSongMarquee = TextView(this).apply {
+                gravity = Gravity.CENTER_VERTICAL
+                textSize = if (compactUi) 17f else 21f
+                setTextColor(Color.WHITE)
+                setPadding(dp(24), dp(8), dp(24), dp(8))
+                setSingleLine(true)
+                ellipsize = android.text.TextUtils.TruncateAt.MARQUEE
+                marqueeRepeatLimit = -1
+                isSelected = true
+                visibility = View.GONE
+                background = GradientDrawable().apply {
+                    setColor(Color.argb(205, 12, 18, 32))
+                    cornerRadius = dp(8).toFloat()
+                    setStroke(dp(1), Color.rgb(7, 193, 96))
+                }
+                UiCompat.setElevation(this, dp(11).toFloat())
+            }.also { root.addView(it, insertionIndex + 2, FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(if (compactUi) 42 else 50), Gravity.BOTTOM
+            ).apply { leftMargin = dp(28); rightMargin = dp(28); bottomMargin = dp(26) }) }
             songIntroIcon = TextView(this).apply {
                 text = "♫"
                 textSize = 34f
@@ -7791,6 +8168,27 @@ class MainActivity : AppCompatActivity() {
         if (playerSongSinger?.text?.toString() != singer) playerSongSinger?.setText(singer)
         val tip = "当前: " + nowNext.current + "  下首: " + nowNext.next
         if (textCurrentSongTip?.text?.toString() != tip) textCurrentSongTip?.setText(tip)
+    }
+
+    /** 歌曲剩余约 30 秒时滚动预告队列中的下一首，单首歌曲只提示一次。 */
+    private fun updateNextSongMarquee() {
+        val view = nextSongMarquee ?: return
+        if (!isFullScreen || player?.isPlaying != true || playbackPreparing) return
+        val duration = player?.duration ?: 0
+        val position = player?.currentPosition ?: 0
+        if (duration <= 0 || duration - position > 30_000 || position >= duration) return
+        val next = nowNextText().next
+        if (next == "无" || next.isBlank()) return
+        val key = currentSong?.let(::stableId).orEmpty() + "|" + next
+        if (nextSongNoticeKey == key) return
+        nextSongNoticeKey = key
+        main.removeCallbacks(hideNextSongMarquee)
+        view.text = "♫  下一首即将播放：$next     "
+        view.visibility = View.VISIBLE
+        view.isSelected = true
+        view.alpha = 0f
+        view.animate().alpha(1f).setDuration(250L).start()
+        main.postDelayed(hideNextSongMarquee, 18_000L)
     }
 
     /** 「当前播放 / 下一首」文本对(下一首按当前曲目在队列中的位置取其后一首)。 */
@@ -8386,9 +8784,17 @@ class MainActivity : AppCompatActivity() {
     private fun showSystemKeyboard() {
         val input = searchInput ?: return
         input.inputType = InputType.TYPE_CLASS_TEXT
+        input.isFocusable = true
+        input.isFocusableInTouchMode = true
         input.requestFocus()
-        (getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager)
-            ?.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+        // Wait until the search field is attached and has focus before asking
+        // the IME to show; this avoids dropped keyboard requests on TV boxes.
+        input.post {
+            if (!isFinishing && input.isAttachedToWindow && input.hasFocus()) {
+                (getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager)
+                    ?.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+            }
+        }
     }
 
     private fun hideSystemKeyboard() {
@@ -9513,7 +9919,7 @@ class MainActivity : AppCompatActivity() {
                         // Android 4.4 没有带 defStyleRes 的 4 参构造器(API 21 引入),
                         // 手动套用 LoadingProgressBar 里同样的 indeterminate drawable。
                         ProgressBar(this@MainActivity).apply {
-                            indeterminateDrawable = ContextCompat.getDrawable(this@MainActivity, R.anim.loading_anim)
+                            indeterminateDrawable = AppCompatResources.getDrawable(this@MainActivity, R.drawable.loading_anim)
                         }
                     },
                     LinearLayout.LayoutParams(dp(54), dp(54)).apply { topMargin = dp(22) },
@@ -9889,7 +10295,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAboutDialog() {
         AlertDialog.Builder(this)
-            .setTitle("关于麦动")
+            .setTitle("关于晓晓呀KTV")
             .setMessage(
                 "框架来源：杨家三郎/麦动KTV\n" +
                     "由 DSH 重构数据库源\n" +
@@ -11193,22 +11599,22 @@ class MainActivity : AppCompatActivity() {
 
         // ===== 主题色(对标原版麦动 配色) =====
         /** 主背景:极深蓝黑(原版 #080C12 系)  */
-        private val BG = Color.rgb(8, 12, 18)
+        private val BG = Color.rgb(9, 8, 23)
 
         /** 面板背景:深蓝灰(原版卡片底色)  */
-        private val PANEL = Color.rgb(22, 31, 42)
+        private val PANEL = Color.rgb(29, 22, 54)
 
         /** 次级面板:更深(列表区背景)  */
-        private val PANEL_2 = Color.rgb(15, 22, 31)
+        private val PANEL_2 = Color.rgb(18, 16, 38)
 
         /** 焦点色:青绿色(原版选中态)  */
-        private val FOCUS = Color.rgb(39, 204, 164)
+        private val FOCUS = Color.rgb(165, 107, 255)
 
         /** 金色:标题与高亮(原版 color_yellow_3 #FFE363 系)  */
-        private val GOLD = Color.rgb(245, 190, 89)
+        private val GOLD = Color.rgb(255, 224, 138)
 
         /** 强调红:选中态/激活态(原版 color_red #FD3359)  */
-        private val ACCENT_RED = Color.rgb(253, 51, 89)
+        private val ACCENT_RED = Color.rgb(243, 107, 210)
 
         /** 文本白:主文本色(原版 color_white_3 #F1F1F1)  */
         private val TEXT_WHITE = Color.rgb(241, 241, 241)
@@ -11217,10 +11623,10 @@ class MainActivity : AppCompatActivity() {
         private val TEXT_DIM = Color.argb(180, 241, 241, 241)
 
         /** 导航选中背景:半透明红  */
-        private val NAV_SELECTED = Color.argb(50, 253, 51, 89)
+        private val NAV_SELECTED = Color.argb(58, 165, 107, 255)
 
         /** 分割线颜色  */
-        private val DIVIDER = Color.argb(80, 241, 241, 241)
+        private val DIVIDER = Color.argb(48, 210, 190, 255)
         private const val PREFS = "ktv"
         private const val KEY_CATALOG_URL = "catalog_url"
         private const val KEY_SHOW_MOBILE_QR = "show_mobile_qr"
