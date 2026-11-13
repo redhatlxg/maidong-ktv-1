@@ -144,7 +144,6 @@ class KtvStore {
     }
 
     fun snapshotJson(): String = JSONObject().apply {
-            val root = JSONObject().apply {
                 put("loopOne", loopOne)
                 put("autoNext", autoNext)
                 put("originalVocal", originalVocal)
@@ -195,7 +194,6 @@ class KtvStore {
                 put("playlistSongs", JSONObject().apply {
                     playlistSongs.forEach { (name, ids) -> put(name, JSONArray(ids.toList())) }
                 })
-            }
             // JSONObject.apply 返回对象本身；不要在序列化失败时退化成 "{}" 覆盖旧数据。
         }.toString(2)
 
