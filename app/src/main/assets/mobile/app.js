@@ -72,7 +72,7 @@ async function loadSingers(reset = true) {
   }
   const requestedPage = uiState.page;
   try {
-    const data = await api(`/api/v1/singers?group=${encodeURIComponent(uiState.singerGroup)}&page=${requestedPage}&pageSize=30`);
+    const data = await api(`/api/v1/singers?group=${encodeURIComponent(uiState.singerGroup)}&q=${encodeURIComponent($("#query").value.trim())}&page=${requestedPage}&pageSize=30`);
     const singers = data.singers || [];
     const rows = singers.map((singer, index) => singerRow(singer, (requestedPage - 1) * 30 + index)).join("");
     if (rows) $("#results").insertAdjacentHTML("beforeend", rows);
@@ -379,7 +379,7 @@ document.addEventListener("click", async (event) => {
   }
 });
 
-$("#searchForm").addEventListener("submit", (event) => { event.preventDefault(); search(); });
+$("#searchForm").addEventListener("submit", (event) => { event.preventDefault(); uiState.searchMode === "singer" ? loadSingers(true) : search(); });
 $("#more").addEventListener("click", () => uiState.resultMode === "singers" ? loadSingers(false) : search(false));
 $("#hotPrev").addEventListener("click", () => loadHot(uiState.hotPage - 1));
 $("#hotNext").addEventListener("click", () => loadHot(uiState.hotPage + 1));
