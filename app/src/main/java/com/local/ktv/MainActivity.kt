@@ -4283,29 +4283,47 @@ class MainActivity : AppCompatActivity() {
         if (id.isEmpty()) return remoteError(400, "MISSING_SONG_ID", "缺少歌曲 ID")
         val song = remoteSongCache[id] ?: library.allSongs().firstOrNull { stableId(it) == id }
             ?: return remoteError(404, "SONG_NOT_FOUND", "歌曲不存在或搜索结果已过期")
-        // 多台手机可能在同一瞬间提交同一首歌。先原子登记 pending，再投递主线程，
-        // 避免所有请求都在主线程真正入队前通过重复检查。
-        synchronized(remotePendingOrderIds) {
-            if (orderQueue?.any { stableId(it) == id } == true || !remotePendingOrderIds.add(id)) {
-                return remoteError(409, "ALREADY_QUEUED", "歌曲已在已点列表或正在提交")
-            }
+
+        // 同一首歌的并发请求先在锁内登记，避免多个手机同时通过去重检查。
+        // 队列本身只允许在主线程读写，不能在 HTTP 工作线程直接遍历 ArrayList。
+        if (!remotePendingOrderIds.add(id)) {
+            return remoteError(409, "ALREADY_QUEUED", "歌曲正在提交，请勿重复点歌")
         }
+
+        val completed = java.util.concurrent.CountDownLatch(1)
+        var response: LocalRemoteServer.ApiResponse? = null
         val posted = main.post {
             try {
-                if (orderQueue?.any { stableId(it) == id } != true) {
+                if (orderQueue?.any { stableId(it) == id } == true) {
+                    response = remoteError(409, "ALREADY_QUEUED", "歌曲已在已点列表")
+                } else {
                     addToQueue(song)
                     remoteStateVersion++
                     saveState()
+                    response = remoteOk(JSONObject().put("message", "点歌请求已提交"), 201)
                 }
+            } catch (e: Exception) {
+                response = remoteError(500, "QUEUE_FAILED", e.message ?: "点歌失败")
             } finally {
                 remotePendingOrderIds.remove(id)
+                completed.countDown()
             }
         }
         if (!posted) {
             remotePendingOrderIds.remove(id)
             return remoteError(503, "QUEUE_BUSY", "点歌请求未能提交，请重试")
         }
-        return remoteOk(JSONObject().put("message", "点歌请求已提交"), 201)
+        val finished = try {
+            completed.await(3, java.util.concurrent.TimeUnit.SECONDS)
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+            false
+        }
+        if (!finished) {
+            // 不在超时分支提前清除 pending：已投递的主线程任务仍可能稍后执行。
+            return remoteError(503, "QUEUE_BUSY", "点歌请求正在处理，请稍后刷新队列")
+        }
+        return response ?: remoteError(503, "QUEUE_BUSY", "点歌请求未能完成，请重试")
     }
 
     private fun remoteQueueMutation(method: String, id: String): LocalRemoteServer.ApiResponse {
