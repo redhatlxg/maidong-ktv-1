@@ -11323,6 +11323,8 @@ class MainActivity : AppCompatActivity() {
         private const val HEARTBEAT_INTERVAL_MS = 3600_000L
         /** 公放候选预热时，外部目录扫描（可能遍历 /storage/ 各挂载点）的超时上限。 */
         private const val RANDOM_SCAN_TIMEOUT_MS = 4_000L
+        /** 手机端搜索结果缓存有效期(与上方缓存策略说明保持一致)。 */
+        private const val SEARCH_CACHE_TTL_MS = 60_000L
 
         // ===== 主题色(对标原版麦动 配色) =====
         /** 主背景:极深蓝黑(原版 #080C12 系)  */
