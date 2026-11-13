@@ -86,7 +86,6 @@ input[type=range]::-moz-range-thumb{border-color:#d9b879}
 .singer-groups button{background:#151e26;border-color:rgba(255,255,255,.07);color:#b8c0c7;border-radius:9px}
 .singer-row .singer-select{background:rgba(217,184,121,.1);border-color:rgba(217,184,121,.2);color:#ddc99f}
 .singer-avatar{background:linear-gradient(135deg,#53616b,#27313a)}
-.song,.singer-row{background:#151e26!important;border-color:rgba(255,255,255,.065)!important}
 .song button,.singer-row button{border-radius:9px}
 .song .delete{background:rgba(217,130,130,.1);color:#d98282}
 .queue-tip{background:rgba(217,184,121,.075);color:#c8b58f}
@@ -177,13 +176,11 @@ input[type=range]::-moz-range-thumb{border-color:#b58a4b}
 .search-mode{background:#e5ebed;border-color:rgba(55,75,91,.1)}
 .search-mode button{color:#687985}
 .hot-block{border-color:rgba(58,78,91,.13)}
-.chips button{background:linear-gradient(145deg,#fff,#edf1f2)!important;border:1px solid rgba(65,85,98,.12)!important;color:#415560!important;box-shadow:0 5px 14px rgba(43,60,72,.055)}
 .rank-pager button{background:#fff;border:1px solid rgba(60,80,94,.12);color:#4a5c67}
 .rank-pager b{color:#73818a}
 .singer-groups button{background:#f8fafb;border:1px solid rgba(60,80,94,.14);color:#596d79}
 .singer-row .singer-select{background:rgba(181,138,75,.12);border:1px solid rgba(181,138,75,.25);color:#896638}
 .singer-avatar{background:linear-gradient(135deg,#6e8b9a,#405a69);color:#fff}
-.song,.singer-row{background:linear-gradient(110deg,#fff,#f2f5f6)!important;border:1px solid rgba(62,82,95,.11)!important;box-shadow:0 4px 12px rgba(45,63,75,.045)}
 .song b,.song strong,.singer-row b{color:#2d404b}
 .song small,.singer-row small{color:#778791}
 .song button,.singer-row button{background:#e9eef0;color:#536975;border:1px solid rgba(62,82,95,.1)}
@@ -527,88 +524,6 @@ nav button.active .nav-favorite{color:#fff0b8}
 .search-icon{display:inline-block;width:18px;height:18px;border:2px solid var(--gold);border-radius:50%;position:relative;flex:none}
 .search-icon:after{content:"";position:absolute;width:7px;height:2px;background:var(--gold);right:-5px;bottom:-2px;transform:rotate(45deg);border-radius:2px}
 
-
-/* ===== Commercial KTV visual system v2: stage navy / electric violet ===== */
-:root{
- --bg:#080d20;--panel:#111a35;--panel2:#172344;--line:rgba(143,170,255,.16);
- --accent:#8c6bff;--accent2:#37c8ff;--gold:#f5c978;--muted:#9eaccb;
-}
-html,body{background:#080d20!important;color:#f4f6ff}
-body{background-image:radial-gradient(ellipse at 12% 0%,rgba(82,77,205,.25),transparent 42%),radial-gradient(ellipse at 95% 28%,rgba(27,135,196,.14),transparent 36%),linear-gradient(180deg,#0b1230,#080d20 65%)!important}
-.aurora,.mesh{opacity:.16!important}
-.app-shell{background:transparent!important}
-.topbar{
- background:rgba(9,16,39,.92)!important;border-bottom:1px solid var(--line)!important;
- box-shadow:0 8px 28px rgba(0,0,0,.24)!important;backdrop-filter:blur(20px)
-}
-.brand-mark{border-radius:13px!important;box-shadow:0 0 22px rgba(140,107,255,.28)}
-.brand h1{color:#fff!important;letter-spacing:1px}
-.brand p{color:#9db1dc!important}
-.queue-badge{background:linear-gradient(135deg,#7555f5,#397fe8)!important;border:1px solid rgba(255,255,255,.2)!important;box-shadow:0 8px 22px rgba(76,94,224,.25)}
-.page{padding-bottom:26px}
-.page-heading h2{color:#fff!important;font-weight:800;letter-spacing:1px}
-.page-heading p,.page-heading>span{color:#94a9d4!important}
-.ktv-welcome{
- position:relative;overflow:hidden;border:1px solid rgba(145,128,255,.28)!important;
- border-radius:22px!important;background:linear-gradient(112deg,#24205c 0%,#29265f 44%,#143a62 100%)!important;
- box-shadow:0 16px 36px rgba(0,0,0,.24)!important;padding:22px 18px!important
-}
-.ktv-welcome:after{content:"♫";position:absolute;right:18px;top:-24px;font-size:130px;font-weight:900;color:rgba(255,255,255,.055);pointer-events:none}
-.ktv-welcome small{color:#b9b5ff!important;letter-spacing:2px}
-.ktv-welcome b{font-size:25px!important;color:#fff!important;letter-spacing:1px}
-.ktv-welcome p{color:#c0c9ed!important}
-.ktv-shortcuts button,.search-mode button,.singer-groups button{
- border-radius:12px!important;border:1px solid rgba(173,183,255,.22)!important;
- background:rgba(255,255,255,.075)!important;color:#dce5ff!important
-}
-.ktv-shortcuts button:first-child,.search-mode button.active,.singer-groups button.active{
- background:linear-gradient(135deg,#8b69ff,#536de9)!important;color:#fff!important;
- border-color:transparent!important;box-shadow:0 6px 16px rgba(102,91,237,.28)
-}
-.search-box,.glass-card,.category-block,.hot-block,.next-card,.queue-tip{
- background:linear-gradient(145deg,rgba(24,36,72,.96),rgba(15,25,52,.96))!important;
- border:1px solid var(--line)!important;box-shadow:0 10px 28px rgba(0,0,0,.18)!important
-}
-.search-box{border-radius:15px!important;padding:5px!important}
-.search-box input{color:#fff!important}
-.search-box input::placeholder{color:#8294bc!important}
-.search-box button,.more{background:linear-gradient(135deg,#8262ff,#4d78ee)!important;border-radius:11px!important}
-.block-title h3,.panel-title b{color:#f6f7ff!important}
-.block-title span,.panel-title small{color:#93a5ce!important}
-.category-chips button,.alphabet-keys button{
- background:rgba(255,255,255,.055)!important;border:1px solid rgba(148,169,226,.17)!important;color:#d9e3ff!important
-}
-.category-chips button.active,.alphabet-keys button:active{background:#735be9!important;color:#fff!important}
-.song{
- background:linear-gradient(110deg,rgba(31,47,88,.96),rgba(17,29,58,.96))!important;
- border:1px solid rgba(138,164,229,.13)!important;border-radius:14px!important;
- box-shadow:0 5px 14px rgba(0,0,0,.12)!important
-}
-.song .info b{color:#f7f8ff!important}.song .info p{color:#9badd2!important}
-.song-index{background:linear-gradient(145deg,#4d65d9,#7956d9)!important;color:#fff!important;border-radius:9px!important}
-.song .order,.song .top,.song .delete,.singer-select{
- background:linear-gradient(135deg,#8061f4,#4d77e9)!important;color:#fff!important;border:0!important;border-radius:10px!important
-}
-.song .favorite{background:rgba(255,255,255,.06)!important;border-color:rgba(148,169,226,.2)!important}
-.song .favorite.active{color:#ffd47e!important}
-.hero-card{background:linear-gradient(125deg,#24215b,#174c72)!important;border:1px solid rgba(145,128,255,.24)!important;box-shadow:0 15px 35px rgba(0,0,0,.24)!important}
-.hero-copy h2{color:#fff!important}.hero-copy p{color:#b7c7e9!important}
-.controls button{background:linear-gradient(145deg,#192747,#111c38)!important;border:1px solid rgba(144,165,230,.2)!important;color:#eaf0ff!important}
-.controls .control-icon{color:#9b8aff!important}
-.controls .primary{background:linear-gradient(135deg,#9470ff,#526fe9)!important;color:#fff!important;border:0!important;box-shadow:0 9px 24px rgba(107,92,232,.3)!important}
-.controls .primary .control-icon{color:#fff!important}
-.next-card{border-radius:16px!important}.next-card b{color:#fff!important}
-nav{
- background:rgba(8,14,34,.97)!important;border-top:1px solid rgba(141,164,228,.18)!important;
- box-shadow:0 -10px 30px rgba(0,0,0,.28)!important
-}
-nav button{color:#788bb5!important}nav button.active{color:#b4a2ff!important}
-nav button.active:before{background:rgba(129,103,255,.18)!important}
-#toast{background:linear-gradient(135deg,#8061f4,#397fe8)!important}
-@media(min-width:430px){.app-shell{max-width:680px}.ktv-welcome{padding:26px 22px!important}}
-
-
-/* ==========================================================================
    MAIDONG KTV · Leishi-inspired professional song-selection redesign
    Visual-only layer: keeps existing DOM hooks, API calls and interactions.
    ========================================================================== */
