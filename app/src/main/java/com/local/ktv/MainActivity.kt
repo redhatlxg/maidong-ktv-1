@@ -932,11 +932,11 @@ class MainActivity : AppCompatActivity() {
                 getChildAt(0).layoutParams = it
             }
             (findViewById<View>(R.id.home_center_column).layoutParams as? LinearLayout.LayoutParams)?.let {
-                it.weight = 0.18f
+                it.weight = 0.23f
                 findViewById<View>(R.id.home_center_column).layoutParams = it
             }
             (findViewById<View>(R.id.home_poster_container).layoutParams as? LinearLayout.LayoutParams)?.let {
-                it.weight = 0.24f
+                it.weight = 0.23f
                 findViewById<View>(R.id.home_poster_container).layoutParams = it
             }
         }

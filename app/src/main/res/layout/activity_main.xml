@@ -842,13 +842,13 @@
                 android:id="@+id/home_center_column"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.18"
+                android:layout_weight="0.23"
                 android:orientation="vertical"
                 android:layout_marginEnd="12dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="42dp"
+                    android:layout_height="48dp"
                     android:gravity="center_vertical"
                     android:orientation="vertical"
                     android:paddingStart="4dp">
@@ -907,7 +907,7 @@
                 android:id="@+id/home_poster_container"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.24"
+                android:layout_weight="0.23"
                 android:background="@drawable/bg_player_window">
 
                 <LinearLayout
@@ -915,7 +915,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
-                    android:padding="14dp"
+                    android:padding="16dp"
                     android:background="#F00A111C">
 
                     <TextView
