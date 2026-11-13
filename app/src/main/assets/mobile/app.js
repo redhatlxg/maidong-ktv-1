@@ -331,7 +331,7 @@ document.addEventListener("click", async (event) => {
   if (button.dataset.vocal) updateAudio({ vocalMode: button.dataset.vocal });
   if (button.dataset.singerGroup) {
     uiState.singerGroup = button.dataset.singerGroup;
-    $("[data-singer-group]").forEach((item) => item.classList.toggle("active", item === button));
+    $$("[data-singer-group]").forEach((item) => item.classList.toggle("active", item === button));
     loadSingers(true);
   }
   if (button.classList.contains("singer-select")) {
@@ -353,7 +353,7 @@ document.addEventListener("click", async (event) => {
     uiState.resultMode = "songs";
     if (uiState.searchMode === "singer") {
       uiState.singerGroup = "all";
-      $("[data-singer-group]").forEach((item) => item.classList.toggle("active", item.dataset.singerGroup === "all"));
+      $$("[data-singer-group]").forEach((item) => item.classList.toggle("active", item.dataset.singerGroup === "all"));
       loadSingers(true);
     }
     $("#query").focus();
