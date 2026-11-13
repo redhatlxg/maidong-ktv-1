@@ -307,6 +307,14 @@ object MuseDbSync {
                     }
                 }
             }
+            // A 2xx response can still be truncated by a proxy or interrupted connection.
+            // When the server supplies Content-Length, reject the partial file so the outer
+            // retry wrapper removes it and downloads a fresh copy.
+            if (total > 0L) {
+                check(dest.isFile && dest.length() == total) {
+                    "曲库下载不完整：收到 ${dest.length()} / ${total} 字节"
+                }
+            }
         } finally {
             conn?.disconnect()
         }
