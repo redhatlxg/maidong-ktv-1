@@ -802,8 +802,8 @@
                     android:layout_height="0dp"
                     android:layout_weight="1"
                     android:layout_marginBottom="6dp"
-                    android:background="@drawable/home_card_rank"
-                    android:gravity="top|start" android:padding="14dp" android:text="排行榜" android:textColor="#FFFFFFFF" android:textSize="20sp" />
+                    android:background="@drawable/bg_home_card_purple"
+                    android:gravity="center_vertical" android:paddingStart="18dp" android:paddingEnd="12dp" android:text="排行榜" android:textColor="#FFFFFFFF" android:textSize="20sp" />
 
                 <TextView
                     android:id="@+id/home_card_song"
@@ -811,8 +811,8 @@
                     android:layout_height="0dp"
                     android:layout_weight="1"
                     android:layout_marginBottom="6dp"
-                    android:background="@drawable/home_card_song"
-                    android:gravity="top|start" android:padding="14dp" android:text="歌名" android:textColor="#FFFFFFFF" android:textSize="20sp" />
+                    android:background="@drawable/bg_home_card_blue"
+                    android:gravity="center_vertical" android:paddingStart="18dp" android:paddingEnd="12dp" android:text="歌名点歌" android:textColor="#FFFFFFFF" android:textSize="20sp" />
 
                 <TextView
                     android:id="@+id/home_card_singer"
@@ -820,16 +820,16 @@
                     android:layout_height="0dp"
                     android:layout_weight="1"
                     android:layout_marginBottom="6dp"
-                    android:background="@drawable/home_card_singer"
-                    android:gravity="top|start" android:padding="14dp" android:text="歌星" android:textColor="#FFFFFFFF" android:textSize="20sp" />
+                    android:background="@drawable/bg_home_card_orange"
+                    android:gravity="center_vertical" android:paddingStart="18dp" android:paddingEnd="12dp" android:text="歌手点歌" android:textColor="#FFFFFFFF" android:textSize="20sp" />
 
                 <TextView
                     android:id="@+id/home_card_local"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:layout_weight="1"
-                    android:background="@drawable/home_card_local"
-                    android:gravity="top|start" android:padding="14dp" android:text="本地" android:textColor="#FFFFFFFF" android:textSize="20sp" />
+                    android:background="@drawable/bg_home_card_pink"
+                    android:gravity="center_vertical" android:paddingStart="18dp" android:paddingEnd="12dp" android:text="本地歌曲" android:textColor="#FFFFFFFF" android:textSize="20sp" />
             </LinearLayout>
 
             <FrameLayout
