@@ -155,22 +155,36 @@ object SongOkDownloadManager {
         forcedRetryReasons.clear()
         synchronized(networkFailed) { networkFailed.clear() }
 
-        val directory = File("${MuseDatabase.VIDEO_ROOT}/${MuseDatabase.CLOUD_SONG_DIR}")
+        // Clean only the app-managed song cache folders on internal storage and writable USB.
+        // Never recurse into the USB root or touch unrelated user files.
+        val directories = LinkedHashMap<String, File>()
+        val candidates = buildList {
+            add(File(AppPaths.videoDir, "cloud-song"))
+            UsbStorageManager.writableVolumes().forEach { volume ->
+                add(File(volume.root, "MaidongKTV/video/cloud-song"))
+            }
+        }
+        candidates.forEach { directory ->
+            val key = runCatching { directory.canonicalPath }.getOrNull() ?: directory.absolutePath
+            directories[key] = directory
+        }
         val keep = keepFile?.let { runCatching { it.canonicalPath }.getOrNull() }
         var deleted = 0
         var bytes = 0L
-        directory.listFiles()?.forEach { file ->
-            val canonical = runCatching { file.canonicalPath }.getOrNull()
-            if (canonical == null || canonical == keep || !file.isFile) return@forEach
-            val name = file.name.lowercase()
-            val isSong = name.endsWith(".ts") || name.endsWith(".ls")
-            val isPartial = name.endsWith(".download") || name.endsWith(".tmp")
-            if (!isSong && !isPartial) return@forEach
-            val size = file.length()
-            if (runCatching { file.delete() }.getOrDefault(false)) {
-                if (isSong) deleted++
-                bytes += size
-                SongFileValidator.forget(file)
+        directories.values.forEach { directory ->
+            directory.listFiles()?.forEach fileLoop@{ file ->
+                val canonical = runCatching { file.canonicalPath }.getOrNull()
+                if (canonical == null || canonical == keep || !file.isFile) return@fileLoop
+                val name = file.name.lowercase()
+                val isSong = name.endsWith(".ts") || name.endsWith(".ls")
+                val isPartial = name.endsWith(".download") || name.endsWith(".tmp")
+                if (!isSong && !isPartial) return@fileLoop
+                val size = file.length()
+                if (runCatching { file.delete() }.getOrDefault(false)) {
+                    if (isSong) deleted++
+                    bytes += size
+                    SongFileValidator.forget(file)
+                }
             }
         }
         return deleted to bytes
