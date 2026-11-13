@@ -136,6 +136,43 @@ object SongOkDownloadManager {
         totalLengths.remove(key)
     }
 
+    /** 删除本机已下载歌曲；保留正在播放的文件，并清理下载任务与下载记录。 */
+    @JvmStatic
+    fun deleteAllDownloaded(keepFile: File?): Pair<Int, Long> {
+        val active = tasks.entries.toList()
+        active.forEach { (key, task) ->
+            manuallyCanceled.add(key)
+            task.cancel()
+        }
+        tasks.clear()
+        pending.clear()
+        callbacks.clear()
+        progress.clear()
+        totalLengths.clear()
+        forcedRetryReasons.clear()
+        synchronized(networkFailed) { networkFailed.clear() }
+
+        val directory = File("${MuseDatabase.VIDEO_ROOT}/${MuseDatabase.CLOUD_SONG_DIR}")
+        val keep = keepFile?.let { runCatching { it.canonicalPath }.getOrNull() }
+        var deleted = 0
+        var bytes = 0L
+        directory.listFiles()?.forEach { file ->
+            val canonical = runCatching { file.canonicalPath }.getOrNull()
+            if (canonical == null || canonical == keep || !file.isFile) return@forEach
+            val name = file.name.lowercase()
+            val isSong = name.endsWith(".ts") || name.endsWith(".ls")
+            val isPartial = name.endsWith(".download") || name.endsWith(".tmp")
+            if (!isSong && !isPartial) return@forEach
+            val size = file.length()
+            if (runCatching { file.delete() }.getOrDefault(false)) {
+                if (isSong) deleted++
+                bytes += size
+                SongFileValidator.forget(file)
+            }
+        }
+        return deleted to bytes
+    }
+
     @JvmStatic
     fun getDownloadProgress(song: Song): Int = progress[songKey(song)] ?: 0
 
