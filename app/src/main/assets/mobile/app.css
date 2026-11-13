@@ -558,3 +558,39 @@ nav .nav-settings{font-style:normal;font-size:18px;line-height:20px}
 @supports (overflow:clip){
   body{overflow-x:clip}
 }
+
+
+/* ── Live room: shared praise, reactions and TV/mobile danmaku ── */
+.live-interaction-card{margin-top:18px;padding:17px;border-radius:23px;background:linear-gradient(145deg,rgba(49,48,91,.82),rgba(19,34,57,.94));border:1px solid rgba(202,185,255,.18);overflow:hidden}
+.live-interaction-card .panel-title{display:flex;align-items:center;justify-content:space-between}
+.live-interaction-card .panel-title>small{display:flex;align-items:center;gap:6px;color:#9ce6d0;font-size:10px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#70e1b6;box-shadow:0 0 10px #70e1b6;display:inline-block}
+.interaction-caption{font-size:11px;line-height:1.7;color:#aab8ce;margin:9px 0 13px}
+.interaction-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.interaction-actions button{min-width:0;min-height:67px;border-radius:15px;border:1px solid rgba(221,207,255,.14);background:linear-gradient(145deg,rgba(111,91,164,.28),rgba(36,53,83,.55));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.interaction-actions button:active{transform:scale(.97)}
+.interaction-actions button span{font-size:23px}
+.interaction-actions button b{font-size:11px;color:#eadcfb}
+.interaction-compose{margin-top:14px}
+.interaction-compose>input,.interaction-compose>div>input{min-width:0;width:100%;height:40px;padding:0 12px;border-radius:11px;border:1px solid rgba(194,209,236,.13);background:rgba(5,12,27,.48);color:#f2f5ff;outline:none;font-size:12px}
+.interaction-compose>input{max-width:140px;margin-bottom:8px}
+.interaction-compose>div{display:flex;gap:8px}
+.interaction-compose>div>input{flex:1}
+.interaction-compose>div>button{flex:0 0 62px;border-radius:11px;background:linear-gradient(135deg,#a38cf0,#6b5ab9);font-size:12px;font-weight:700}
+.interaction-compose>small{display:block;margin-top:7px;color:#8595b0;font-size:9px}
+.interaction-feed-heading{display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px}
+.interaction-feed-heading b{font-size:12px;color:#e9e1ff}
+.interaction-feed-heading span{font-size:10px;color:#92a2bc}
+.interaction-feed{display:flex;flex-direction:column;gap:7px;max-height:260px;overflow:auto;overscroll-behavior:contain}
+.interaction-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:13px;background:rgba(5,12,27,.35);border:1px solid rgba(189,205,233,.08);animation:interaction-in .28s ease-out}
+.interaction-item>span{font-size:19px;flex:0 0 24px}
+.interaction-item>div{min-width:0}
+.interaction-item b{font-size:10px;color:#c9baff}
+.interaction-item p{margin:3px 0 0;font-size:11px;line-height:1.55;color:#e7edf9;overflow-wrap:anywhere}
+.interaction-item.applause{border-color:rgba(244,209,138,.17)}
+.interaction-item.cheer{border-color:rgba(255,133,193,.18)}
+.interaction-item.bravo{border-color:rgba(124,223,203,.18)}
+.interaction-empty{text-align:center;padding:15px 8px;color:#8796af;font-size:10px}
+@keyframes interaction-in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:360px){.live-interaction-card{padding:13px}.interaction-actions{gap:6px}.interaction-actions button{min-height:61px}}
+@media(prefers-reduced-motion:reduce){.interaction-item{animation:none}}
