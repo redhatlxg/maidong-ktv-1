@@ -4157,7 +4157,7 @@ class MainActivity : AppCompatActivity() {
             if (json.has("enabled")) {
                 KtvEqualizer.setEnabled(json.optBoolean("enabled"))
             }
-            presetName?.let(KtvEqualizer::applyPreset)
+            presetName?.let { KtvEqualizer.applyPreset(it) }
             if (levelsArray != null && caps != null) {
                 val levels = FloatArray(caps.bandCount) { index ->
                     levelsArray.optDouble(index, 0.0).toFloat().coerceIn(caps.minDb, caps.maxDb)
