@@ -3509,7 +3509,7 @@ class MainActivity : AppCompatActivity() {
         val confirm = TextView(this).apply {
             text = "确 定"
             textSize = if (compact) 13f else 15f
-            setTextColor(Color.rgb(59, 18, 92))
+            setTextColor(Color.rgb(255, 255, 255))
             gravity = Gravity.CENTER
             isClickable = true
             isFocusable = true
@@ -3565,18 +3565,18 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(8), dp(8), dp(8), dp(7))
             background = GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
-                intArrayOf(Color.rgb(255, 255, 255), Color.rgb(239, 243, 255))
+                intArrayOf(Color.rgb(255, 255, 255), Color.rgb(255, 241, 243))
             ).apply {
                 cornerRadius = dp(16).toFloat()
-                setStroke(dp(1), Color.rgb(196, 207, 245))
+                setStroke(dp(1), Color.rgb(225, 92, 108))
             }
             UiCompat.setElevation(this, dp(14).toFloat())
             addView(TextView(this@MainActivity).apply {
-                text = "手机扫码点歌"
+                text = "微信扫码点歌"
                 textSize = if (compactUi) 11f else 13f
                 typeface = Typeface.DEFAULT_BOLD
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(48, 54, 112))
+                setTextColor(Color.rgb(38, 43, 54))
                 includeFontPadding = false
             }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 20 else 23)))
             addView(ImageView(this@MainActivity).apply {
@@ -3589,17 +3589,17 @@ class MainActivity : AppCompatActivity() {
                 bottomMargin = dp(4)
             })
             addView(TextView(this@MainActivity).apply {
-                text = "微信 / 浏览器扫一扫"
+                text = "微信扫一扫 · 进入点歌大厅"
                 textSize = if (compactUi) 8f else 9f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(77, 91, 139))
+                setTextColor(Color.rgb(72, 80, 94))
                 includeFontPadding = false
             }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 14 else 16)))
             addView(TextView(this@MainActivity).apply {
                 text = "手机与电视连接同一 Wi-Fi"
                 textSize = if (compactUi) 7f else 8f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(116, 126, 157))
+                setTextColor(Color.rgb(112, 120, 134))
                 includeFontPadding = false
             }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 13 else 15)))
             setOnClickListener { showMobileRemoteDialog() }
