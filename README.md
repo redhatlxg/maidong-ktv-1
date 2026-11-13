@@ -7,7 +7,7 @@
 <p align="center"><b>电视大屏当舞台，手机扫码当点歌台 —— 开机即唱的开源 KTV</b></p>
 
 <p align="center">
-  <a href="https://github.com/ktv668899/maidong-ktv/releases"><img src="https://img.shields.io/github/v/tag/ktv668899/maidong-ktv?label=release&amp;style=flat-square&amp;color=2f81f7&amp;sort=semver" alt="release"></a>
+  <a href="https://github.com/redhatlxg/maidong-ktv-1/releases"><img src="https://img.shields.io/github/v/tag/ktv668899/maidong-ktv?label=release&amp;style=flat-square&amp;color=2f81f7&amp;sort=semver" alt="release"></a>
   <img src="https://img.shields.io/badge/platform-Android%20TV%20%7C%20Mobile-3DDC84?style=flat-square&amp;logo=android&amp;logoColor=white" alt="platform">
   <img src="https://img.shields.io/badge/Android-4.4%2B%20(API%2019)-3DDC84?style=flat-square" alt="minSdk">
   <img src="https://img.shields.io/badge/Kotlin-1.9.22-7F52FF?style=flat-square&amp;logo=kotlin&amp;logoColor=white" alt="kotlin">
@@ -16,9 +16,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ktv668899/maidong-ktv/stargazers"><img src="https://img.shields.io/github/stars/ktv668899/maidong-ktv?style=flat-square&amp;logo=github&amp;label=stars" alt="stars"></a>
-  <a href="https://github.com/ktv668899/maidong-ktv/forks"><img src="https://img.shields.io/github/forks/ktv668899/maidong-ktv?style=flat-square&amp;logo=github&amp;label=forks" alt="forks"></a>
-  <a href="https://github.com/ktv668899/maidong-ktv/issues"><img src="https://img.shields.io/github/issues/ktv668899/maidong-ktv?style=flat-square&amp;color=e05d44" alt="issues"></a>
+  <a href="https://github.com/redhatlxg/maidong-ktv-1/stargazers"><img src="https://img.shields.io/github/stars/ktv668899/maidong-ktv?style=flat-square&amp;logo=github&amp;label=stars" alt="stars"></a>
+  <a href="https://github.com/redhatlxg/maidong-ktv-1/forks"><img src="https://img.shields.io/github/forks/ktv668899/maidong-ktv?style=flat-square&amp;logo=github&amp;label=forks" alt="forks"></a>
+  <a href="https://github.com/redhatlxg/maidong-ktv-1/issues"><img src="https://img.shields.io/github/issues/ktv668899/maidong-ktv?style=flat-square&amp;color=e05d44" alt="issues"></a>
   <img src="https://img.shields.io/github/last-commit/ktv668899/maidong-ktv?style=flat-square&amp;color=6f42c1" alt="last commit">
   <a href="https://gitee.com/weishilong/maidong-ktv"><img src="https://img.shields.io/badge/Gitee-weishilong%2Fmaidong--ktv-C71D23?style=flat-square&amp;logo=gitee&amp;logoColor=white" alt="gitee"></a>
 </p>
@@ -105,11 +105,11 @@
 
 **方式一：装现成 APK**
 
-到 [Releases](https://github.com/ktv668899/maidong-ktv/releases)（或 [Gitee Releases](https://gitee.com/weishilong/maidong-ktv/releases)）下载最新 `.apk`，U 盘拷到电视安装，或用 adb：
+到 [Releases](https://github.com/redhatlxg/maidong-ktv-1/releases)（或 [Gitee Releases](https://gitee.com/weishilong/maidong-ktv/releases)）下载最新 `.apk`，U 盘拷到电视安装，或用 adb：
 
 ```bash
 adb connect 192.168.1.x:5555            # 电视需先开启「网络调试」
-adb install -r maidong-ktv-release.apk
+adb install -r xiaoxiaoya-ktv.apk
 ```
 
 **方式二：自己编译源码** —— 见下一节。
