@@ -312,6 +312,7 @@ class MainActivity : AppCompatActivity() {
             // 播放界面左上角的「当前播放 / 下一首」实时刷新: 无论队列是本地点歌、
             // 手机扫码点歌还是自动切歌而变化, 500ms 内必然同步到界面。
             refreshNowPlayingLabels()
+            updateNextSongMarquee()
             main.postDelayed(this, 500)
         }
     }
@@ -2705,6 +2706,9 @@ class MainActivity : AppCompatActivity() {
         fullScreenNetworkBadge = null
         fullScreenChromeVisible = false
         main.removeCallbacks(hideFullScreenChromeRunnable)
+        main.removeCallbacks(hideNextSongMarquee)
+        nextSongMarquee?.visibility = View.GONE
+        nextSongNoticeKey = null
         scheduleAutoFullscreen()
     }
 
@@ -7408,6 +7412,9 @@ class MainActivity : AppCompatActivity() {
     }
     private var playbackModeNotice: TextView? = null
     private var songIntroNotice: TextView? = null
+    private var nextSongMarquee: TextView? = null
+    private var nextSongNoticeKey: String? = null
+    private val hideNextSongMarquee = Runnable { nextSongMarquee?.visibility = View.GONE }
     private var songIntroIcon: TextView? = null
     private val hidePlaybackModeNotice = Runnable {
         playbackModeNotice?.animate()?.alpha(0f)?.setDuration(180L)?.withEndAction {
@@ -7705,6 +7712,25 @@ class MainActivity : AppCompatActivity() {
                 alpha = 0f
                 UiCompat.setElevation(this, dp(7).toFloat())
             }.also { root.addView(it, insertionIndex + 1, FrameLayout.LayoutParams(dp(330), dp(92))) }
+            nextSongMarquee = TextView(this).apply {
+                gravity = Gravity.CENTER_VERTICAL
+                textSize = if (compactUi) 17f else 21f
+                setTextColor(Color.WHITE)
+                setPadding(dp(24), dp(8), dp(24), dp(8))
+                singleLine = true
+                ellipsize = android.text.TextUtils.TruncateAt.MARQUEE
+                marqueeRepeatLimit = -1
+                isSelected = true
+                visibility = View.GONE
+                background = GradientDrawable().apply {
+                    setColor(Color.argb(205, 12, 18, 32))
+                    cornerRadius = dp(8).toFloat()
+                    setStroke(dp(1), Color.rgb(7, 193, 96))
+                }
+                UiCompat.setElevation(this, dp(11).toFloat())
+            }.also { root.addView(it, insertionIndex + 2, FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(if (compactUi) 42 else 50), Gravity.BOTTOM
+            ).apply { leftMargin = dp(28); rightMargin = dp(28); bottomMargin = dp(26) }) }
             songIntroIcon = TextView(this).apply {
                 text = "♫"
                 textSize = 34f
@@ -8142,6 +8168,27 @@ class MainActivity : AppCompatActivity() {
         if (playerSongSinger?.text?.toString() != singer) playerSongSinger?.setText(singer)
         val tip = "当前: " + nowNext.current + "  下首: " + nowNext.next
         if (textCurrentSongTip?.text?.toString() != tip) textCurrentSongTip?.setText(tip)
+    }
+
+    /** 歌曲剩余约 30 秒时滚动预告队列中的下一首，单首歌曲只提示一次。 */
+    private fun updateNextSongMarquee() {
+        val view = nextSongMarquee ?: return
+        if (!isFullScreen || player?.isPlaying != true || playbackPreparing) return
+        val duration = player?.duration ?: 0
+        val position = player?.currentPosition ?: 0
+        if (duration <= 0 || duration - position > 30_000 || position >= duration) return
+        val next = nowNextText().next
+        if (next == "无" || next.isBlank()) return
+        val key = currentSong?.let(::stableId).orEmpty() + "|" + next
+        if (nextSongNoticeKey == key) return
+        nextSongNoticeKey = key
+        main.removeCallbacks(hideNextSongMarquee)
+        view.text = "♫  下一首即将播放：$next     "
+        view.visibility = View.VISIBLE
+        view.isSelected = true
+        view.alpha = 0f
+        view.animate().alpha(1f).setDuration(250L).start()
+        main.postDelayed(hideNextSongMarquee, 18_000L)
     }
 
     /** 「当前播放 / 下一首」文本对(下一首按当前曲目在队列中的位置取其后一首)。 */
