@@ -2249,7 +2249,7 @@ class MainActivity : AppCompatActivity() {
         val tv = TextView(this)
         tv.setText(title)
         tv.setTextSize(17f)
-        tv.setTextColor(Color.rgb(0x27, 0xCC, 0xA4))
+        tv.setTextColor(Color.rgb(235, 76, 94))
         tv.setTextSize(17f)
         tv.setPadding(dp(8), dp(8), dp(8), dp(12))
         tv.setTypeface(null, Typeface.BOLD)
@@ -2940,7 +2940,7 @@ class MainActivity : AppCompatActivity() {
         lateinit var eqArea: LinearLayout
         fun renderEqEnabled() {
             eqSwitch.text = if (KtvEqualizer.enabled) "均衡器：开启" else "均衡器：关闭"
-            eqSwitch.setTextColor(if (KtvEqualizer.enabled) Color.rgb(39, 204, 164) else Color.WHITE)
+            eqSwitch.setTextColor(if (KtvEqualizer.enabled) Color.rgb(235, 76, 94) else Color.WHITE)
             // 关闭时预设/频段整体降透明度，直观表达"当前不生效"。
             eqArea.alpha = if (KtvEqualizer.enabled) 1f else 0.45f
         }
@@ -11472,24 +11472,24 @@ class MainActivity : AppCompatActivity() {
         /** 手机端搜索结果缓存有效期(与上方缓存策略说明保持一致)。 */
         private const val SEARCH_CACHE_TTL_MS = 60_000L
 
-        // ===== 主题色(对标原版麦动 配色) =====
-        /** 主背景:极深蓝黑(原版 #080C12 系)  */
-        private val BG = Color.rgb(19, 29, 37)
+        // ===== 晓晓呀独立 KTV 主题色：炭黑底、酒红主操作、暖金辅助 =====
+        /** 主背景：深炭黑，避免蓝紫播放器观感。 */
+        private val BG = Color.rgb(11, 14, 20)
 
-        /** 面板背景:深蓝灰(原版卡片底色)  */
-        private val PANEL = Color.rgb(29, 34, 44)
+        /** 面板背景：略亮一级，保证电视远距离可读性。 */
+        private val PANEL = Color.rgb(23, 28, 37)
 
-        /** 次级面板:更深(列表区背景)  */
-        private val PANEL_2 = Color.rgb(19, 23, 31)
+        /** 次级面板：搜索、列表与弹窗内部底色。 */
+        private val PANEL_2 = Color.rgb(16, 20, 28)
 
-        /** 焦点色:香槟金,用于商业版遥控器焦点态。 */
-        private val FOCUS = Color.rgb(235, 91, 108)
+        /** 焦点色：高对比 KTV 红，适配遥控器方向键焦点。 */
+        private val FOCUS = Color.rgb(235, 76, 94)
 
-        /** 金色:标题与高亮(原版 color_yellow_3 #FFE363 系)  */
+        /** 暖金：仅用于标题、状态和次级强调。 */
         private val GOLD = Color.rgb(241, 196, 104)
 
-        /** 强调色:香槟金,避免高饱和红色造成廉价感。 */
-        private val ACCENT_RED = Color.rgb(217, 184, 121)
+        /** 主强调色：酒红，用于选中态和关键操作。 */
+        private val ACCENT_RED = Color.rgb(217, 54, 72)
 
         /** 文本白:主文本色(原版 color_white_3 #F1F1F1)  */
         private val TEXT_WHITE = Color.rgb(241, 241, 241)
@@ -11497,8 +11497,8 @@ class MainActivity : AppCompatActivity() {
         /** 次要文本:70% 透明白(原版 color_white_3_70)  */
         private val TEXT_DIM = Color.argb(205, 232, 238, 240)
 
-        /** 导航选中背景:低透明香槟金。 */
-        private val NAV_SELECTED = Color.argb(42, 217, 184, 121)
+        /** 导航选中背景：低透明酒红。 */
+        private val NAV_SELECTED = Color.argb(46, 217, 54, 72)
 
         /** 分割线颜色  */
         private val DIVIDER = Color.argb(42, 220, 226, 236)
