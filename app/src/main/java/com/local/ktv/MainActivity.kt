@@ -11328,19 +11328,19 @@ class MainActivity : AppCompatActivity() {
 
         // ===== 主题色(对标原版麦动 配色) =====
         /** 主背景:极深蓝黑(原版 #080C12 系)  */
-        private val BG = Color.rgb(8, 12, 18)
+        private val BG = Color.rgb(19, 29, 37)
 
         /** 面板背景:深蓝灰(原版卡片底色)  */
-        private val PANEL = Color.rgb(22, 31, 42)
+        private val PANEL = Color.rgb(39, 54, 64)
 
         /** 次级面板:更深(列表区背景)  */
-        private val PANEL_2 = Color.rgb(15, 22, 31)
+        private val PANEL_2 = Color.rgb(29, 42, 51)
 
         /** 焦点色:香槟金,用于商业版遥控器焦点态。 */
-        private val FOCUS = Color.rgb(217, 184, 121)
+        private val FOCUS = Color.rgb(225, 196, 139)
 
         /** 金色:标题与高亮(原版 color_yellow_3 #FFE363 系)  */
-        private val GOLD = Color.rgb(245, 190, 89)
+        private val GOLD = Color.rgb(220, 184, 119)
 
         /** 强调色:香槟金,避免高饱和红色造成廉价感。 */
         private val ACCENT_RED = Color.rgb(217, 184, 121)
@@ -11349,7 +11349,7 @@ class MainActivity : AppCompatActivity() {
         private val TEXT_WHITE = Color.rgb(241, 241, 241)
 
         /** 次要文本:70% 透明白(原版 color_white_3_70)  */
-        private val TEXT_DIM = Color.argb(180, 241, 241, 241)
+        private val TEXT_DIM = Color.argb(205, 232, 238, 240)
 
         /** 导航选中背景:低透明香槟金。 */
         private val NAV_SELECTED = Color.argb(42, 217, 184, 121)
