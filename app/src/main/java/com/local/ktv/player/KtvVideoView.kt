@@ -94,15 +94,25 @@ private class KtvSurfaceView(context: Context) : SurfaceView(context) {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val maxWidth = getDefaultSize(videoWidth, widthMeasureSpec).coerceAtLeast(1)
         val maxHeight = getDefaultSize(videoHeight, heightMeasureSpec).coerceAtLeast(1)
-        // 保持麦动原版 scale mode 1 的行为: 画面拉伸铺满 16:9 画布并居中。
-        // 不要按片源真实比例缩放 —— 3:2/4:3 片源会在 16:9 窗口里产生黑边、画面变小。
-        var measuredWidth = maxWidth
-        var measuredHeight = measuredWidth * 9 / 16
-        if (measuredHeight > maxHeight) {
-            measuredHeight = maxHeight
-            measuredWidth = measuredHeight * 16 / 9
+        // 以播放器窗口为裁切区域，按片源比例执行 CENTER_CROP：
+        // 先缩放到完全覆盖窗口，再由父容器裁掉超出部分，避免上下/左右黑边。
+        // 与强行拉伸不同，这里保留 MV 原始宽高比，不把人物和画面压扁。
+        if (videoWidth <= 0 || videoHeight <= 0) {
+            setMeasuredDimension(maxWidth, maxHeight)
+            return
         }
-        setMeasuredDimension(measuredWidth.coerceAtLeast(1), measuredHeight.coerceAtLeast(1))
+        val sourceAspect = videoWidth.toFloat() / videoHeight.toFloat()
+        val targetAspect = maxWidth.toFloat() / maxHeight.toFloat()
+        val measuredWidth: Int
+        val measuredHeight: Int
+        if (sourceAspect > targetAspect) {
+            measuredHeight = maxHeight
+            measuredWidth = (maxHeight * sourceAspect).toInt().coerceAtLeast(maxWidth)
+        } else {
+            measuredWidth = maxWidth
+            measuredHeight = (maxWidth / sourceAspect).toInt().coerceAtLeast(maxHeight)
+        }
+        setMeasuredDimension(measuredWidth, measuredHeight)
     }
 }
 
