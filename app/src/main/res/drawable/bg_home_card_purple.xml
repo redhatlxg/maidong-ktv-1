@@ -1,15 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 晓晓呀KTV首页分类卡片：统一霓虹紫蓝舞台配色 -->
+<!-- 首页分类卡片：蓝紫渐变与克制的高光 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
- <item><shape android:shape="rectangle">
-  <gradient android:angle="45" android:startColor="#FF9E6BFF" android:centerColor="#FF7546D0" android:endColor="#FF42247F" android:type="linear"/>
-  <corners android:radius="16dp"/>
- </shape></item>
- <item android:gravity="right|bottom">
-  <shape android:shape="rectangle">
-   <size android:width="150dp" android:height="150dp"/>
-   <gradient android:angle="135" android:startColor="#40FFFFFF" android:centerColor="#16FFFFFF" android:endColor="#00000000"/>
-   <corners android:radius="16dp"/>
-  </shape>
- </item>
+ <item><shape android:shape="rectangle"><gradient android:angle="45" android:startColor="#FF667FC1" android:centerColor="#FF485B91" android:endColor="#FF293B62" android:type="linear"/><corners android:radius="18dp"/></shape></item>
+ <item android:gravity="right|bottom"><shape android:shape="rectangle"><size android:width="150dp" android:height="150dp"/><gradient android:angle="135" android:startColor="#35FFFFFF" android:centerColor="#12FFFFFF" android:endColor="#00000000"/><corners android:radius="18dp"/></shape></item>
 </layer-list>
