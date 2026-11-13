@@ -17,8 +17,8 @@ function setConnected(connected) {
   uiState.connected = connected;
   $("#offline").classList.toggle("hidden", connected);
   $("#connection").innerHTML = connected
-    ? "<span></span>已连接麦动 KTV"
-    : "<span></span>正在连接麦动 KTV…";
+    ? "<span></span>已连接晓晓呀"
+    : "<span></span>正在连接晓晓呀…";
 }
 
 async function api(path, options = {}) {
