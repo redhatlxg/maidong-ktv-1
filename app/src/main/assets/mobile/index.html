@@ -33,6 +33,12 @@
           <button data-action="next"><span class="control-icon">›|</span><span>切歌</span></button>
         </div>
 
+        <article class="glass-card voice-command-card">
+          <div class="panel-title"><div><span class="tiny-icon">🎙</span><b>语音遥控</b></div><small id="voiceCommandState">点击麦克风说指令</small></div>
+          <button type="button" id="voiceCommand" class="voice-command-button" aria-label="开始语音遥控"><span>🎙</span><b>按住说话</b><small>下一首、暂停、重唱，或直接说歌名</small></button>
+          <p class="voice-command-hint">例如：“下一首”“暂停”“继续播放”“重唱”“点一首睡睡睡”</p>
+        </article>
+
         <article class="glass-card audio-panel">
           <div class="panel-title"><div><span class="tiny-icon">♪</span><b>声音控制</b></div><small>即时生效</small></div>
           <div class="seg"><button id="accompany" data-vocal="accompany"><span>伴</span>伴唱</button><button id="original" data-vocal="original"><span>原</span>原唱</button></div>
