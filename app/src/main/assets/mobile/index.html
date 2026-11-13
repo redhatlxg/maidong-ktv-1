@@ -93,6 +93,14 @@
           <div class="block-title"><h3 id="resultTitle">歌手搜索结果</h3><span id="resultSummary"></span></div>
           <div id="results" class="list"></div><button id="more" class="more hidden">加载更多歌曲</button>
         </div>
+        <section class="category-section" aria-label="歌曲分类">
+          <div class="block-title"><h3>按分类点歌</h3><span>选择曲库分类</span></div>
+          <div id="categoryChips" class="category-chips"><span class="category-loading">正在读取分类…</span></div>
+          <div id="categoryResults" class="category-results hidden">
+            <div class="block-title"><h3 id="categoryTitle">分类歌曲</h3><span>最多展示 120 首</span></div>
+            <div id="categorySongList" class="list"></div>
+          </div>
+        </section>
         <div class="hot-tabs" role="tablist" aria-label="热歌榜单">
           <button type="button" class="active" data-hot-tab="library">曲库热歌</button>
           <button type="button" data-hot-tab="douyin">抖音音乐榜</button>
