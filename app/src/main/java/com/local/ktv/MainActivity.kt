@@ -4345,25 +4345,44 @@ class MainActivity : AppCompatActivity() {
             }
         }
         val completed = java.util.concurrent.CountDownLatch(1)
+        val gate = Any()
+        var started = false
+        var cancelled = false
         var response: LocalRemoteServer.ApiResponse? = null
-        val posted = main.post {
-            try {
-                response = action()
-            } catch (e: Exception) {
-                response = remoteError(500, "REMOTE_ACTION_FAILED", e.message ?: "远程操作失败")
-            } finally {
+        val task = Runnable {
+            val shouldRun = synchronized(gate) {
+                if (cancelled) false else {
+                    started = true
+                    true
+                }
+            }
+            if (shouldRun) {
+                try {
+                    response = action()
+                } catch (e: Exception) {
+                    response = remoteError(500, "REMOTE_ACTION_FAILED", e.message ?: "远程操作失败")
+                } finally {
+                    completed.countDown()
+                }
+            } else {
                 completed.countDown()
             }
         }
-        if (!posted) return remoteError(503, "REMOTE_BUSY", "设备正在忙，请稍后重试")
+        if (!main.post(task)) return remoteError(503, "REMOTE_BUSY", "设备正在忙，请稍后重试")
         val finished = try {
             completed.await(3, java.util.concurrent.TimeUnit.SECONDS)
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
             false
         }
-        return if (finished) response ?: remoteError(503, "REMOTE_BUSY", "远程操作未能完成")
-        else remoteError(503, "REMOTE_BUSY", "设备正在处理其他操作，请稍后刷新")
+        if (!finished) {
+            // 若任务尚未开始，取消它，避免客户端收到 503 后操作却在稍后意外执行。
+            synchronized(gate) {
+                if (!started) cancelled = true
+            }
+            return remoteError(503, "REMOTE_BUSY", "设备正在处理其他操作，请稍后刷新")
+        }
+        return response ?: remoteError(503, "REMOTE_BUSY", "远程操作未能完成")
     }
 
     private fun remotePlayerAction(json: JSONObject): LocalRemoteServer.ApiResponse {
