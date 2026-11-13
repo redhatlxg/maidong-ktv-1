@@ -11477,16 +11477,16 @@ class MainActivity : AppCompatActivity() {
         private val BG = Color.rgb(19, 29, 37)
 
         /** 面板背景:深蓝灰(原版卡片底色)  */
-        private val PANEL = Color.rgb(39, 54, 64)
+        private val PANEL = Color.rgb(29, 34, 44)
 
         /** 次级面板:更深(列表区背景)  */
-        private val PANEL_2 = Color.rgb(29, 42, 51)
+        private val PANEL_2 = Color.rgb(19, 23, 31)
 
         /** 焦点色:香槟金,用于商业版遥控器焦点态。 */
-        private val FOCUS = Color.rgb(225, 196, 139)
+        private val FOCUS = Color.rgb(235, 91, 108)
 
         /** 金色:标题与高亮(原版 color_yellow_3 #FFE363 系)  */
-        private val GOLD = Color.rgb(220, 184, 119)
+        private val GOLD = Color.rgb(241, 196, 104)
 
         /** 强调色:香槟金,避免高饱和红色造成廉价感。 */
         private val ACCENT_RED = Color.rgb(217, 184, 121)
@@ -11501,7 +11501,7 @@ class MainActivity : AppCompatActivity() {
         private val NAV_SELECTED = Color.argb(42, 217, 184, 121)
 
         /** 分割线颜色  */
-        private val DIVIDER = Color.argb(80, 241, 241, 241)
+        private val DIVIDER = Color.argb(42, 220, 226, 236)
         private const val PREFS = "ktv"
         private const val KEY_CATALOG_URL = "catalog_url"
         private const val KEY_SHOW_MOBILE_QR = "show_mobile_qr"
