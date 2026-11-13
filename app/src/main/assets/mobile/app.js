@@ -418,7 +418,7 @@ async function loadQueue(silent = false) {
 function formatDownloadSize(bytes) {
   const value = Number(bytes || 0);
   if (value < 1024 * 1024) return (value / 1024).toFixed(1) + " KB";
-  if (value < 1024 * 1024 * 1024) return (value / 1024 / 1024).toFixed(2) + " GB".replace(" GB", " MB");
+  if (value < 1024 * 1024 * 1024) return (value / 1024 / 1024).toFixed(2) + " MB";
   return (value / 1024 / 1024 / 1024).toFixed(2) + " GB";
 }
 
@@ -431,7 +431,6 @@ async function loadDownloads() {
     const data = await api("/api/v1/downloads");
     count.textContent = String(data.count || 0) + " 首";
     size.textContent = formatDownloadSize(data.bytes || 0);
-    $("#downloadStorageBar").style.width = data.bytes > 0 ? "100%" : "0%";
     $("#downloadHint").textContent = data.count
       ? "共 " + data.count + " 首；清理时会保留正在播放的歌曲，其余下载缓存将删除"
       : "当前没有已下载歌曲；在线曲库、收藏和歌单不会受到影响";
