@@ -65,6 +65,14 @@
           <button type="button" data-search-mode="song" class="active">歌曲</button>
           <button type="button" data-search-mode="singer">歌手</button>
         </div>
+        <div id="singerGroups" class="singer-groups hidden" role="group" aria-label="歌手分类">
+          <button type="button" data-singer-group="all" class="active">全部</button>
+          <button type="button" data-singer-group="mainland">内地</button>
+          <button type="button" data-singer-group="hktw">港台</button>
+          <button type="button" data-singer-group="male">男歌手</button>
+          <button type="button" data-singer-group="female">女歌手</button>
+          <button type="button" data-singer-group="group">组合</button>
+        </div>
         <form id="searchForm" class="search-box"><span class="search-icon"></span><input id="query" autocomplete="off" placeholder="输入歌曲名或拼音"><button type="submit">搜索</button></form>
         <div id="searchResultBlock" class="search-result-block hidden">
           <div class="block-title"><h3 id="resultTitle">歌手搜索结果</h3><span id="resultSummary"></span></div>
