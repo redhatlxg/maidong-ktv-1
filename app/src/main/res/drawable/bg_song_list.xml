@@ -2,7 +2,7 @@
 <!-- 歌曲列表背景 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#331A0A4D" />
+    <solid android:color="#55300D68" />
     <corners android:radius="6dp" />
-    <stroke android:width="1dp" android:color="#3327CCA4" />
+    <stroke android:width="1dp" android:color="#55C78BFF" />
 </shape>
