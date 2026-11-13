@@ -156,11 +156,26 @@ class LocalRemoteServer(private val context: Context) {
                 val method = parts[0].uppercase(Locale.US)
                 val target = parts[1]
                 val headers = linkedMapOf<String, String>()
+                var headerCount = 0
                 while (true) {
                     val line = readLine(input) ?: break
                     if (line.isEmpty()) break
+                    headerCount++
+                    if (headerCount > MAX_REQUEST_HEADERS) {
+                        write(client, ApiResponse(431, error("HEADERS_TOO_LARGE", "请求头数量过多")))
+                        return
+                    }
                     val colon = line.indexOf(':')
-                    if (colon > 0) headers[line.substring(0, colon).lowercase(Locale.US)] = line.substring(colon + 1).trim()
+                    if (colon <= 0) {
+                        write(client, ApiResponse(400, error("BAD_REQUEST", "请求头格式错误")))
+                        return
+                    }
+                    val name = line.substring(0, colon).lowercase(Locale.US)
+                    if (headers.containsKey(name)) {
+                        write(client, ApiResponse(400, error("BAD_REQUEST", "请求头重复")))
+                        return
+                    }
+                    headers[name] = line.substring(colon + 1).trim()
                 }
                 val path = target.substringBefore('?')
                 val pageRequest = path == "/" || path == "/mobile" || path == "/mobile/"
@@ -239,12 +254,18 @@ class LocalRemoteServer(private val context: Context) {
         val expected = boundAddress ?: return false
         return runCatching {
             val uri = URI("http://$host")
-            uri.host == expected && (uri.port == -1 || uri.port == boundPort)
+            uri.host == expected &&
+                uri.userInfo == null &&
+                uri.rawPath.isNullOrEmpty() &&
+                uri.rawQuery == null &&
+                uri.rawFragment == null &&
+                (uri.port == -1 || uri.port == boundPort)
         }.getOrDefault(false)
     }
 
     private fun validOrigin(origin: String?): Boolean {
-        if (origin.isNullOrBlank() || origin == "null") return true
+        if (origin.isNullOrBlank()) return true
+        if (origin == "null") return false
         val expected = boundAddress ?: return false
         return runCatching {
             val uri = URI(origin)
@@ -282,7 +303,8 @@ class LocalRemoteServer(private val context: Context) {
         val bytes = response.bytes ?: response.body.toByteArray(Charsets.UTF_8)
         val reason = when (response.status) {
             200 -> "OK"; 201 -> "Created"; 204 -> "No Content"; 400 -> "Bad Request"
-            403 -> "Forbidden"; 404 -> "Not Found"; 409 -> "Conflict"; 413 -> "Payload Too Large"; 503 -> "Service Unavailable"; else -> "Error"
+            403 -> "Forbidden"; 404 -> "Not Found"; 409 -> "Conflict"; 413 -> "Payload Too Large"
+            431 -> "Request Header Fields Too Large"; 503 -> "Service Unavailable"; else -> "Error"
         }
         val output = socket.getOutputStream()
         output.write(("HTTP/1.1 ${response.status} $reason\r\n" +
@@ -298,6 +320,7 @@ class LocalRemoteServer(private val context: Context) {
     companion object {
         private const val MAX_CONCURRENT_REQUESTS = 12
         private const val MAX_REQUEST_BODY_BYTES = 64 * 1024
+        private const val MAX_REQUEST_HEADERS = 64
 
         fun isPrivateIpv4(value: String?): Boolean = runCatching {
             val address = InetAddress.getByName(value)
