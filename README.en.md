@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="app/src/main/res/drawable-nodpi/ktv_logo.png" width="140" alt="Maidong KTV Logo">
+  <img src="app/src/main/res/drawable-nodpi/ktv_logo.png" width="140" alt="Xiao Xiao Ya Logo">
 </p>
 
-<h1 align="center">Maidong KTV</h1>
+<h1 align="center">Xiao Xiao Ya · 晓晓呀</h1>
 
 <p align="center">A local karaoke application for Android TV and landscape song-selection devices</p>
 
