@@ -4073,6 +4073,7 @@ class MainActivity : AppCompatActivity() {
             when {
                 method == "GET" && path == "/api/v1/state" -> remoteOk(remoteStateJson())
                 method == "GET" && path == "/api/v1/songs" -> remoteOk(remoteSearchJson(query))
+                method == "GET" && path == "/api/v1/singers" -> remoteOk(remoteSingersJson(query))
                 method == "GET" && path == "/api/v1/hot" -> remoteOk(remoteHotJson(query))
                 method == "GET" && path == "/api/v1/queue" -> remoteOk(remoteQueueJson())
                 method == "POST" && path == "/api/v1/queue" -> remoteOrder(JSONObject(body))
@@ -4208,6 +4209,46 @@ class MainActivity : AppCompatActivity() {
             .put("type", type).put("hasMore", hasMore)
         remoteSearchCache[cacheKey] = payload.toString() to System.currentTimeMillis()
         return payload
+    }
+
+    /** 手机端歌手分类列表：复用正式曲库 singers 表的 area/type 字段，不猜测歌手归属。 */
+    private fun remoteSingersJson(query: Map<String, String>): JSONObject {
+        val group = query["group"].orEmpty().lowercase(Locale.ROOT)
+        val area: String? = when (group) {
+            "mainland" -> "大陆"
+            "hktw" -> "港台"
+            else -> null
+        }
+        val type: String? = when (group) {
+            "male" -> "男"
+            "female" -> "女"
+            "group" -> "组合"
+            else -> null
+        }
+        val keyword = query["q"].orEmpty().trim()
+        val page = (query["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
+        val pageSize = (query["pageSize"]?.toIntOrNull() ?: 30).coerceIn(1, 100)
+        val offset = (page - 1) * pageSize
+        val rows = if (library.muse.isAvailable()) {
+            if (keyword.isBlank()) library.muse.singers(area, type, offset, pageSize + 1)
+            else library.muse.searchSingers(keyword, area, type, offset, pageSize + 1)
+        } else {
+            mutableListOf()
+        }
+        val hasMore = rows.size > pageSize
+        val singers = JSONArray()
+        rows.take(pageSize).forEach { row ->
+            singers.put(JSONObject().apply {
+                put("id", row.getOrNull(0).orEmpty())
+                put("name", row.getOrNull(1).orEmpty())
+                put("type", row.getOrNull(2).orEmpty())
+                put("area", row.getOrNull(3).orEmpty())
+                put("hotScore", row.getOrNull(4)?.toIntOrNull() ?: 0)
+                put("image", row.getOrNull(5).orEmpty())
+            })
+        }
+        return JSONObject().put("singers", singers).put("group", group)
+            .put("page", page).put("pageSize", pageSize).put("hasMore", hasMore)
     }
 
     private fun remoteHotJson(query: Map<String, String>): JSONObject {
