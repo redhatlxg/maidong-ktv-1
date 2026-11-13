@@ -855,14 +855,14 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="点歌大厅"
+                        android:text="点歌导航"
                         android:textColor="#FFF4E7CF"
                         android:textSize="18sp"
                         android:textStyle="bold" />
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="选择喜欢的点歌方式"
+                        android:text="歌曲 · 歌手 · 排行 · 本地曲库"
                         android:textColor="#FF8F9AA8"
                         android:textSize="10sp" />
                 </LinearLayout>
@@ -921,7 +921,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="歌手分类"
+                        android:text="歌手专区"
                         android:textColor="#FFF4E7CF"
                         android:textSize="20sp"
                         android:textStyle="bold"
@@ -931,7 +931,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="按地区与性别快速查找"
+                        android:text="选择地区与歌手类型，快速进入曲库"
                         android:textColor="#FF8F9AA8"
                         android:textSize="12sp"
                         android:gravity="center_vertical"

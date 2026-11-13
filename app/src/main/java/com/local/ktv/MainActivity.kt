@@ -7426,7 +7426,7 @@ class MainActivity : AppCompatActivity() {
         btnBottomSettings = findViewById<TextView?>(R.id.btn_bottom_settings)
         btnBottomExit = findViewById<TextView?>(R.id.btn_bottom_exit)
 
-        // ===== 首页 3 列布局 =====
+        // ===== 首页商业 KTV 三栏点歌布局 =====
         homeLayout = findViewById<LinearLayout?>(R.id.home_layout)
         val homeVideoPlaceholder = findViewById<KtvVideoView?>(R.id.home_video_background)
         homePlayerTitle = findViewById<TextView?>(R.id.home_player_song_title)

@@ -275,3 +275,7 @@ nav button.active{color:#e8ca8b}
 .nav-ranking:before{content:"";position:absolute;left:2px;bottom:1px;width:5px;height:9px;background:currentColor;border-radius:2px 2px 0 0;box-shadow:7px -6px 0 currentColor,14px -12px 0 currentColor}
 .nav-ranking:after{content:"";position:absolute;left:1px;right:0;bottom:0;border-bottom:2px solid currentColor}
 @media(max-width:360px){nav{padding-left:3px;padding-right:3px}nav button{font-size:9px}}
+
+/* Queue collaboration hint and reliable multi-phone queue refresh. */
+.queue-tip{line-height:1.55}
+.queue-heading>span{white-space:nowrap}

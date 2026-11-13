@@ -3,7 +3,7 @@ const $$ = (selector) => document.querySelectorAll(selector);
 const uiState = {
   page: 1, query: "", searchMode: "song", busy: false, resultMode: "songs", singerGroup: "all",
   hotPage: 1, hotPageSize: 10, hotBusy: false,
-  visible: true, connected: false, eqEnabled: false, category: "",
+  visible: true, connected: false, eqEnabled: false, category: "", queueBusy: false, queuePollAt: 0,
   equalizer: null, searchAbort: null, searchKey: ""
 };
 
@@ -144,6 +144,8 @@ async function refresh() {
     $("#original").classList.toggle("active", data.vocalMode === "original");
     $("#accompany").classList.toggle("active", data.vocalMode !== "original");
     $("#nextSong").textContent = data.next?.title || "队列为空";
+    // 已点页面保持多手机同步：在用户查看队列时每约 3 秒拉取一次最新顺序。
+    if ($("#queue").classList.contains("active") && Date.now() - uiState.queuePollAt >= 2800) loadQueue();
     // 均衡器卡片默认收起: 收起时跳过 DOM 更新(避免每秒轮询重绘), 展开时再渲染一次。
     uiState.equalizer = data.equalizer;
     if (!$("#eqBody")?.classList.contains("hidden")) renderEqualizer(data.equalizer);
@@ -356,12 +358,15 @@ async function loadHot(page) {
 }
 
 async function loadQueue() {
+  if (uiState.queueBusy) return;
+  uiState.queueBusy = true;
   try {
     const data = await api("/api/v1/queue");
     const queue = data.queue || [];
     $("#queueCount").textContent = `${queue.length} 首`;
     $("#queueList").innerHTML = queue.map((song, index) => songRow(song, true, index === 0, index)).join("") || '<div class="empty">还没有点歌<br><small>去曲库选一首喜欢的歌吧</small></div>';
   } catch (error) { toast(error.message); }
+  finally { uiState.queueBusy = false; uiState.queuePollAt = Date.now(); }
 }
 
 document.addEventListener("click", async (event) => {
