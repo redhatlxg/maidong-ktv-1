@@ -37,7 +37,8 @@ object UsbStorageManager {
     }.getOrDefault(emptyMap())
 
     private fun isRemovableRoot(dir: File): Boolean {
-        val path = runCatching { dir.canonicalPath }.getOrNull() ?: return false
+         // Preserve the visible mount path; canonicalPath may resolve to /mnt/media_rw.
+        val path = dir.absolutePath
         if (!path.startsWith("/storage/")) return false
         val name = dir.name.lowercase(Locale.ROOT)
         return name != "emulated" && name != "self" && dir.isDirectory
@@ -64,8 +65,9 @@ object UsbStorageManager {
             .mapNotNull { root ->
                 val state = runCatching { Environment.getExternalStorageState(root) }.getOrNull()
                 if (state != Environment.MEDIA_MOUNTED) return@mapNotNull null
+                val canonical = runCatching { root.canonicalPath }.getOrNull()
                 val fs = types.entries
-                    .filter { (mount, _) -> root.absolutePath == mount || root.absolutePath.startsWith("$mount/") }
+                    .filter { (mount, _) -> root.absolutePath == mount || root.absolutePath.startsWith(mount + "/") || canonical == mount || (canonical != null && canonical.startsWith(mount + "/")) }
                     .maxByOrNull { it.key.length }?.value ?: "unknown"
                 val writable = writeProbe(root)
                 if (!writable) return@mapNotNull null
