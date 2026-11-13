@@ -2,7 +2,7 @@
 <!-- 左列顶部状态条背景 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#221A0A4D" />
+    <solid android:color="#44300D68" />
     <corners android:radius="6dp" />
-    <stroke android:width="1dp" android:color="#3327CCA4" />
+    <stroke android:width="1dp" android:color="#66C78BFF" />
 </shape>
