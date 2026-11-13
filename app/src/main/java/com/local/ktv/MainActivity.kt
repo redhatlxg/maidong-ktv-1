@@ -191,7 +191,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val remoteSongCache = Collections.synchronizedMap(LinkedHashMap<String, Song>())
+    private val remoteSongCache = Collections.synchronizedMap(LinkedHashMap<String, Song>(64, 0.75f, true))
 
     /**
      * 远程搜索结果的短期缓存（LRU，最多 24 条 = 最近 4 个查询 × 6 页）。
@@ -202,7 +202,7 @@ class MainActivity : AppCompatActivity() {
      */
     private val remoteSearchCache = object : LinkedHashMap<String, Pair<String, Long>>(8, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<String, Long>>?): Boolean =
-            size > 24
+            size > 8
     }
     private var mobileQrOverlay: View? = null
     private var fullScreenQrOverlay: View? = null
@@ -382,12 +382,12 @@ class MainActivity : AppCompatActivity() {
         val pageSize: Int,
     )
     private data class BrowsePageResult(val songs: List<Song>, val total: Int)
-    private val browsePageCache = object : LinkedHashMap<BrowseCacheKey, BrowsePageResult>(48, 0.75f, true) {
+    private val browsePageCache = object : LinkedHashMap<BrowseCacheKey, BrowsePageResult>(24, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<BrowseCacheKey, BrowsePageResult>?): Boolean =
-            size > 48
+            size > 24
     }
-    private val browseCountCache = object : LinkedHashMap<String, Int>(24, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Int>?): Boolean = size > 24
+    private val browseCountCache = object : LinkedHashMap<String, Int>(12, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Int>?): Boolean = size > 12
     }
     private val browseRequestsInFlight = HashSet<BrowseCacheKey>()
     private val browseDisplayRequests = HashMap<BrowseCacheKey, Int>()
@@ -796,6 +796,33 @@ class MainActivity : AppCompatActivity() {
     @Deprecated("Deprecated in Android")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    /**
+     * 2GB RAM boxes: discard only rebuildable search/browse/interaction caches when Android
+     * signals memory pressure. Playback state, current song, queue and library DB are untouched.
+     */
+    private fun clearTransientMemoryCaches() {
+        runCatching { remoteSongCache.clear() }
+        synchronized(remoteSearchCache) { remoteSearchCache.clear() }
+        synchronized(browsePageCache) { browsePageCache.clear() }
+        synchronized(browseCountCache) { browseCountCache.clear() }
+        browseRequestsInFlight.clear()
+        browseDisplayRequests.clear()
+        synchronized(liveInteractions) { liveInteractions.clear() }
+        interactionRate.clear()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            clearTransientMemoryCaches()
+        }
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        clearTransientMemoryCaches()
     }
 
     override fun onDestroy() {
@@ -4426,7 +4453,7 @@ class MainActivity : AppCompatActivity() {
             remoteSongCache[stableId(song)] = song
             array.put(songJson(song))
         }
-        while (remoteSongCache.size > 500) remoteSongCache.remove(remoteSongCache.keys.first())
+        while (remoteSongCache.size > 200) remoteSongCache.remove(remoteSongCache.keys.first())
         val payload = JSONObject().put("songs", array).put("page", page).put("pageSize", pageSize)
             .put("type", type).put("hasMore", hasMore)
         remoteSearchCache[cacheKey] = payload.toString() to System.currentTimeMillis()
