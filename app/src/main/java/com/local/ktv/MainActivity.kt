@@ -976,7 +976,9 @@ class MainActivity : AppCompatActivity() {
         val availH = column.height - cardsH - gap
         if (availH <= 0) return
         val rowInner = row.width - row.paddingLeft - row.paddingRight
-        val capW = ((rowInner - colLp.leftMargin - colLp.rightMargin) * 0.62f).toInt()
+        // MV 是首页主视觉：把可用宽度上限从 62% 提高到 70%，减少播放器显得过窄的问题。
+        // 中列和推荐列仍保留剩余空间，避免把分类入口挤没。
+        val capW = ((rowInner - colLp.leftMargin - colLp.rightMargin) * 0.70f).toInt()
         val targetW = ((availH * 16f) / 9f).toInt().coerceIn(dp(120), capW.coerceAtLeast(dp(120)))
         val targetH = ((targetW * 9f) / 16f).toInt()
         val tolerance = dp(2)
@@ -3459,7 +3461,7 @@ class MainActivity : AppCompatActivity() {
         // 右列固定宽度: 横版布局下避免被压缩导致地址/文案被截断。
         val infoWidth = dp(if (compact) 196 else 240)
         info.addView(
-            label("扫码点歌", if (compact) 16 else 20, Color.WHITE).apply {
+            label("微信扫码点歌", if (compact) 16 else 20, Color.WHITE).apply {
                 gravity = Gravity.CENTER
                 includeFontPadding = false
                 setTypeface(typeface, Typeface.BOLD)
@@ -3541,8 +3543,8 @@ class MainActivity : AppCompatActivity() {
         if (prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, true) != true) return
         val url = remoteUrl()
         if (url.isBlank()) return
-        val qrSize = dp(if (compactUi) 66 else 82)
-        val panelWidth = dp(if (compactUi) 78 else 96)
+        val qrSize = dp(if (compactUi) 68 else 86)
+        val panelWidth = dp(if (compactUi) 88 else 108)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
@@ -3551,11 +3553,11 @@ class MainActivity : AppCompatActivity() {
             UiCompat.setElevation(this, dp(10).toFloat())
             addView(ImageView(this@MainActivity).apply {
                 setImageBitmap(qrBitmap(url, qrSize))
-                contentDescription = "固定在 MV 右上角的手机点歌二维码"
+                contentDescription = "微信扫码点歌二维码"
                 scaleType = ImageView.ScaleType.FIT_CENTER
             }, LinearLayout.LayoutParams(qrSize, qrSize))
             addView(TextView(this@MainActivity).apply {
-                text = "扫码点歌"
+                text = "微信扫码点歌"
                 textSize = if (compactUi) 9f else 10f
                 gravity = Gravity.CENTER
                 setTextColor(Color.rgb(48, 65, 77))
@@ -3582,7 +3584,7 @@ class MainActivity : AppCompatActivity() {
         val url = remoteUrl()
         if (url.isBlank()) return
         val qrSize = dp(if (compactUi) 68 else 84)
-        val totalWidth = dp(if (compactUi) 78 else 96)
+        val totalWidth = dp(if (compactUi) 88 else 108)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
@@ -3591,10 +3593,10 @@ class MainActivity : AppCompatActivity() {
             UiCompat.setElevation(this, dp(12).toFloat())
             addView(ImageView(this@MainActivity).apply {
                 setImageBitmap(qrBitmap(url, qrSize))
-                contentDescription = "扫码手机点歌"
+                contentDescription = "微信扫码点歌"
             }, LinearLayout.LayoutParams(qrSize, qrSize))
             addView(TextView(this@MainActivity).apply {
-                text = "扫码点歌"
+                text = "微信扫码点歌"
                 textSize = if (compactUi) 9f else 10f
                 gravity = Gravity.CENTER
                 setTextColor(Color.rgb(59, 18, 92))

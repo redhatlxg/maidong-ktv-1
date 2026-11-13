@@ -738,6 +738,7 @@
                     <!-- MV 左上角品牌标识，与右上角扫码点歌形成固定双入口 -->
                     <TextView
                         android:id="@+id/home_mv_live_badge"
+                        android:visibility="gone"
                         android:layout_width="wrap_content"
                         android:layout_height="30dp"
                         android:layout_gravity="top|start"
