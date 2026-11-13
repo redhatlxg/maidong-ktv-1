@@ -594,3 +594,17 @@ nav .nav-settings{font-style:normal;font-size:18px;line-height:20px}
 @keyframes interaction-in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:360px){.live-interaction-card{padding:13px}.interaction-actions{gap:6px}.interaction-actions button{min-height:61px}}
 @media(prefers-reduced-motion:reduce){.interaction-item{animation:none}}
+
+
+/* Voice remote controls */
+.voice-command-card{margin:0 0 14px;padding:16px;border-radius:20px;background:linear-gradient(145deg,rgba(39,61,94,.9),rgba(21,31,55,.96));border:1px solid rgba(244,209,138,.2)}
+.voice-command-card .panel-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.voice-command-card .panel-title small{color:#9fb2cc;font-size:10px}
+.voice-command-button{width:100%;min-height:72px;border:1px solid rgba(244,209,138,.3);border-radius:17px;background:linear-gradient(135deg,rgba(143,118,214,.3),rgba(37,57,86,.8));color:#f3d99f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.voice-command-button>span{font-size:23px}
+.voice-command-button>b{font-size:13px}
+.voice-command-button>small{font-size:10px;color:#b9c7dc}
+.voice-command-button.listening{background:linear-gradient(135deg,rgba(189,85,110,.45),rgba(57,44,83,.9));border-color:#ff9bab;animation:voice-pulse 1.2s infinite}
+.voice-command-hint{margin:10px 0 0;color:#8fa1bb;font-size:10px;line-height:1.6}
+@keyframes voice-pulse{50%{box-shadow:0 0 0 6px rgba(255,155,171,.1)}}
+@media(prefers-reduced-motion:reduce){.voice-command-button.listening{animation:none}}
