@@ -102,8 +102,8 @@ async function loadSingers(reset = true) {
 
 function openPage(name) {
   const pageName = name === "singers" || name === "ranking" ? "search" : name;
-  $("nav button,.page").forEach((element) => element.classList.remove("active"));
-  $("nav button").forEach((element) => {
+  $$("nav button,.page").forEach((element) => element.classList.remove("active"));
+  $$("nav button").forEach((element) => {
     if (element.dataset.page === name) element.setAttribute("aria-current", "page");
     else element.removeAttribute("aria-current");
   });
