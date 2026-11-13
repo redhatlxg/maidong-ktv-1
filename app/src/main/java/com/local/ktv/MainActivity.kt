@@ -3557,33 +3557,51 @@ class MainActivity : AppCompatActivity() {
         if (prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, true) != true) return
         val url = remoteUrl()
         if (url.isBlank()) return
-        val qrSize = dp(if (compactUi) 108 else 132)
-        val panelWidth = dp(if (compactUi) 124 else 150)
+        val qrSize = dp(if (compactUi) 112 else 144)
+        val panelWidth = dp(if (compactUi) 142 else 178)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(dp(5), dp(5), dp(5), dp(4))
-            setBackgroundColor(Color.argb(238, 255, 255, 255))
-            UiCompat.setElevation(this, dp(10).toFloat())
+            setPadding(dp(8), dp(8), dp(8), dp(7))
+            background = GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                intArrayOf(Color.rgb(255, 255, 255), Color.rgb(239, 243, 255))
+            ).apply {
+                cornerRadius = dp(16).toFloat()
+                setStroke(dp(1), Color.rgb(196, 207, 245))
+            }
+            UiCompat.setElevation(this, dp(14).toFloat())
+            addView(TextView(this@MainActivity).apply {
+                text = "手机扫码点歌"
+                textSize = if (compactUi) 11f else 13f
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                setTextColor(Color.rgb(48, 54, 112))
+                includeFontPadding = false
+            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 20 else 23)))
             addView(ImageView(this@MainActivity).apply {
                 setImageBitmap(qrBitmap(url, qrSize))
-                contentDescription = "微信扫码点歌二维码"
+                contentDescription = "手机点歌二维码，扫码进入点歌大厅"
                 scaleType = ImageView.ScaleType.FIT_CENTER
-            }, LinearLayout.LayoutParams(qrSize, qrSize))
+                setBackgroundColor(Color.WHITE)
+            }, LinearLayout.LayoutParams(qrSize, qrSize).apply {
+                topMargin = dp(4)
+                bottomMargin = dp(4)
+            })
             addView(TextView(this@MainActivity).apply {
-                text = "微信扫码点歌"
-                textSize = if (compactUi) 9f else 10f
+                text = "微信 / 浏览器扫一扫"
+                textSize = if (compactUi) 8f else 9f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(48, 65, 77))
+                setTextColor(Color.rgb(77, 91, 139))
                 includeFontPadding = false
-            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 17 else 19)))
+            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 14 else 16)))
             addView(TextView(this@MainActivity).apply {
-                text = "扫码进入手机点歌大厅"
+                text = "手机与电视连接同一 Wi-Fi"
                 textSize = if (compactUi) 7f else 8f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(105, 116, 126))
+                setTextColor(Color.rgb(116, 126, 157))
                 includeFontPadding = false
-            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 12 else 14)))
+            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 13 else 15)))
             setOnClickListener { showMobileRemoteDialog() }
         }
         val params = FrameLayout.LayoutParams(panelWidth, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.END or Gravity.TOP).apply {
