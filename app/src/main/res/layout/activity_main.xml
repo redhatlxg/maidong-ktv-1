@@ -225,7 +225,7 @@
             android:gravity="center_vertical"
             android:paddingStart="16dp"
             android:paddingEnd="20dp"
-            android:text="▣  扫码点歌"
+            android:text="▣  微信扫码点歌"
             android:textColor="#FFFFFFFF"
             android:textSize="14sp" />
 
@@ -708,10 +708,10 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="horizontal"
-            android:paddingStart="24dp"
-            android:paddingTop="18dp"
-            android:paddingEnd="24dp"
-            android:paddingBottom="14dp">
+            android:paddingStart="18dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="8dp">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -807,7 +807,7 @@
                 <LinearLayout
                     android:id="@+id/home_bottom_cards_row"
                     android:layout_width="match_parent"
-                    android:layout_height="62dp"
+                    android:layout_height="56dp"
                     android:orientation="horizontal">
 
                     <TextView
@@ -855,14 +855,14 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="点歌导航"
+                        android:text="点歌大厅"
                         android:textColor="#FFF4E7CF"
                         android:textSize="18sp"
                         android:textStyle="bold" />
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="歌曲 · 歌手 · 排行 · 本地曲库"
+                        android:text="热门推荐 · 歌曲检索 · 歌手专区"
                         android:textColor="#FF8F9AA8"
                         android:textSize="10sp" />
                 </LinearLayout>
@@ -874,7 +874,7 @@
                     android:layout_weight="1"
                     android:layout_marginBottom="6dp"
                     android:background="@drawable/bg_home_card_purple"
-                    android:gravity="center_vertical" android:paddingStart="18dp" android:paddingEnd="12dp" android:text="♫  热门排行\n实时热榜 · 新歌推荐" android:textColor="#FFFFFFFF" android:textSize="16sp" android:lineSpacingExtra="3dp" />
+                    android:gravity="center_vertical" android:paddingStart="18dp" android:paddingEnd="12dp" android:text="♫  热门排行\n人气金曲 · 新歌榜单" android:textColor="#FFFFFFFF" android:textSize="16sp" android:lineSpacingExtra="3dp" />
 
                 <TextView
                     android:id="@+id/home_card_song"
@@ -883,7 +883,7 @@
                     android:layout_weight="1"
                     android:layout_marginBottom="6dp"
                     android:background="@drawable/bg_home_card_blue"
-                    android:gravity="center_vertical" android:paddingStart="18dp" android:paddingEnd="12dp" android:text="⌕  歌名点歌\n输入歌名 · 拼音首字母搜索" android:textColor="#FFFFFFFF" android:textSize="16sp" android:lineSpacingExtra="3dp" />
+                    android:gravity="center_vertical" android:paddingStart="18dp" android:paddingEnd="12dp" android:text="⌕  歌曲点歌\n歌名搜索 · 拼音快速检索" android:textColor="#FFFFFFFF" android:textSize="16sp" android:lineSpacingExtra="3dp" />
 
                 <TextView
                     android:id="@+id/home_card_singer"
@@ -892,7 +892,7 @@
                     android:layout_weight="1"
                     android:layout_marginBottom="6dp"
                     android:background="@drawable/bg_home_card_orange"
-                    android:gravity="center_vertical" android:paddingStart="18dp" android:paddingEnd="12dp" android:text="♬  歌手点歌\n按歌手姓名查找歌曲" android:textColor="#FFFFFFFF" android:textSize="16sp" android:lineSpacingExtra="3dp" />
+                    android:gravity="center_vertical" android:paddingStart="18dp" android:paddingEnd="12dp" android:text="♬  歌手点歌\n按地区、歌手快速查找" android:textColor="#FFFFFFFF" android:textSize="16sp" android:lineSpacingExtra="3dp" />
 
                 <TextView
                     android:id="@+id/home_card_local"
@@ -900,7 +900,7 @@
                     android:layout_height="0dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_home_card_pink"
-                    android:gravity="center_vertical" android:paddingStart="18dp" android:paddingEnd="12dp" android:text="▣  本地曲库\nU盘歌曲 · 本机收藏" android:textColor="#FFFFFFFF" android:textSize="16sp" android:lineSpacingExtra="3dp" />
+                    android:gravity="center_vertical" android:paddingStart="18dp" android:paddingEnd="12dp" android:text="▣  本地曲库\n本机歌曲 · 收藏曲目" android:textColor="#FFFFFFFF" android:textSize="16sp" android:lineSpacingExtra="3dp" />
             </LinearLayout>
 
             <FrameLayout
@@ -931,7 +931,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="选择地区与歌手类型，快速进入曲库"
+                        android:text="按地区与性别选择歌手，快速点歌"
                         android:textColor="#FF8F9AA8"
                         android:textSize="12sp"
                         android:gravity="center_vertical"
