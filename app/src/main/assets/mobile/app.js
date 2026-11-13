@@ -767,6 +767,98 @@ function startVoiceSearch() {
   }
 }
 
+
+let remoteVoiceRecognition = null;
+let remoteVoiceListening = false;
+
+function setRemoteVoiceState(listening, message) {
+  remoteVoiceListening = listening;
+  const button = $("#voiceCommand");
+  const label = $("#voiceCommandState");
+  if (button) {
+    button.classList.toggle("listening", listening);
+    button.setAttribute("aria-pressed", listening ? "true" : "false");
+    button.querySelector("b").textContent = listening ? "正在聆听…" : "按住说话";
+  }
+  if (label && message) label.textContent = message;
+}
+
+function parseRemoteVoiceCommand(transcript) {
+  const raw = String(transcript || "").trim().replace(/[，。！？、,.!?；;：:]+$/g, "");
+  const phrase = raw.replace(/^(请|麻烦)?(帮我)?\s*/, "").trim();
+  if (/^(切歌|下一首|换一首|跳过这首|跳到下一首)$/.test(phrase)) return { action: "next" };
+  if (/^(暂停|停一下|先暂停|停止播放)$/.test(phrase)) return { action: "pause" };
+  if (/^(继续|继续播放|播放|恢复播放)$/.test(phrase)) return { action: "resume" };
+  if (/^(重唱|再唱一次|重新播放|从头播放)$/.test(phrase)) return { action: "replay" };
+  const song = phrase.replace(/^(点一首|点首|来一首|唱一首|播放歌曲|播放|我想听|我要听|点歌)\s*/, "")
+    .replace(/[《》“”"']/g, "").replace(/(这首歌|这首歌曲)$/, "").trim();
+  if (song && song.length <= 40 && !/^(下一首|切歌|暂停|继续播放|重唱)$/.test(song)) return { action: "song", query: song };
+  return null;
+}
+
+async function executeRemoteVoiceCommand(command) {
+  if (command.action !== "song") {
+    await playerAction(command.action);
+    toast(({ next: "已切换下一首", pause: "已暂停", resume: "继续播放", replay: "重新播放当前歌曲" })[command.action] || "操作成功");
+    return;
+  }
+  const data = await api("/api/v1/songs?q=" + encodeURIComponent(command.query) + "&type=song&page=1&pageSize=20");
+  const songs = data.songs || [];
+  if (!songs.length) { toast("曲库没有找到《" + command.query + "》，请换个说法"); return; }
+  const normalized = value => String(value || "").toLocaleLowerCase().replace(/[\s《》“”'"]/g, "");
+  const exact = songs.find(song => normalized(song.title) === normalized(command.query));
+  const chosen = exact || songs[0];
+  await api("/api/v1/queue", { method: "POST", body: JSON.stringify({ songId: chosen.id }) });
+  await loadQueue();
+  toast("已点歌：" + chosen.title + " · " + (chosen.singer || "未知歌手"));
+}
+
+function startVoiceRemoteCommand() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    toast("浏览器暂不支持语音识别，请使用搜索页语音点歌或键盘麦克风");
+    return;
+  }
+  if (remoteVoiceListening && remoteVoiceRecognition) {
+    remoteVoiceRecognition.stop();
+    setRemoteVoiceState(false, "已停止聆听");
+    return;
+  }
+  try {
+    remoteVoiceRecognition = new SpeechRecognition();
+    remoteVoiceRecognition.lang = "zh-CN";
+    remoteVoiceRecognition.continuous = false;
+    remoteVoiceRecognition.interimResults = false;
+    remoteVoiceRecognition.maxAlternatives = 3;
+    remoteVoiceRecognition.onstart = () => {
+      setRemoteVoiceState(true, "正在听，请说出指令");
+      toast("请说：下一首、暂停、继续播放、重唱，或点歌名");
+    };
+    remoteVoiceRecognition.onresult = async event => {
+      const transcript = event.results?.[0]?.[0]?.transcript || "";
+      const command = parseRemoteVoiceCommand(transcript);
+      if (!command) { toast("没听懂：“" + transcript + "”，请再说一次"); return; }
+      setRemoteVoiceState(false, "识别到：" + transcript);
+      try { await executeRemoteVoiceCommand(command); }
+      catch (error) { toast(error.message || "语音指令执行失败"); }
+    };
+    remoteVoiceRecognition.onerror = event => {
+      const message = event.error === "not-allowed" ? "麦克风权限未开启" :
+        event.error === "no-speech" ? "没有听到声音，请靠近手机再说" :
+        event.error === "network" ? "语音识别网络不可用" : "语音识别失败，请重试";
+      setRemoteVoiceState(false, message);
+      toast(message);
+    };
+    remoteVoiceRecognition.onend = () => setRemoteVoiceState(false, "点击麦克风说指令");
+    remoteVoiceRecognition.start();
+  } catch (_) {
+    setRemoteVoiceState(false, "无法启动麦克风");
+    toast("无法启动语音识别，请检查浏览器麦克风权限");
+  }
+}
+
+$("#voiceCommand")?.addEventListener("click", startVoiceRemoteCommand);
+
 $("#playlistBack")?.addEventListener("click", () => loadPlaylists());
 $("#detailClose")?.addEventListener("click", () => $("#detailModal").classList.add("hidden"));
 $("#detailModal")?.addEventListener("click", (event) => { if (event.target.id === "detailModal") $("#detailModal").classList.add("hidden"); });
