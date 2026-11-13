@@ -18,6 +18,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
+import android.media.ToneGenerator
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.MediaPlayer.OnCompletionListener
@@ -176,6 +177,20 @@ class MainActivity : AppCompatActivity() {
     val store: KtvStore = KtvStore()
     private val remoteServer by lazy { LocalRemoteServer(this) }
     @Volatile private var remoteStateVersion = 1L
+    private val liveInteractions = java.util.concurrent.CopyOnWriteArrayList<JSONObject>()
+    private val interactionRate = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    @Volatile private var interactionSequence = 0L
+    private var danmakuOverlay: FrameLayout? = null
+    private var danmakuRows: LinearLayout? = null
+    private var lastTvInteractionId = 0L
+    private var interactionTone: ToneGenerator? = null
+    private val interactionRefresh = object : Runnable {
+        override fun run() {
+            refreshTvInteractions()
+            main.postDelayed(this, 900L)
+        }
+    }
+
     private val remoteSongCache = Collections.synchronizedMap(LinkedHashMap<String, Song>())
 
     /**
@@ -3666,6 +3681,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startRemoteServer() {
+        main.removeCallbacks(interactionRefresh)
+        main.post(interactionRefresh)
         val address = localIp().takeIf { LocalRemoteServer.isPrivateIpv4(it) }
         remoteServer.start(
             address,
@@ -4117,6 +4134,8 @@ class MainActivity : AppCompatActivity() {
         return try {
             when {
                 method == "GET" && path == "/api/v1/state" -> remoteOk(remoteStateJson())
+                method == "GET" && path == "/api/v1/interactions" -> remoteInteractionsJson()
+                method == "POST" && path == "/api/v1/interactions" -> remotePostInteraction(JSONObject(body))
                 method == "GET" && path == "/api/v1/songs" -> remoteOk(remoteSearchJson(query))
                 method == "GET" && path == "/api/v1/singer" -> remoteSingerJson(query)
                 method == "GET" && path.startsWith("/api/v1/lyrics/") -> remoteLyricsJson(URLDecoder.decode(path.substringAfterLast('/'), "UTF-8"))
@@ -4173,6 +4192,123 @@ class MainActivity : AppCompatActivity() {
             put("keptPlaying", keep?.exists() == true)
             put("message", if (result.first == 0) "没有可删除的已下载歌曲" else "已删除 ${result.first} 首下载歌曲")
         })
+    }
+
+    /** Shared LAN room feed: short-lived messages/reactions are broadcast to every connected phone and TV. */
+    private fun remoteInteractionsJson(): LocalRemoteServer.ApiResponse {
+        val now = System.currentTimeMillis()
+        synchronized(liveInteractions) {
+            liveInteractions.removeAll { now - it.optLong("createdAt", now) > 25_000L }
+            val items = JSONArray()
+            liveInteractions.forEach { items.put(JSONObject(it.toString())) }
+            return remoteOk(JSONObject().put("items", items).put("serverTime", now))
+        }
+    }
+
+    private fun remotePostInteraction(json: JSONObject): LocalRemoteServer.ApiResponse {
+        val sender = json.optString("senderId").trim().take(64)
+        val name = json.optString("name").trim().replace(Regex("[\\r\\n\\t]"), " ").take(12).ifBlank { "KTV朋友" }
+        val kind = json.optString("kind").trim()
+        if (sender.length < 8) return remoteError(400, "BAD_SENDER", "请刷新页面后重试")
+        if (kind !in setOf("message", "applause", "cheer", "bravo")) {
+            return remoteError(400, "BAD_KIND", "不支持的互动类型")
+        }
+        val text = json.optString("text").trim().replace(Regex("[\\r\\n\\t]"), " ").take(40)
+        if (kind == "message" && text.isBlank()) return remoteError(400, "EMPTY_MESSAGE", "先写一句祝福吧")
+        val now = System.currentTimeMillis()
+        val previous = interactionRate[sender] ?: 0L
+        if (now - previous < 1800L) return remoteError(429, "TOO_FAST", "慢一点哦，给大家留出展示时间")
+        interactionRate[sender] = now
+        val item = JSONObject().apply {
+            put("id", ++interactionSequence)
+            put("kind", kind)
+            put("name", name)
+            put("text", if (kind == "message") text else when (kind) {
+                "applause" -> "👏 掌声送给正在唱歌的朋友"
+                "cheer" -> "🎉 欢呼声送给舞台上的你"
+                else -> "✨ 太棒了！喝彩！"
+            })
+            put("createdAt", now)
+        }
+        synchronized(liveInteractions) {
+            liveInteractions.add(item)
+            while (liveInteractions.size > 60) liveInteractions.removeAt(0)
+        }
+        main.post {
+            if (kind != "message") playInteractionCue(kind)
+            refreshTvInteractions()
+        }
+        return remoteOk(JSONObject().put("message", "已发送").put("id", item.optLong("id")), 201)
+    }
+
+    private fun playInteractionCue(kind: String) {
+        runCatching {
+            if (interactionTone == null) interactionTone = ToneGenerator(AudioManager.STREAM_MUSIC, 55)
+            val tone = when (kind) {
+                "applause" -> ToneGenerator.TONE_PROP_ACK
+                "cheer" -> ToneGenerator.TONE_PROP_PROMPT
+                else -> ToneGenerator.TONE_PROP_BEEP
+            }
+            interactionTone?.startTone(tone, 180)
+        }
+    }
+
+    private fun ensureDanmakuOverlay() {
+        val root = playerLayerRoot ?: return
+        if (danmakuOverlay != null) return
+        val rows = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.BOTTOM or Gravity.START
+            setPadding(dp(20), dp(8), dp(20), dp(12))
+            isClickable = false
+            isFocusable = false
+        }
+        val overlay = FrameLayout(this).apply {
+            isClickable = false
+            isFocusable = false
+            clipChildren = false
+            clipToPadding = false
+            setBackgroundColor(Color.TRANSPARENT)
+            addView(rows, FrameLayout.LayoutParams(-1, -1, Gravity.BOTTOM))
+            UiCompat.setElevation(this, dp(28).toFloat())
+        }
+        root.addView(overlay, FrameLayout.LayoutParams(-1, dp(190), Gravity.BOTTOM))
+        danmakuOverlay = overlay
+        danmakuRows = rows
+    }
+
+    private fun refreshTvInteractions() {
+        val root = playerLayerRoot ?: return
+        ensureDanmakuOverlay()
+        val rows = danmakuRows ?: return
+        val now = System.currentTimeMillis()
+        val recent = synchronized(liveInteractions) {
+            liveInteractions.filter { now - it.optLong("createdAt", now) < 12_000L }.takeLast(5)
+        }
+        rows.removeAllViews()
+        recent.forEach { item ->
+            val label = TextView(this).apply {
+                text = "  " + item.optString("name", "KTV朋友") + "  " + item.optString("text")
+                textSize = 17f
+                setTextColor(Color.WHITE)
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
+                setPadding(dp(12), dp(7), dp(14), dp(7))
+                background = GradientDrawable().apply {
+                    cornerRadius = dp(18).toFloat()
+                    setColor(Color.argb(178, 19, 24, 48))
+                    setStroke(dp(1), Color.argb(125, 244, 209, 138))
+                }
+                alpha = 0.96f
+            }
+            rows.addView(label, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(6) })
+            if (item.optLong("id") > lastTvInteractionId) {
+                label.translationX = dp(90).toFloat()
+                label.animate().translationX(0f).setDuration(420L).start()
+                lastTvInteractionId = item.optLong("id")
+            }
+        }
+        danmakuOverlay?.visibility = if (recent.isEmpty()) View.GONE else View.VISIBLE
     }
 
     private fun remoteStateJson(): JSONObject {
