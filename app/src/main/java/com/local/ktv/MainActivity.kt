@@ -4071,11 +4071,11 @@ class MainActivity : AppCompatActivity() {
     ): LocalRemoteServer.ApiResponse {
         return try {
             when {
-                method == "GET" && path == "/api/v1/state" -> remoteOk(remoteStateJson())
+                method == "GET" && path == "/api/v1/state" -> remoteOnMain { remoteOk(remoteStateJson()) }
                 method == "GET" && path == "/api/v1/songs" -> remoteOk(remoteSearchJson(query))
                 method == "GET" && path == "/api/v1/singers" -> remoteOk(remoteSingersJson(query))
                 method == "GET" && path == "/api/v1/hot" -> remoteOk(remoteHotJson(query))
-                method == "GET" && path == "/api/v1/queue" -> remoteOk(remoteQueueJson())
+                method == "GET" && path == "/api/v1/queue" -> remoteOnMain { remoteOk(remoteQueueJson()) }
                 method == "POST" && path == "/api/v1/queue" -> remoteOrder(JSONObject(body))
                 method == "POST" && path == "/api/v1/player/actions" -> remotePlayerAction(JSONObject(body))
                 method == "PATCH" && path == "/api/v1/player/audio" -> remoteAudio(JSONObject(body))
@@ -4326,17 +4326,48 @@ class MainActivity : AppCompatActivity() {
         return response ?: remoteError(503, "QUEUE_BUSY", "点歌请求未能完成，请重试")
     }
 
-    private fun remoteQueueMutation(method: String, id: String): LocalRemoteServer.ApiResponse {
-        val song = orderQueue?.firstOrNull { stableId(it) == id }
-            ?: return remoteError(404, "QUEUE_ITEM_NOT_FOUND", "已点歌曲不存在")
-        if (stableId(currentSong ?: song) == id && currentSong != null) {
-            return remoteError(409, "CURRENT_SONG", "正在播放的歌曲不能修改")
-        }
-        main.post {
+    private fun remoteQueueMutation(method: String, id: String): LocalRemoteServer.ApiResponse =
+        remoteOnMain {
+            val song = orderQueue?.firstOrNull { stableId(it) == id }
+                ?: return@remoteOnMain remoteError(404, "QUEUE_ITEM_NOT_FOUND", "已点歌曲不存在")
+            if (stableId(currentSong ?: song) == id && currentSong != null) {
+                return@remoteOnMain remoteError(409, "CURRENT_SONG", "正在播放的歌曲不能修改")
+            }
             if (method == "PATCH") moveQueuedSongToNext(song) else deleteQueuedSong(song)
             remoteStateVersion++
+            remoteOk(JSONObject().put("message", if (method == "PATCH") "已置顶" else "已删除"))
         }
-        return remoteOk(JSONObject().put("message", if (method == "PATCH") "已置顶" else "已删除"))
+
+    /**
+     * HTTP 请求由工作线程处理；播放队列和当前播放状态由主线程维护。
+     * 涉及这些可变状态的远程读写统一切回主线程，避免多人并发时遍历 ArrayList。
+     */
+    private fun remoteOnMain(action: () -> LocalRemoteServer.ApiResponse): LocalRemoteServer.ApiResponse {
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            return runCatching(action).getOrElse {
+                remoteError(500, "REMOTE_ACTION_FAILED", it.message ?: "远程操作失败")
+            }
+        }
+        val completed = java.util.concurrent.CountDownLatch(1)
+        var response: LocalRemoteServer.ApiResponse? = null
+        val posted = main.post {
+            try {
+                response = action()
+            } catch (e: Exception) {
+                response = remoteError(500, "REMOTE_ACTION_FAILED", e.message ?: "远程操作失败")
+            } finally {
+                completed.countDown()
+            }
+        }
+        if (!posted) return remoteError(503, "REMOTE_BUSY", "设备正在忙，请稍后重试")
+        val finished = try {
+            completed.await(3, java.util.concurrent.TimeUnit.SECONDS)
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+            false
+        }
+        return if (finished) response ?: remoteError(503, "REMOTE_BUSY", "远程操作未能完成")
+        else remoteError(503, "REMOTE_BUSY", "设备正在处理其他操作，请稍后刷新")
     }
 
     private fun remotePlayerAction(json: JSONObject): LocalRemoteServer.ApiResponse {
