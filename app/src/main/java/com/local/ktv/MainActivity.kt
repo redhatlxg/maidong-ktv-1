@@ -3529,57 +3529,65 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateMobileQrOverlay() {
-        val root = findViewById<FrameLayout?>(R.id.layout_root) ?: return
-        mobileQrOverlay?.let { root.removeView(it) }
+        // 二维码只作为 MV 播放窗口内的覆盖层，绝不添加到首页根布局/宣传海报区域。
+        val playerContainer = findViewById<FrameLayout?>(R.id.player_container) ?: return
+        mobileQrOverlay?.let { old ->
+            (old.parent as? ViewGroup)?.removeView(old)
+        }
         mobileQrOverlay = null
-        // 常驻显示，不再受设置开关、手机访问状态或播放控制层影响。
+
         val url = remoteUrl()
+        val qrSize = dp(if (compactUi) 62 else 76)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(dp(7), dp(7), dp(7), dp(6))
+            setPadding(dp(4), dp(4), dp(4), dp(3))
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(Color.WHITE)
-                cornerRadius = dp(12).toFloat()
+                cornerRadius = dp(8).toFloat()
                 setStroke(dp(2), Color.rgb(7, 193, 96))
             }
+            UiCompat.setElevation(this, dp(10).toFloat())
             addView(TextView(this@MainActivity).apply {
-                text = "微信扫一扫"
-                textSize = 12f
+                text = "微信扫码"
+                textSize = 9f
                 gravity = Gravity.CENTER
                 setTypeface(typeface, Typeface.BOLD)
                 setTextColor(Color.rgb(7, 193, 96))
                 includeFontPadding = false
-            }, LinearLayout.LayoutParams(-1, dp(22)))
+            }, LinearLayout.LayoutParams(-1, dp(14)))
             if (url.isNotBlank()) {
                 addView(ImageView(this@MainActivity).apply {
-                    setImageBitmap(qrBitmap(url, dp(112)))
+                    setImageBitmap(qrBitmap(url, qrSize))
                     contentDescription = "微信扫码点歌二维码"
-                    setBackgroundColor(Color.WHITE)
-                }, LinearLayout.LayoutParams(dp(116), dp(116)))
+                }, LinearLayout.LayoutParams(qrSize, qrSize))
             } else {
                 addView(TextView(this@MainActivity).apply {
-                    text = "连接局域网后\n自动生成二维码"
-                    textSize = 11f
+                    text = "连接局域网"
+                    textSize = 9f
                     gravity = Gravity.CENTER
                     setTextColor(Color.DKGRAY)
-                }, LinearLayout.LayoutParams(dp(116), dp(116)))
+                }, LinearLayout.LayoutParams(qrSize, qrSize))
             }
             addView(TextView(this@MainActivity).apply {
-                text = "扫码手机点歌"
-                textSize = 12f
+                text = "手机点歌"
+                textSize = 9f
                 gravity = Gravity.CENTER
                 setTextColor(Color.rgb(7, 193, 96))
                 includeFontPadding = false
-            }, LinearLayout.LayoutParams(-1, dp(22)))
+            }, LinearLayout.LayoutParams(-1, dp(14)))
             setOnClickListener { showMobileRemoteDialog() }
         }
-        val params = FrameLayout.LayoutParams(dp(128), dp(152), Gravity.END or Gravity.BOTTOM).apply {
-            rightMargin = dp(20)
-            bottomMargin = dp(76)
+        val params = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            Gravity.END or Gravity.TOP
+        ).apply {
+            topMargin = dp(7)
+            rightMargin = dp(7)
         }
-        root.addView(box, params)
-        // 二维码浮层是展示型表面: 被焦点填充盖住会直接遮掉二维码。
+        playerContainer.addView(box, params)
+        box.bringToFront()
         TvFocusStyler.suppressFill(box)
         mobileQrOverlay = box
     }
