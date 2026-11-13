@@ -664,7 +664,7 @@
     <string name="license_vip_near_expired_hint">(会员即将到期)</string>
     <string name="license_vip_none_free_download">下载次数已用完</string>
     <string name="license_vip_remain_day">天</string>
-    <string name="license_vip_valid">麦动</string>
+    <string name="license_vip_valid">晓晓呀</string>
     <string name="license_vip_valid_date">会员有效期：</string>
     <string name="license_wx_activate_hint">微信扫码免费开通会员</string>
     <string name="license_wx_charge_hint">微信扫码续费</string>
@@ -1009,7 +1009,7 @@
     <string name="setting_boot_logo">开机静态图</string>
     <string name="setting_bootstrap">运行向导</string>
     <string name="setting_bootstrap_open">打开</string>
-    <string name="setting_button_check_upgrade">麦动</string>
+    <string name="setting_button_check_upgrade">晓晓呀</string>
     <string name="setting_button_local_file">扫描本地文件</string>
     <string name="setting_button_remove_db">还原</string>
     <string name="setting_button_save">保存</string>
