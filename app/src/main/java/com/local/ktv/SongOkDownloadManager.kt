@@ -283,7 +283,8 @@ object SongOkDownloadManager {
         val target = getLocalFile(song)
         val partial = File(target.parentFile, "${target.name}.download")
         target.parentFile?.mkdirs()
-        if (attempt > 0) partial.delete()
+        // Do not delete the partial file here: a same-URL retry must let OkDownload
+        // validate and reuse its persisted breakpoint. Fresh-URL retries clear it first.
         val task = OkDownloadTask.Builder(url, partial.parentFile!!)
             .setFilename(partial.name)
             .setPassIfAlreadyCompleted(false)
