@@ -72,6 +72,7 @@ function openPage(name) {
   if (name === "favorites") loadFavorites();
   if (name === "playlists") loadPlaylists();
   if (name === "search" && !$("#hotList").children.length) loadHot(1);
+  if (name === "settings") loadDownloads();
 }
 
 async function refresh() {
@@ -414,6 +415,52 @@ async function loadQueue(silent = false) {
   finally { uiState.queueBusy = false; }
 }
 
+function formatDownloadSize(bytes) {
+  const value = Number(bytes || 0);
+  if (value < 1024 * 1024) return (value / 1024).toFixed(1) + " KB";
+  if (value < 1024 * 1024 * 1024) return (value / 1024 / 1024).toFixed(2) + " GB".replace(" GB", " MB");
+  return (value / 1024 / 1024 / 1024).toFixed(2) + " GB";
+}
+
+async function loadDownloads() {
+  const count = $("#downloadCount");
+  const size = $("#downloadSize");
+  if (!count || !size) return;
+  count.textContent = "读取中…";
+  try {
+    const data = await api("/api/v1/downloads");
+    count.textContent = String(data.count || 0) + " 首";
+    size.textContent = formatDownloadSize(data.bytes || 0);
+    $("#downloadStorageBar").style.width = data.bytes > 0 ? "100%" : "0%";
+    $("#downloadHint").textContent = data.count
+      ? "共 " + data.count + " 首；清理时会保留正在播放的歌曲，其余下载缓存将删除"
+      : "当前没有已下载歌曲；在线曲库、收藏和歌单不会受到影响";
+    $("#deleteAllDownloads").disabled = !data.count;
+  } catch (error) {
+    count.textContent = "暂不可用";
+    size.textContent = "—";
+    $("#downloadHint").textContent = "无法连接 KTV 主机，请确认设备在线后重试";
+    $("#deleteAllDownloads").disabled = true;
+    toast(error.message);
+  }
+}
+
+async function deleteAllDownloads() {
+  if (!window.confirm("确定删除 KTV 主机上的全部已下载歌曲吗？\n正在播放的歌曲会保留；在线曲库、收藏和歌单不会删除。")) return;
+  const button = $("#deleteAllDownloads");
+  button.disabled = true;
+  button.textContent = "正在清理…";
+  try {
+    const data = await api("/api/v1/downloads", { method: "DELETE" });
+    toast(data.message || "下载歌曲清理完成");
+    await loadDownloads();
+  } catch (error) {
+    toast(error.message || "清理失败");
+  } finally {
+    button.textContent = "一键删除全部下载歌曲";
+  }
+}
+
 document.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button) return;
@@ -623,6 +670,8 @@ $("#more").addEventListener("click", () => search(false));
 $("#hotPrev").addEventListener("click", () => loadHot(uiState.hotPage - 1));
 $("#hotNext").addEventListener("click", () => loadHot(uiState.hotPage + 1));
 $("#douyinRefresh")?.addEventListener("click", () => loadDouyinMusicBoard(true));
+$("#refreshDownloads")?.addEventListener("click", loadDownloads);
+$("#deleteAllDownloads")?.addEventListener("click", deleteAllDownloads);
 // 音乐音量可调; 麦克风音量由功放硬件控制, 不再向设备发送无效果请求。
 attachThumbOnlyDrag($("#musicVolume"));
 $("#musicVolume").addEventListener("input", (event) => { $("#musicValue").textContent = event.target.value; });
