@@ -81,6 +81,7 @@ class KtvStore {
             lastScoreSong = root.optString("lastScoreSong", "")
             marqueeEnabled = root.optBoolean("marqueeEnabled", true)
             marqueeText = root.optString("marqueeText", "欢迎使用晓晓呀")
+            if (marqueeText == "欢迎使用麦动") marqueeText = "欢迎使用晓晓呀"
             playWhileDownloading = root.optBoolean("playWhileDownloading", false)
             clearDownloadsOnBoot = root.optBoolean("clearDownloadsOnBoot", false)
             autoFullscreenSeconds = root.optInt("autoFullscreenSeconds", 30)
