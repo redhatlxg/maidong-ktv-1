@@ -35,6 +35,29 @@ jobs:
           node --check app/src/main/assets/mobile/ktv_api.js
           node -e 'const fs=require("fs");const s=fs.readFileSync("app/src/main/assets/mobile/app.js","utf8");if(/(^|[^$])\$\("\[data-singer-group\]"\)\.forEach/m.test(s)){console.error("Invalid single-element selector used as a collection");process.exit(1)}'
 
+      - name: Validate Xiaoxiaoya branding
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const app = fs.readFileSync("app/src/main/res/values/strings.xml", "utf8");
+          const html = fs.readFileSync("app/src/main/assets/mobile/index.html", "utf8");
+          const js = fs.readFileSync("app/src/main/assets/mobile/app.js", "utf8");
+          const main = fs.readFileSync("app/src/main/java/com/local/ktv/MainActivity.kt", "utf8");
+          const checks = [
+            ["launcher name", app.includes('<string name="app_name">晓晓呀</string>')],
+            ["mobile title", html.includes("<title>晓晓呀")],
+            ["mobile heading", html.includes("<h1>晓晓呀</h1>")],
+            ["mobile connection status", js.includes("已连接晓晓呀") && js.includes("正在连接晓晓呀")],
+            ["TV heading", main.includes('label("晓晓呀"')]
+          ];
+          const failed = checks.filter(([, ok]) => !ok);
+          if (failed.length) {
+            for (const [name] of failed) console.error("Brand check failed: " + name);
+            process.exit(1);
+          }
+          console.log("Xiaoxiaoya branding checks passed");
+          NODE
+
       # Package the installable QA APK first; tests run afterward and their result remains visible.
       - name: Build QA APK
         id: build-apk
@@ -42,7 +65,6 @@ jobs:
 
       - name: Run unit tests
         id: unit-tests
-        continue-on-error: true
         run: ./gradlew --no-daemon :app:testDebugUnitTest
 
       - name: Upload QA APK
