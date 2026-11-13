@@ -4122,6 +4122,8 @@ class MainActivity : AppCompatActivity() {
                 method == "GET" && path.startsWith("/api/v1/lyrics/") -> remoteLyricsJson(URLDecoder.decode(path.substringAfterLast('/'), "UTF-8"))
                 method == "GET" && path == "/api/v1/hot" -> remoteOk(remoteHotJson(query))
                 method == "GET" && path == "/api/v1/queue" -> remoteOk(remoteQueueJson())
+                method == "GET" && path == "/api/v1/downloads" -> remoteOk(remoteDownloadsJson())
+                method == "DELETE" && path == "/api/v1/downloads" -> remoteDeleteAllDownloads()
                 method == "GET" && path == "/api/v1/favorites" -> remoteOk(remoteFavoritesJson())
                 method == "POST" && path == "/api/v1/favorites" -> remoteToggleFavorite(JSONObject(body))
                 method == "GET" && path == "/api/v1/playlists" -> remoteOk(remotePlaylistsJson())
@@ -4139,6 +4141,38 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             remoteError(400, "BAD_REQUEST", e.message ?: "请求参数错误")
         }
+    }
+
+    /** 手机端下载管理：只统计歌曲缓存目录，不扫描曲库数据库或外接 U 盘。 */
+    private fun remoteDownloadsJson(): JSONObject {
+        val directory = File("${MuseDatabase.VIDEO_ROOT}/${MuseDatabase.CLOUD_SONG_DIR}")
+        val files = directory.listFiles()?.filter { file ->
+            file.isFile && (file.name.endsWith(".ts", true) || file.name.endsWith(".ls", true))
+        }.orEmpty()
+        return JSONObject().apply {
+            put("count", files.size)
+            put("bytes", files.sumOf { it.length() })
+            put("directoryAvailable", directory.exists() || directory.parentFile?.exists() == true)
+        }
+    }
+
+    /** 批量删除已下载歌曲；正在播放的本地缓存保留，避免删除中断当前演唱。 */
+    private fun remoteDeleteAllDownloads(): LocalRemoteServer.ApiResponse {
+        val keep = currentSong?.let { SongOkDownloadManager.getLocalFile(it) }
+        val result = SongOkDownloadManager.deleteAllDownloaded(keep)
+        stateDatabase.clearDownloads()
+        main.post {
+            downloads.clear()
+            if (browseMode == "downloads") loadDownloadedList()
+            remoteStateVersion++
+            toast("已清理 ${result.first} 首下载歌曲")
+        }
+        return remoteOk(JSONObject().apply {
+            put("deletedCount", result.first)
+            put("freedBytes", result.second)
+            put("keptPlaying", keep?.exists() == true)
+            put("message", if (result.first == 0) "没有可删除的已下载歌曲" else "已删除 ${result.first} 首下载歌曲")
+        })
     }
 
     private fun remoteStateJson(): JSONObject {
