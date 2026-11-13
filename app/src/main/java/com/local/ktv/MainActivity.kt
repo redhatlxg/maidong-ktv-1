@@ -4220,7 +4220,7 @@ class MainActivity : AppCompatActivity() {
         if (now - previous < 1800L) return remoteError(429, "TOO_FAST", "慢一点哦，给大家留出展示时间")
         interactionRate[sender] = now
         val item = JSONObject().apply {
-            put("id", ++interactionSequence)
+            put("id", maxOf(++interactionSequence, now).also { interactionSequence = it })
             put("kind", kind)
             put("name", name)
             put("text", if (kind == "message") text else when (kind) {
