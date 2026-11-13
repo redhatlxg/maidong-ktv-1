@@ -1,5 +1,6 @@
 package com.local.ktv
 
+import android.database.sqlite.SQLiteDatabase
 import android.util.Base64
 import android.util.Log
 import org.json.JSONObject
@@ -63,7 +64,7 @@ object MuseDbSync {
         val gzFile = File(target.parentFile, "${target.name}.gz.download")
         val tmpDb = File(target.parentFile, "${target.name}.download")
         try {
-            downloadFile(file.url, gzFile) { pct -> onProgress((pct * 80 / 100).coerceIn(0, 80), null) }
+            retryCatalogDownload(file.url, gzFile) { pct -> onProgress((pct * 80 / 100).coerceIn(0, 80), null) }
             onProgress(80, "正在校验曲库文件")
             if (file.md5.isNotEmpty()) {
                 check(md5(gzFile).equals(file.md5, ignoreCase = true)) { "曲库文件校验失败" }
@@ -88,6 +89,8 @@ object MuseDbSync {
                     }
                 }
             }
+            onProgress(94, "正在检查数据库完整性")
+            validateDatabase(tmpDb)
             onProgress(96, "正在安装曲库")
             val backup = File(target.parentFile, "${target.name}.backup")
             backup.delete()
@@ -107,6 +110,31 @@ object MuseDbSync {
             runCatching { gzFile.delete() }
             runCatching { tmpDb.delete() }
         }
+    }
+
+    private fun retryCatalogDownload(url: String, dest: File, onProgress: (Int) -> Unit) {
+        var last: Throwable? = null
+        for (attempt in 1..3) {
+            try { downloadFile(url, dest, onProgress); return }
+            catch (error: Throwable) {
+                last = error
+                runCatching { dest.delete() }
+                MiliLog.warn("MUSE-DB download retry failed")
+                if (attempt < 3) Thread.sleep(1500L * attempt)
+            }
+        }
+        throw IllegalStateException("曲库下载失败，已重试3次", last)
+    }
+
+    private fun validateDatabase(file: File) {
+        check(file.isFile && file.length() > 16L) { "曲库数据库文件无效" }
+        val header = ByteArray(16)
+        file.inputStream().use { input -> check(input.read(header) == 16) }
+        check(String(header, Charsets.US_ASCII) == "SQLite format 3\u0000") { "下载内容不是 SQLite 数据库" }
+        val db = SQLiteDatabase.openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+        try { db.rawQuery("PRAGMA quick_check", null).use { cursor ->
+            check(cursor.moveToFirst() && cursor.getString(0).equals("ok", ignoreCase = true)) { "曲库数据库完整性检查失败" }
+        } } finally { db.close() }
     }
 
     private fun saveVersion(version: String) {
