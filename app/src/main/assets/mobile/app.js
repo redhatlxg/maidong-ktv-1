@@ -336,6 +336,20 @@ async function loadQueue() {
 document.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button) return;
+  if (button.dataset.letter) {
+    const input = $("#query");
+    input.value += button.dataset.letter.toLowerCase();
+    input.focus();
+  }
+  if (button.dataset.letterAction === "backspace") {
+    const input = $("#query");
+    input.value = input.value.slice(0, -1);
+    input.focus();
+  }
+  if (button.dataset.letterAction === "clear") {
+    $("#query").value = "";
+    $("#query").focus();
+  }
   if (button.dataset.page) openPage(button.dataset.page);
   if (button.dataset.action) playerAction(button.dataset.action);
   if (button.dataset.vocal) updateAudio({ vocalMode: button.dataset.vocal });
