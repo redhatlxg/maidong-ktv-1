@@ -2,6 +2,7 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 const uiState = {
   page: 1, query: "", searchMode: "song", selectedSinger: "", voiceSingerFilter: "", busy: false,
+  categoriesLoaded: false, categoryBusy: false, selectedCategory: "",
   hotPage: 1, hotPageSize: 10, hotBusy: false, hotTab: "library", douyinHotLoaded: false, douyinHotBusy: false,
   visible: true, connected: false, eqEnabled: false, queueBusy: false, queueUpdatedAt: 0,
   equalizer: null, searchAbort: null, searchKey: "", interactionLastId: 0, interactionReady: false, interactionBusy: false, interactionAudio: null
@@ -392,6 +393,41 @@ async function search(reset = true, preserveVoiceSingerFilter = false) {
 }
 
 
+async function loadCategories() {
+  if (uiState.categoriesLoaded) return;
+  try {
+    const data = await api("/api/v1/categories");
+    const categories = data.categories || [];
+    $("#categoryChips").innerHTML = categories.map(name =>
+      '<button type="button" data-category="' + escapeHtml(name) + '">' + escapeHtml(name) + '</button>'
+    ).join("") || '<span class="category-loading">曲库暂时没有分类</span>';
+    uiState.categoriesLoaded = true;
+  } catch (error) {
+    $("#categoryChips").innerHTML = '<span class="category-loading">分类加载失败，进入页面后可重试</span>';
+  }
+}
+
+async function loadCategorySongs(category) {
+  if (uiState.categoryBusy) return;
+  uiState.categoryBusy = true;
+  uiState.selectedCategory = category;
+  $("[data-category]").forEach(button => button.classList.toggle("active", button.dataset.category === category));
+  $("#categoryResults").classList.remove("hidden");
+  $("#categoryTitle").textContent = category + " · 正在加载";
+  $("#categorySongList").innerHTML = '<div class="empty compact">正在读取分类歌曲…</div>';
+  try {
+    const data = await api("/api/v1/category?name=" + encodeURIComponent(category));
+    const songs = data.songs || [];
+    $("#categoryTitle").textContent = category + " · " + songs.length + " 首";
+    $("#categorySongList").innerHTML = songs.map((song, index) => songRow(song, false, false, index)).join("")
+      || '<div class="empty compact">这个分类暂时没有可点歌曲</div>';
+  } catch (error) {
+    $("#categorySongList").innerHTML = '<div class="empty compact">' + escapeHtml(error.message || "分类加载失败") + '</div>';
+  } finally {
+    uiState.categoryBusy = false;
+  }
+}
+
 const DOUYIN_MUSIC_README = "https://raw.githubusercontent.com/SnailDev/douyin-hot-hub/main/README.md";
 
 function parseDouyinMusicBoard(markdown) {
@@ -572,6 +608,7 @@ document.addEventListener("click", async (event) => {
   if (!button) return;
   if (button.dataset.page) openPage(button.dataset.page);
   if (button.dataset.hotTab) { switchHotTab(button.dataset.hotTab); return; }
+  if (button.dataset.category) { loadCategorySongs(button.dataset.category); return; }
   if (button.id === "douyinRefresh") { loadDouyinMusicBoard(true); return; }
   if (button.dataset.douyinSearch) {
     switchHotTab("library");
@@ -930,4 +967,5 @@ window.setInterval(() => {
 }, 1000);
 refresh();
 refreshInteractions();
+loadCategories();
 loadHot(1);
