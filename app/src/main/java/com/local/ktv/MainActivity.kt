@@ -4580,7 +4580,8 @@ class MainActivity : AppCompatActivity() {
         val overrideHost = Settings.Global.getString(contentResolver, "maidong_remote_host")
             ?.takeIf { LocalRemoteServer.isPrivateIpv4(it) }
         val host = overrideHost ?: remoteServer.address() ?: return ""
-        return "http://$host:${remoteServer.port()}/mobile"
+        val pair = remoteServer.pairingToken() ?: return ""
+        return "http://$host:${remoteServer.port()}/mobile?pair=$pair"
     }
 
     /**
