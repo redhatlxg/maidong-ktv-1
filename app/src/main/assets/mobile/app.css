@@ -485,3 +485,33 @@ nav button.active:before{background:rgba(179,105,245,.18)}
   .ktv-welcome{padding:14px 12px}
   .ktv-welcome b{font-size:17px}
 }
+
+
+/* Commercial mobile UX: favorites are a first-class song-library destination. */
+nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0}
+nav button{min-width:0;padding-left:2px;padding-right:2px;font-size:11px}
+nav button i{font-style:normal}
+.nav-favorite{
+  display:flex;align-items:center;justify-content:center;
+  width:24px;height:24px;margin:0 auto 4px;
+  color:#f4d48a;font-size:22px;line-height:1;
+  text-shadow:0 0 12px rgba(244,212,138,.38)
+}
+nav button.active .nav-favorite{color:#fff0b8}
+.song .favorite{
+  flex:0 0 34px;width:34px;height:34px;margin-right:6px;
+  border:1px solid rgba(241,212,255,.18);border-radius:11px;
+  color:#cdb8df;background:rgba(255,255,255,.075);
+  font-size:20px;line-height:1
+}
+.song .favorite.active{
+  color:#ffe39b;background:rgba(236,185,91,.16);
+  border-color:rgba(255,220,150,.34);
+  text-shadow:0 0 12px rgba(255,220,150,.5)
+}
+.song .favorite:active{transform:scale(.94)}
+#favoritesList .song{background:linear-gradient(110deg,rgba(255,255,255,.14),rgba(255,255,255,.06))}
+@media(max-width:360px){
+  nav button{font-size:10px}
+  .song .favorite{margin-right:4px}
+}
