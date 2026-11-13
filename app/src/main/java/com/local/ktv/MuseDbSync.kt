@@ -46,9 +46,7 @@ object MuseDbSync {
 
     /** 取远端曲库版本；失败返回 null。版本取自 files[0].date(毫秒时间戳)。 */
     fun fetchVersion(): String? = runCatching {
-        val cookie = login() ?: return null
-        val file = sync(cookie) ?: return null
-        file.version
+        acquireCatalogFile()?.version
     }.getOrNull()
 
     /**
@@ -57,8 +55,7 @@ object MuseDbSync {
      *        因为解压/校验阶段很慢，只给百分比会让界面长时间不动、看着像卡死。
      */
     fun download(onProgress: (Int, String?) -> Unit): File {
-        val cookie = login() ?: error("登录曲库服务失败")
-        val file = sync(cookie) ?: error("曲库同步失败或无可用文件")
+        val file = acquireCatalogFile() ?: error("曲库服务登录或同步失败，已重试3次")
         val version = file.version
 
         val gzFile = File(target.parentFile, "${target.name}.gz.download")
@@ -139,6 +136,33 @@ object MuseDbSync {
 
     private fun saveVersion(version: String) {
         runCatching { File(target.parentFile, "db_version.txt").writeText(version) }
+    }
+
+    /**
+     * 登录与同步作为一个完整会话重试。登录成功但同步请求瞬时失败时，
+     * 下一轮会重新登录取得新 cookie，避免复用过期会话。
+     */
+    private fun acquireCatalogFile(): DbFile? {
+        var lastFailure: String? = null
+        for (attempt in 1..3) {
+            val result = runCatching {
+                val cookie = login() ?: error("login returned no session cookie")
+                sync(cookie) ?: error("sync returned no catalog file")
+            }
+            if (result.isSuccess) return result.getOrNull()
+            lastFailure = result.exceptionOrNull()?.message
+            MiliLog.warn("MUSE-DB session attempt $attempt/3 failed: ${lastFailure ?: "unknown"}")
+            if (attempt < 3) {
+                try {
+                    Thread.sleep(1_000L * attempt)
+                } catch (interrupted: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    throw IllegalStateException("曲库同步重试被中断", interrupted)
+                }
+            }
+        }
+        MiliLog.warn("MUSE-DB session failed after 3 attempts: ${lastFailure ?: "unknown"}")
+        return null
     }
 
     private fun login(): String? {
