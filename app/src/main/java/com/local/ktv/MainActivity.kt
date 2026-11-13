@@ -7417,6 +7417,11 @@ class MainActivity : AppCompatActivity() {
         homeCardRegular = findViewById<TextView?>(R.id.home_card_regular)
         homeCardFavorite = findViewById<TextView?>(R.id.home_card_favorite)
         homeCardCategory = findViewById<TextView?>(R.id.home_card_category)
+        // 首页右侧歌手分类墙：直接进入对应歌手分组，减少点歌层级。
+        findViewById<View?>(R.id.home_singer_mainland_male)?.setOnClickListener { loadSingers("大陆男") }
+        findViewById<View?>(R.id.home_singer_mainland_female)?.setOnClickListener { loadSingers("大陆女") }
+        findViewById<View?>(R.id.home_singer_hktw_male)?.setOnClickListener { loadSingers("港台男") }
+        findViewById<View?>(R.id.home_singer_hktw_female)?.setOnClickListener { loadSingers("港台女") }
         // 首页底部三卡(常唱/收藏/分类): 渐变底 + 右侧独立配图，替代整张被
         // 拉伸变形的 webp 背景；配图尺寸随屏幕密度/紧凑模式自适应。
         run {
@@ -7592,6 +7597,10 @@ class MainActivity : AppCompatActivity() {
             btnBottomGuess, btnBottomMobileOrder, btnBottomSettings, btnBottomExit, btnBack, btnPrevPage, btnNextPage,
             homeCardRank, homeCardSong, homeCardSinger, homeCardLocal, homeCardRegular,
             homeCardFavorite, homeCardCategory,
+            findViewById(R.id.home_singer_mainland_male),
+            findViewById(R.id.home_singer_mainland_female),
+            findViewById(R.id.home_singer_hktw_male),
+            findViewById(R.id.home_singer_hktw_female),
         ).forEach(::installPressFeedback)
         // 播放画面宿主/海报是「表面型」View: 不能套焦点/按下填充,
         // 否则触摸一次就会用纯色层盖住整个播放画面或海报(见 TvFocusStyler.suppressFill)。
@@ -9043,7 +9052,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * 加载歌手列表
      */
-    private fun loadSingers() {
+    private fun loadSingers(initialCategory: String? = null) {
         searchScope = "singer"
         activeSearchQuery = ""
         setSearchText("")
@@ -9059,10 +9068,10 @@ class MainActivity : AppCompatActivity() {
         currentCategories.add("港台女")
         currentCategories.add("中国组合")
         currentCategories.add("外国组合")
-        currentCategoryIndex = 0
+        currentCategoryIndex = currentCategories.indexOf(initialCategory ?: "全部").coerceAtLeast(0)
         updateCategories()
         browsePage = 0
-        loadSingerList("全部")
+        loadSingerList(initialCategory ?: "全部")
     }
 
     private fun loadSingerList(type: String?, query: String = activeSearchQuery) {

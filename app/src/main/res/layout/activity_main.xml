@@ -887,10 +887,82 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="0.20"
-                android:background="@drawable/home_banner_0">
+                android:background="@drawable/bg_player_window">
+
+                <LinearLayout
+                    android:id="@+id/home_singer_wall"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:gravity="center"
+                    android:background="#E6111921">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="歌手点歌"
+                        android:textColor="#FFE2C996"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:paddingBottom="10dp" />
+
+                    <TextView
+                        android:id="@+id/home_singer_mainland_male"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginBottom="7dp"
+                        android:gravity="center"
+                        android:background="@drawable/bg_home_card_blue"
+                        android:text="内地男歌手"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/home_singer_mainland_female"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginBottom="7dp"
+                        android:gravity="center"
+                        android:background="@drawable/bg_home_card_violet"
+                        android:text="内地女歌手"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/home_singer_hktw_male"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginBottom="7dp"
+                        android:gravity="center"
+                        android:background="@drawable/bg_home_card_orange"
+                        android:text="港台男歌手"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/home_singer_hktw_female"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:background="@drawable/bg_home_card_pink"
+                        android:text="港台女歌手"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/text_poster_page"
+                    android:visibility="gone"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="bottom|end"
