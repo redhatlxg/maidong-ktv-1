@@ -25,7 +25,7 @@ class KtvStore {
     @JvmField var lastScore = 0
     @JvmField var lastScoreSong = ""
     @JvmField var marqueeEnabled = true
-    @JvmField var marqueeText = "欢迎使用麦动"
+    @JvmField var marqueeText = "欢迎使用晓晓呀"
     @JvmField var playWhileDownloading = false
     @JvmField var clearDownloadsOnBoot = false
     @JvmField var autoFullscreenSeconds = 30
@@ -80,7 +80,7 @@ class KtvStore {
             lastScore = root.optInt("lastScore", 0)
             lastScoreSong = root.optString("lastScoreSong", "")
             marqueeEnabled = root.optBoolean("marqueeEnabled", true)
-            marqueeText = root.optString("marqueeText", "欢迎使用麦动")
+            marqueeText = root.optString("marqueeText", "欢迎使用晓晓呀")
             playWhileDownloading = root.optBoolean("playWhileDownloading", false)
             clearDownloadsOnBoot = root.optBoolean("clearDownloadsOnBoot", false)
             autoFullscreenSeconds = root.optInt("autoFullscreenSeconds", 30)
