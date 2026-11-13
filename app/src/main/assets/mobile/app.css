@@ -265,3 +265,13 @@ nav button>b{background:#b58a4b;color:#fff}
 nav{background:rgba(10,15,20,.97);border-top:1px solid rgba(217,184,121,.14)}
 nav button.active{color:#e2c996}
 @media(max-width:390px){.ktv-welcome{align-items:flex-start;padding:14px 12px}.ktv-welcome b{font-size:17px}.ktv-shortcuts{flex-basis:94px}.ktv-shortcuts button{font-size:10px}}
+
+/* Commercial KTV navigation refresh: five clear destinations, thumb-friendly on phones. */
+nav{grid-template-columns:repeat(5,minmax(0,1fr));height:76px;padding:5px 8px env(safe-area-inset-bottom);background:rgba(8,12,18,.97);border-top:1px solid rgba(226,201,150,.2)}
+nav button{gap:5px;font-size:10px;letter-spacing:.2px}
+nav button.active{color:#e8ca8b}
+.nav-singer:before{content:"";position:absolute;width:8px;height:8px;left:6px;top:1px;border:2px solid currentColor;border-radius:50%}
+.nav-singer:after{content:"";position:absolute;width:18px;height:9px;left:1px;bottom:0;border:2px solid currentColor;border-bottom:0;border-radius:12px 12px 0 0}
+.nav-ranking:before{content:"";position:absolute;left:2px;bottom:1px;width:5px;height:9px;background:currentColor;border-radius:2px 2px 0 0;box-shadow:7px -6px 0 currentColor,14px -12px 0 currentColor}
+.nav-ranking:after{content:"";position:absolute;left:1px;right:0;bottom:0;border-bottom:2px solid currentColor}
+@media(max-width:360px){nav{padding-left:3px;padding-right:3px}nav button{font-size:9px}}

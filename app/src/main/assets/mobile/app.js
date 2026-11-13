@@ -98,11 +98,28 @@ async function loadSingers(reset = true) {
 }
 
 function openPage(name) {
-  $$("nav button,.page").forEach((element) => element.classList.remove("active"));
+  const pageName = name === "singers" || name === "ranking" ? "search" : name;
+  $("nav button,.page").forEach((element) => element.classList.remove("active"));
   $(`nav button[data-page="${name}"]`)?.classList.add("active");
-  $("#" + name)?.classList.add("active");
+  $("#" + pageName)?.classList.add("active");
   if (name === "queue") loadQueue();
   if (name === "search" && !$("#hotList").children.length) loadHot(1);
+  if (name === "singers") {
+    uiState.searchMode = "singer";
+    uiState.category = "";
+    $("#singerGroups").classList.remove("hidden");
+    $("#query").placeholder = "输入歌手名或拼音";
+    $("[data-search-mode]").forEach((item) => item.classList.toggle("active", item.dataset.searchMode === "singer"));
+    uiState.singerGroup = "all";
+    $("[data-singer-group]").forEach((item) => item.classList.toggle("active", item.dataset.singerGroup === "all"));
+    $("#searchResultBlock").classList.remove("hidden");
+    loadSingers(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  if (name === "ranking") {
+    if (!$("#hotList").children.length) loadHot(1);
+    window.setTimeout(() => $("#hot")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
 }
 
 async function refresh() {

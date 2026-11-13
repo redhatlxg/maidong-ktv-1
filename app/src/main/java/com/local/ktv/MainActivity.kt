@@ -3557,8 +3557,8 @@ class MainActivity : AppCompatActivity() {
         if (prefs()?.getBoolean(KEY_SHOW_MOBILE_QR, true) != true) return
         val url = remoteUrl()
         if (url.isBlank()) return
-        val qrSize = dp(if (compactUi) 96 else 118)
-        val panelWidth = dp(if (compactUi) 112 else 134)
+        val qrSize = dp(if (compactUi) 108 else 132)
+        val panelWidth = dp(if (compactUi) 124 else 150)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
@@ -3576,7 +3576,14 @@ class MainActivity : AppCompatActivity() {
                 gravity = Gravity.CENTER
                 setTextColor(Color.rgb(48, 65, 77))
                 includeFontPadding = false
-            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 15 else 17)))
+            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 17 else 19)))
+            addView(TextView(this@MainActivity).apply {
+                text = "扫码进入手机点歌大厅"
+                textSize = if (compactUi) 7f else 8f
+                gravity = Gravity.CENTER
+                setTextColor(Color.rgb(105, 116, 126))
+                includeFontPadding = false
+            }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 12 else 14)))
             setOnClickListener { showMobileRemoteDialog() }
         }
         val params = FrameLayout.LayoutParams(panelWidth, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.END or Gravity.TOP).apply {
