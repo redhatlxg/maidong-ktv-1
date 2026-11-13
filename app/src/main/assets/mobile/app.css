@@ -249,3 +249,69 @@ button:focus-visible,input:focus-visible{outline:2px solid #e8ca8d;outline-offse
 @media(min-width:430px){.page{padding-left:20px;padding-right:20px}.hero-card{min-height:170px}.album{flex-basis:104px;width:104px;height:104px}}
 @media(max-width:360px){.topbar{padding-left:14px;padding-right:14px}.page{padding-left:12px;padding-right:12px}.brand h1{font-size:18px}.queue-badge{gap:5px;padding:6px 8px}.queue-badge span{font-size:10px}.hero-card{gap:12px;padding:15px}.album{flex-basis:78px;width:78px;height:78px}.hero-copy h2{font-size:20px}.controls{gap:7px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
+
+
+/* ── 晓晓呀KTV：实体遥控器式手机控制台 ── */
+:root{--gold:#f4cc78;--gold2:#d99b43;--bg:#080f20;--glass:rgba(17,31,55,.88);--glass2:rgba(28,45,72,.9);--line:rgba(205,220,244,.15);--muted:#9aabc4;--green:#65dfc0;--violet:#8e9fff}
+html,body{background:#080f20}
+body{background:radial-gradient(ellipse at 50% -10%,#26395c 0,#111d35 42%,#080f20 100%);color:#f4f6fb}
+.aurora-one{background:#34558a;opacity:.26}.aurora-two{background:#b8894e;opacity:.12}.mesh{opacity:.1}
+.app-shell{max-width:480px}
+.topbar{height:82px;padding:13px 17px 9px}
+.brand-mark{width:45px;height:45px;border-radius:13px}
+.queue-badge{border-radius:12px;background:linear-gradient(145deg,#263c5d,#14243d);border:1px solid rgba(244,204,120,.3)}
+.queue-badge b{background:linear-gradient(145deg,#ffdfa0,#d69b45);color:#34230e}
+#remote.page{padding:9px 14px 24px}
+#remote .hero-card{min-height:112px;padding:15px 17px;border-radius:22px;background:linear-gradient(145deg,#1b2b47,#101c32 72%);border:1px solid rgba(190,211,240,.2);box-shadow:inset 0 1px rgba(255,255,255,.08),0 12px 28px rgba(0,0,0,.3)}
+#remote .hero-glow{background:#6f91c8;opacity:.16}
+#remote .album{flex-basis:70px;width:70px;height:70px;border-radius:17px;padding:5px;background:linear-gradient(145deg,#e9c77d,#8b693c);box-shadow:0 5px 18px #050b17}
+#remote .disc{border-radius:13px;background:repeating-radial-gradient(circle,#111c30 0 3px,#253652 4px 7px)}
+#remote .disc:after{width:17px;height:17px;background:linear-gradient(145deg,#ffe3a0,#b88742)}
+#remote .disc span{font-size:20px}
+#remote .eyebrow{color:#b6c6df;letter-spacing:1.4px}
+#remote .playing-dot{background:#67e3c2;box-shadow:0 0 8px #67e3c2}
+#remote .hero-copy h2{font-size:19px;margin:7px 0 4px;color:#fff}
+#remote .hero-copy p{font-size:12px;color:#a9bad2}
+#remote .sound-wave i{background:linear-gradient(to top,#c18b42,#ffe5a5)}
+/* Physical remote keypad: three raised hardware buttons */
+#remote .controls{position:relative;display:grid;grid-template-columns:1fr 1.12fr 1fr;gap:12px;padding:22px 8px 20px}
+#remote .controls:before{content:"PLAYER CONTROL";position:absolute;top:5px;left:11px;color:#8294af;font-size:8px;font-weight:800;letter-spacing:2px}
+#remote .controls button{height:66px;margin-top:13px;border-radius:17px;background:linear-gradient(160deg,#263a59,#15243c 70%);border:1px solid rgba(198,216,244,.18);box-shadow:inset 0 1px rgba(255,255,255,.12),0 6px 0 #091323,0 10px 16px rgba(0,0,0,.3);color:#dce6f5}
+#remote .controls button:active{transform:translateY(3px);box-shadow:inset 0 1px rgba(255,255,255,.08),0 3px 0 #091323,0 5px 10px rgba(0,0,0,.24)}
+#remote .controls .control-icon{font-size:22px;color:#f4d28b}
+#remote .controls button>span:last-child{font-size:11px;color:#bdcbe0}
+#remote .controls .primary{height:76px;border-radius:19px;margin-top:8px;background:linear-gradient(155deg,#f4d58f,#bd873e);border:1px solid #ffe6ac;box-shadow:inset 0 1px rgba(255,255,255,.55),0 6px 0 #76552c,0 11px 19px rgba(0,0,0,.32);color:#261b0d}
+#remote .controls .primary .control-icon,#remote .controls .primary>span:last-child{color:#261b0d;font-weight:900}
+#remote .controls .primary:active{transform:translateY(3px);box-shadow:inset 0 1px rgba(255,255,255,.4),0 3px 0 #76552c,0 5px 10px rgba(0,0,0,.2)}
+/* Control clusters look like the molded body of a real remote */
+#remote .glass-card{background:linear-gradient(145deg,#1a2b46,#101c31);border:1px solid rgba(192,211,239,.17);border-radius:20px;box-shadow:inset 0 1px rgba(255,255,255,.07),0 9px 22px rgba(0,0,0,.2)}
+#remote .audio-panel{padding:16px 16px 14px}
+#remote .panel-title{margin-bottom:13px}
+#remote .panel-title b{font-size:14px;letter-spacing:.4px}
+#remote .tiny-icon{color:#f2ce83}
+#remote .seg{background:#0b1527;border:1px solid rgba(196,214,239,.1);border-radius:13px}
+#remote .seg button{height:42px;border-radius:10px;color:#aebdd2}
+#remote .seg button.active{background:linear-gradient(145deg,#f4d58f,#c18c45);color:#2b2113;box-shadow:inset 0 1px rgba(255,255,255,.45),0 3px 9px rgba(0,0,0,.2)}
+#remote .seg button span{background:rgba(255,255,255,.1)}
+#remote .audio-row{margin-top:15px;color:#dbe4f1}
+#remote .audio-row>b{color:#f2ce83}
+#remote .volume-icon{background:#263b5a;color:#f3d28e}
+#remote .volume-icon.mic{color:#79d9c5}
+#remote input[type=range]::-webkit-slider-runnable-track{height:6px;background:linear-gradient(90deg,#8ca5c8,#e8c27b)}
+#remote input[type=range]::-moz-range-track{height:6px;background:linear-gradient(90deg,#8ca5c8,#e8c27b)}
+#remote input[type=range]::-webkit-slider-thumb{border-color:#f0cc7c}
+#remote input[type=range]::-moz-range-thumb{border-color:#f0cc7c}
+#remote .eq-panel{padding:15px;margin-top:12px}
+#remote .eq-title{min-height:25px}
+#remote .eq-title-right small{color:#aabbd2}
+#remote .eq-preset{background:#172943;border-color:rgba(196,214,239,.14);color:#c6d3e5}
+#remote .eq-preset.active{background:linear-gradient(145deg,#f4d58f,#c18c45);color:#2b2113}
+#remote .next-card{margin-top:12px;padding:13px 14px;border-radius:16px;background:linear-gradient(145deg,#1b2c47,#101c31);border:1px solid rgba(192,211,239,.14)}
+#remote .next-number{background:linear-gradient(145deg,#f4d58f,#bd873e);color:#2c2112;font-weight:900}
+#remote .next-card small{color:#93a7c2}
+#remote .next-card b{color:#edf3fb}
+#remote .next-card button{color:#f2ce83}
+nav{background:rgba(7,15,29,.94);border-top:1px solid rgba(195,214,242,.16)}
+nav button{color:#8092ad}nav button.active{color:#f2ce83}
+#toast{background:rgba(20,35,57,.97);border-color:rgba(244,204,120,.25)}
+@media(max-width:360px){#remote.page{padding-left:11px;padding-right:11px}#remote .controls{gap:8px;padding-left:5px;padding-right:5px}#remote .controls button{height:62px}#remote .controls .primary{height:72px}}
