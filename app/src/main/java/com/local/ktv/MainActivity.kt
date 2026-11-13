@@ -7414,9 +7414,13 @@ class MainActivity : AppCompatActivity() {
                 val view = super.getView(position, convertView, parent) as TextView
                 view.setTextColor(TEXT_WHITE)
                 view.setTextSize(18f)
-                view.setMinHeight(dp(48))
+                view.setMinHeight(dp(54))
                 view.setGravity(Gravity.CENTER_VERTICAL)
-                view.setPadding(dp(14), dp(4), dp(14), dp(4))
+                view.setPadding(dp(18), dp(6), dp(18), dp(6))
+                // 统一使用电视端酒红焦点选择器：遥控器移动时有明确反馈，
+                // 同时保留 ListView 自身的选中/激活状态，不改变点击与点歌逻辑。
+                view.setBackgroundResource(R.drawable.bg_song_row_selector)
+                view.setIncludeFontPadding(true)
                 return view
             }
         }
@@ -7842,7 +7846,7 @@ class MainActivity : AppCompatActivity() {
             songList!!.setBackgroundResource(R.drawable.bg_song_list)
             songList!!.setDivider(ColorDrawable(Color.argb(34, 255, 255, 255)))
             songList!!.setDividerHeight(dp(1))
-            songList!!.selector = ColorDrawable(Color.TRANSPARENT)
+            songList!!.selector = AppCompatResources.getDrawable(this, R.drawable.bg_song_row_selector)
             songList!!.itemsCanFocus = true
             songList!!.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
         }
