@@ -82,7 +82,7 @@ async function loadSingers(reset = true) {
     const rows = singers.map((singer, index) => singerRow(singer, (requestedPage - 1) * 30 + index)).join("");
     if (rows) {
       $("#results").insertAdjacentHTML("beforeend", rows);
-      $("#results .singer-avatar-image").forEach((image) => {
+      $$("#results .singer-avatar-image").forEach((image) => {
         image.addEventListener("error", () => image.remove(), { once: true });
         image.addEventListener("load", () => image.previousElementSibling?.classList.add("hidden"), { once: true });
       });
@@ -251,7 +251,7 @@ async function search(reset = true) {
   if (reset) {
     uiState.resultMode = "songs";
     const nextQuery = $("#query").value.trim();
-    if (!nextQuery) {
+    if (!nextQuery && !uiState.category) {
       toast(`请输入${uiState.searchMode === "singer" ? "歌手" : "歌曲"}名称`);
       $("#query").focus();
       return;
@@ -373,10 +373,11 @@ document.addEventListener("click", async (event) => {
     uiState.query = "";
     uiState.searchKey = "";
     $("#query").value = "";
-    $("[data-search-mode]").forEach((item) => item.classList.toggle("active", item.dataset.searchMode === "song"));
+    $$("[data-search-mode]").forEach((item) => item.classList.toggle("active", item.dataset.searchMode === "song"));
     $("#singerGroups").classList.add("hidden");
-    $("#categoryChips [data-category]").forEach((item) => item.classList.toggle("active", item === button));
-    search(true);
+    $$("#categoryChips [data-category]").forEach((item) => item.classList.toggle("active", item === button));
+    if (uiState.category) search(true);
+    else $("#searchResultBlock").classList.add("hidden");
   }
   if (button.dataset.page) openPage(button.dataset.page);
   if (button.dataset.action) playerAction(button.dataset.action);
@@ -396,7 +397,7 @@ document.addEventListener("click", async (event) => {
   if (button.dataset.searchMode) {
     uiState.searchMode = button.dataset.searchMode;
     uiState.category = "";
-    $("#categoryChips [data-category]").forEach((item) => item.classList.toggle("active", !item.dataset.category));
+    $$("#categoryChips [data-category]").forEach((item) => item.classList.toggle("active", !item.dataset.category));
     $$('[data-search-mode]').forEach((item) => item.classList.toggle("active", item === button));
     $("#query").placeholder = uiState.searchMode === "singer" ? "输入歌手名或拼音" : "输入歌曲名或拼音";
     $("#singerGroups").classList.toggle("hidden", uiState.searchMode !== "singer");
