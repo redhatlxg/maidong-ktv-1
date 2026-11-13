@@ -133,11 +133,13 @@ object AppPaths {
      * 但 still 报着几 GB 可用 —— 所以判断"是不是空间问题"必须靠真实写入，而不是看数字。
      */
     fun probeWrite(dir: File, sizeMB: Int = 8): String = runCatching {
-        val probe = File(dir, ".write_probe.tmp")
+        // Use an exclusive, unique name: never truncate or delete a user's pre-existing file.
+        val probe = File(dir, ".write_probe_${System.nanoTime()}.tmp")
+        check(probe.createNewFile()) { "cannot create unique write probe" }
         try {
             val buffer = ByteArray(1024 * 1024)
             FileOutputStream(probe).use { out ->
-                repeat(sizeMB) { out.write(buffer) }
+                repeat(sizeMB.coerceAtLeast(1)) { out.write(buffer) }
                 out.flush()
                 out.fd.sync()
             }
