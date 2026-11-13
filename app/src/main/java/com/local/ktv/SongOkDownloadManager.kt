@@ -342,9 +342,19 @@ object SongOkDownloadManager {
                 if (cause != EndCause.COMPLETED) {
                     val retryable = forcedReason != null || cause != EndCause.CANCELED
                     if (retryable && attempt < MAX_RETRY_COUNT) {
-                        clearBrokenDownload(task, target)
                         val response = if (httpResponseCode > 0) " HTTP $httpResponseCode" else ""
-                        retry(song, cb, attempt + 1, forcedReason ?: "${cause.name}$response")
+                        val reason = forcedReason ?: "${cause.name}$response"
+                        if (attempt == 0) {
+                            // Keep the partial file and breakpoint record for one same-URL retry.
+                            // OkDownload rechecks Range, ETag and remote length before resuming;
+                            // if the server cannot safely resume, it falls back to a fresh download.
+                            retry(song, cb, attempt + 1, reason, url)
+                        } else {
+                            // The same-URL resume attempt also failed. Drop its checkpoint before
+                            // refreshing the signed URL so bytes from different objects never mix.
+                            clearBrokenDownload(task, target)
+                            retry(song, cb, attempt + 1, reason)
+                        }
                     } else {
                         pending.remove(key)
                         progress.remove(key)
@@ -477,17 +487,29 @@ object SongOkDownloadManager {
         File(partial.parentFile, "${partial.name}.decrypted").delete()
     }
 
-    private fun retry(song: Song, callback: DownloadCallback?, attempt: Int, reason: String) {
-        Log.w(TAG, "Retrying ${song.title}, attempt=$attempt, reason=$reason")
+    private fun retry(
+        song: Song,
+        callback: DownloadCallback?,
+        attempt: Int,
+        reason: String,
+        resumeUrl: String? = null,
+    ) {
+        Log.w(TAG, "Retrying ${song.title}, attempt=$attempt, reason=$reason, resume=${resumeUrl != null}")
         val key = songKey(song)
         pending.add(key)
         progress[key] = 0
         callback?.onDownloadProgress(song, 0)
-        song.downloadUrl = null
-        SongApiClient.clearTokenCache()
         io.execute {
             Thread.sleep((attempt * 750L).coerceAtMost(2_250L))
-            val url = runCatching { buildDownloadUrl(song, forceRefresh = true) }.getOrDefault("")
+            val url = if (!resumeUrl.isNullOrBlank()) {
+                // Reuse the identical URL once: OkDownload's task id is URL + destination,
+                // allowing its persisted breakpoint to be found and remotely validated.
+                resumeUrl
+            } else {
+                song.downloadUrl = null
+                SongApiClient.clearTokenCache()
+                runCatching { buildDownloadUrl(song, forceRefresh = true) }.getOrDefault("")
+            }
             if (url.isEmpty()) {
                 if (attempt < MAX_RETRY_COUNT) {
                     retry(song, callback, attempt + 1, "refresh download URL failed")
