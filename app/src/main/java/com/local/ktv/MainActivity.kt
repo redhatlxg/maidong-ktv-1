@@ -4109,7 +4109,7 @@ class MainActivity : AppCompatActivity() {
                 method == "GET" && path == "/api/v1/singers" -> remoteOk(remoteSingersJson(query))
                 method == "GET" && path == "/api/v1/hot" -> remoteOk(remoteHotJson(query))
                 method == "GET" && path == "/api/v1/queue" -> remoteOnMain { remoteOk(remoteQueueJson()) }
-                method == "GET" && path == "/api/v1/favorites" -> remoteOnMain { remoteOk(remoteFavoritesJson()) }
+                method == "GET" && path == "/api/v1/favorites" -> remoteFavorites()
                 method == "POST" && path == "/api/v1/favorites" -> remoteToggleFavorite(JSONObject(body))
                 method == "POST" && path == "/api/v1/queue" -> remoteOrder(JSONObject(body))
                 method == "POST" && path == "/api/v1/player/actions" -> remotePlayerAction(JSONObject(body))
@@ -4342,13 +4342,21 @@ class MainActivity : AppCompatActivity() {
         return JSONObject().put("queue", array)
     }
 
-    /** 手机端收藏列表：复用电视端同一份收藏状态。 */
-    private fun remoteFavoritesJson(): JSONObject {
+    /** 手机端收藏列表：主线程快照收藏 ID，曲库遍历放在 HTTP 工作线程执行。 */
+    private fun remoteFavorites(): LocalRemoteServer.ApiResponse {
+        var favoriteIds: Set<String> = emptySet()
+        val snapshot = remoteOnMain {
+            favoriteIds = store.favoriteIds.toSet()
+            remoteOk(JSONObject())
+        }
+        if (snapshot.status != 200) return snapshot
         val array = JSONArray()
         for (song in library.allSongs()) {
-            if (isVisibleSong(song) && store.isFavorite(song)) array.put(songJson(song))
+            if (isVisibleSong(song) && stableId(song) in favoriteIds) {
+                array.put(songJson(song, favoriteOverride = true))
+            }
         }
-        return JSONObject().put("songs", array)
+        return remoteOk(JSONObject().put("songs", array))
     }
 
     /** 手机端收藏/取消收藏：所有变更回到主线程执行并持久化。 */
@@ -4534,7 +4542,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     @Throws(Exception::class)
-    private fun songJson(song: Song): JSONObject {
+    private fun songJson(song: Song, favoriteOverride: Boolean? = null): JSONObject {
         val item = JSONObject()
         item.put("id", stableId(song))
         item.put("title", song.title)
@@ -4542,7 +4550,7 @@ class MainActivity : AppCompatActivity() {
         item.put("category", song.category)
         item.put("language", song.language)
         item.put("remote", song.remote)
-        item.put("favorite", store.isFavorite(song))
+        item.put("favorite", favoriteOverride ?: store.isFavorite(song))
         item.put("playCount", song.playCount)
         item.put("hasOriginal", hasUrl(song.originalUrl) || hasUrl(song.originalPath))
         item.put("hasAccompany", hasUrl(song.accompanyUrl) || hasUrl(song.accompanyPath))
