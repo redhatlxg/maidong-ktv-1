@@ -48,7 +48,10 @@ object SongOkDownloadManager {
     @JvmStatic
     fun getLocalFile(song: Song): File {
         val fileName = song.filename?.takeIf(String::isNotEmpty) ?: "${song.id}.ts"
-        return File("${MuseDatabase.VIDEO_ROOT}/${MuseDatabase.CLOUD_SONG_DIR}", fileName)
+        // Reuse an existing copy first. New downloads can use writable USB when internal
+        // storage is low and the device firmware exposes the mounted filesystem.
+        return UsbStorageManager.findExistingSong(fileName)
+            ?: File(UsbStorageManager.downloadDirectory(), File(fileName).name)
     }
 
     @JvmStatic
