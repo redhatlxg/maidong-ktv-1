@@ -7494,7 +7494,7 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(Color.WHITE)
                 background = GradientDrawable(
                     GradientDrawable.Orientation.TL_BR,
-                    intArrayOf(Color.rgb(254, 78, 184), Color.rgb(87, 52, 230))
+                    intArrayOf(Color.rgb(217, 184, 121), Color.rgb(120, 94, 55))
                 ).apply { shape = GradientDrawable.OVAL; setStroke(dp(3), Color.argb(210, 255, 255, 255)) }
                 visibility = View.GONE
                 alpha = 0f
@@ -7861,7 +7861,7 @@ class MainActivity : AppCompatActivity() {
         }
         notice.background = GradientDrawable(
             GradientDrawable.Orientation.TL_BR,
-            intArrayOf(Color.rgb(151, 126, 255), Color.rgb(74, 39, 220))
+            intArrayOf(Color.rgb(217, 184, 121), Color.rgb(120, 94, 55))
         ).apply { shape = GradientDrawable.OVAL }
         updatePlaybackNoticeBounds()
         notice.visibility = View.VISIBLE
@@ -7883,7 +7883,7 @@ class MainActivity : AppCompatActivity() {
         notice.text = "${song.title}\n${song.singer.orEmpty()}"
         notice.background = GradientDrawable(
             GradientDrawable.Orientation.LEFT_RIGHT,
-            intArrayOf(Color.rgb(163, 67, 225), Color.rgb(242, 48, 174), Color.argb(20, 242, 48, 174))
+            intArrayOf(Color.rgb(54, 68, 78), Color.rgb(35, 45, 54), Color.argb(20, 217, 184, 121))
         ).apply { cornerRadius = dp(3).toFloat() }
         updatePlaybackNoticeBounds()
         notice.visibility = View.VISIBLE
@@ -8153,7 +8153,7 @@ class MainActivity : AppCompatActivity() {
                 addView(label(
                     recommendationLabel,
                     12,
-                    if (historyCount > 0) Color.rgb(193, 193, 193) else Color.rgb(253, 51, 89),
+                    if (historyCount > 0) Color.rgb(193, 193, 193) else Color.rgb(217, 184, 121),
                 ).apply {
                     gravity = Gravity.CENTER
                     maxLines = 1
@@ -8345,7 +8345,7 @@ class MainActivity : AppCompatActivity() {
      * 更新 Tab 样式(选中/未选中)
      */
     private fun updateTabStyle(tab: TextView, selected: Boolean) {
-        val normalText = if (selected) Color.rgb(253, 51, 89) else Color.argb(180, 241, 241, 241)
+        val normalText = if (selected) Color.rgb(217, 184, 121) else Color.argb(180, 241, 241, 241)
         tab.setTextColor(ColorStateList(
             arrayOf(
                 intArrayOf(android.R.attr.state_focused),
@@ -8355,12 +8355,12 @@ class MainActivity : AppCompatActivity() {
             intArrayOf(Color.WHITE, Color.WHITE, normalText),
         ))
         val normal = GradientDrawable().apply {
-            setColor(if (selected) Color.argb(30, 253, 51, 89) else Color.TRANSPARENT)
+            setColor(if (selected) Color.argb(30, 217, 184, 121) else Color.TRANSPARENT)
             cornerRadius = dp(4).toFloat()
         }
         val focused = GradientDrawable(
             GradientDrawable.Orientation.LEFT_RIGHT,
-            intArrayOf(Color.rgb(232, 49, 111), Color.rgb(255, 154, 48)),
+            intArrayOf(Color.rgb(225, 203, 156), Color.rgb(169, 137, 83)),
         ).apply {
             cornerRadius = dp(4).toFloat()
             setStroke(dp(1), Color.argb(150, 255, 255, 255))
@@ -9625,7 +9625,7 @@ class MainActivity : AppCompatActivity() {
         if (databaseLoadingOverlay == null) {
             val root = findViewById<FrameLayout>(R.id.layout_root)
             val overlay = FrameLayout(this).apply {
-                setBackgroundColor(Color.rgb(24, 17, 45))
+                setBackgroundColor(Color.rgb(12, 18, 24))
                 isClickable = true
                 isFocusable = true
                 UiCompat.setElevation(this, dp(30).toFloat())
@@ -9667,7 +9667,7 @@ class MainActivity : AppCompatActivity() {
                     text = "重试"
                     textSize = 19f
                     gravity = Gravity.CENTER
-                    setTextColor(Color.rgb(45, 20, 65))
+                    setTextColor(Color.rgb(22, 27, 32))
                     isClickable = true
                     isFocusable = true
                     visibility = View.GONE
@@ -10061,8 +10061,8 @@ class MainActivity : AppCompatActivity() {
             cat.setClickable(true)
             // 设置选中状态
             if (i == currentCategoryIndex) {
-                cat.setTextColor(Color.rgb(253, 51, 89))
-                cat.setBackgroundColor(Color.argb(30, 253, 51, 89))
+                cat.setTextColor(Color.rgb(217, 184, 121))
+                cat.setBackgroundColor(Color.argb(30, 217, 184, 121))
             } else {
                 cat.setTextColor(Color.argb(200, 241, 241, 241))
                 cat.setBackgroundColor(Color.TRANSPARENT)
@@ -11336,14 +11336,14 @@ class MainActivity : AppCompatActivity() {
         /** 次级面板:更深(列表区背景)  */
         private val PANEL_2 = Color.rgb(15, 22, 31)
 
-        /** 焦点色:青绿色(原版选中态)  */
-        private val FOCUS = Color.rgb(39, 204, 164)
+        /** 焦点色:香槟金,用于商业版遥控器焦点态。 */
+        private val FOCUS = Color.rgb(217, 184, 121)
 
         /** 金色:标题与高亮(原版 color_yellow_3 #FFE363 系)  */
         private val GOLD = Color.rgb(245, 190, 89)
 
-        /** 强调红:选中态/激活态(原版 color_red #FD3359)  */
-        private val ACCENT_RED = Color.rgb(253, 51, 89)
+        /** 强调色:香槟金,避免高饱和红色造成廉价感。 */
+        private val ACCENT_RED = Color.rgb(217, 184, 121)
 
         /** 文本白:主文本色(原版 color_white_3 #F1F1F1)  */
         private val TEXT_WHITE = Color.rgb(241, 241, 241)
@@ -11351,8 +11351,8 @@ class MainActivity : AppCompatActivity() {
         /** 次要文本:70% 透明白(原版 color_white_3_70)  */
         private val TEXT_DIM = Color.argb(180, 241, 241, 241)
 
-        /** 导航选中背景:半透明红  */
-        private val NAV_SELECTED = Color.argb(50, 253, 51, 89)
+        /** 导航选中背景:低透明香槟金。 */
+        private val NAV_SELECTED = Color.argb(42, 217, 184, 121)
 
         /** 分割线颜色  */
         private val DIVIDER = Color.argb(80, 241, 241, 241)
