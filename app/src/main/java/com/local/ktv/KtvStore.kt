@@ -3,6 +3,8 @@ package com.local.ktv
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.util.LinkedHashMap
 import java.util.LinkedHashSet
 
@@ -134,10 +136,14 @@ class KtvStore {
     }
 
     fun save() {
-        writeSnapshot(snapshotJson())
+        val snapshot = runCatching { snapshotJson() }.getOrElse {
+            android.util.Log.e("KtvStore", "State serialization failed; previous data was preserved", it)
+            return
+        }
+        writeSnapshot(snapshot)
     }
 
-    fun snapshotJson(): String = runCatching {
+    fun snapshotJson(): String = JSONObject().apply {
             val root = JSONObject().apply {
                 put("loopOne", loopOne)
                 put("autoNext", autoNext)
@@ -190,14 +196,27 @@ class KtvStore {
                     playlistSongs.forEach { (name, ids) -> put(name, JSONArray(ids.toList())) }
                 })
             }
-            root.toString(2)
-        }.getOrDefault("{}")
+            // JSONObject.apply 返回对象本身；不要在序列化失败时退化成 "{}" 覆盖旧数据。
+        }.toString(2)
 
+    @Synchronized
     fun writeSnapshot(snapshot: String) {
+        val temp = File(file.parentFile ?: file.absoluteFile.parentFile, file.name + ".tmp")
         runCatching {
             file.parentFile?.mkdirs()
-            file.writeText(snapshot)
+            FileOutputStream(temp).use { output ->
+                output.write(snapshot.toByteArray(Charsets.UTF_8))
+                output.flush()
+                output.fd.sync()
+            }
+            // 临时文件与正式文件位于同一目录，rename 可避免断电时留下半截 JSON。
+            if (!temp.renameTo(file)) {
+                throw IOException("无法原子替换本地状态文件")
+            }
+        }.onFailure {
+            android.util.Log.e("KtvStore", "State snapshot write failed; previous data was preserved", it)
         }
+        if (temp.exists()) temp.delete()
     }
 
     fun toggleFavorite(song: Song): Boolean = toggleId(favoriteIds, stableId(song))
