@@ -88,6 +88,7 @@ async function refresh() {
     $("#playButton").dataset.action = data.playing ? "pause" : "resume";
     $("#playButton .control-icon").textContent = data.playing ? "Ⅱ" : "▶";
     $("#musicVolume").value = data.musicVolume ?? 85;
+    if (Number(data.musicVolume) > 0) lastAudibleVolume = Number(data.musicVolume);
     $("#micVolume").value = data.micVolume ?? 70;
     $("#musicValue").textContent = data.musicVolume ?? 85;
     // 麦克风音量由功放/混音器硬件调节(滑杆已禁用), 仅保留显示值。
