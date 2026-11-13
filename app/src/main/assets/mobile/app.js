@@ -138,7 +138,9 @@ async function refresh() {
     $("#navCount").classList.toggle("hidden", count === 0);
     $("#playButton span:last-child").textContent = data.playing ? "暂停" : "继续";
     $("#playButton").dataset.action = data.playing ? "pause" : "resume";
-    $("#playButton .control-icon").textContent = data.playing ? "Ⅱ" : "▶";
+    $("#playButton .control-icon").innerHTML = data.playing
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg>';
     $("#musicVolume").value = data.musicVolume ?? 85;
     $("#micVolume").value = data.micVolume ?? 70;
     $("#musicValue").textContent = data.musicVolume ?? 85;
