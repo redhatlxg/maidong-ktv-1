@@ -3628,7 +3628,13 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
             setPadding(dp(4), dp(4), dp(4), dp(3))
-            setBackgroundColor(Color.argb(218, 255, 255, 255))
+            background = GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                intArrayOf(Color.rgb(255, 255, 255), Color.rgb(255, 242, 244))
+            ).apply {
+                cornerRadius = dp(10).toFloat()
+                setStroke(dp(1), Color.rgb(225, 92, 108))
+            }
             UiCompat.setElevation(this, dp(12).toFloat())
             addView(ImageView(this@MainActivity).apply {
                 setImageBitmap(qrBitmap(url, qrSize))
@@ -3638,7 +3644,7 @@ class MainActivity : AppCompatActivity() {
                 text = "微信扫码点歌"
                 textSize = if (compactUi) 9f else 10f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(59, 18, 92))
+                setTextColor(Color.rgb(38, 43, 54))
                 includeFontPadding = false
             }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 16 else 18)))
             setOnClickListener { showMobileRemoteDialog() }
