@@ -163,21 +163,46 @@ class LocalRemoteServer(private val context: Context) {
                     if (colon > 0) headers[line.substring(0, colon).lowercase(Locale.US)] = line.substring(colon + 1).trim()
                 }
                 val path = target.substringBefore('?')
-                val query = parseQuery(target.substringAfter('?', ""))
                 val pageRequest = path == "/" || path == "/mobile" || path == "/mobile/"
                 if (!validHost(headers["host"]) || !validOrigin(headers["origin"])) {
                     write(client, ApiResponse(403, error("BAD_ORIGIN", "请求来源无效")))
                     return
                 }
-                val length = headers["content-length"]?.toIntOrNull()?.coerceIn(0, 65536) ?: 0
+                // 本服务不实现 chunked 编码；拒绝不支持的传输方式，避免请求体边界被绕过。
+                if (headers.containsKey("transfer-encoding")) {
+                    write(client, ApiResponse(400, error("BAD_REQUEST", "不支持的请求传输格式")))
+                    return
+                }
+                val lengthHeader = headers["content-length"]
+                val length = when {
+                    lengthHeader == null -> 0
+                    lengthHeader.toIntOrNull() == null || lengthHeader.toInt() < 0 -> {
+                        write(client, ApiResponse(400, error("BAD_REQUEST", "请求长度无效")))
+                        return
+                    }
+                    lengthHeader.toInt() > MAX_REQUEST_BODY_BYTES -> {
+                        write(client, ApiResponse(413, error("PAYLOAD_TOO_LARGE", "请求内容过大")))
+                        return
+                    }
+                    else -> lengthHeader.toInt()
+                }
+                val query = try {
+                    parseQuery(target.substringAfter('?', ""))
+                } catch (_: Exception) {
+                    write(client, ApiResponse(400, error("BAD_REQUEST", "请求参数编码无效")))
+                    return
+                }
                 val bodyBytes = ByteArray(length)
                 var offset = 0
                 while (offset < length) {
                     val count = input.read(bodyBytes, offset, length - offset)
-                    if (count < 0) break
+                    if (count < 0) {
+                        write(client, ApiResponse(400, error("BAD_REQUEST", "请求内容不完整")))
+                        return
+                    }
                     offset += count
                 }
-                val body = String(bodyBytes, 0, offset, Charsets.UTF_8)
+                val body = String(bodyBytes, Charsets.UTF_8)
                 // 手机端已成功建立会话并访问页面/接口 → 记录活跃(用于控制二维码显隐)。
                 lastActivityAtMs = System.currentTimeMillis()
                 val response = when {
@@ -212,17 +237,24 @@ class LocalRemoteServer(private val context: Context) {
     private fun validHost(host: String?): Boolean {
         if (host.isNullOrBlank()) return false
         val expected = boundAddress ?: return false
-        val name = host.substringBefore(':')
-        return name == expected || isPrivateIpv4(name)
+        return runCatching {
+            val uri = URI("http://$host")
+            uri.host == expected && (uri.port == -1 || uri.port == boundPort)
+        }.getOrDefault(false)
     }
 
     private fun validOrigin(origin: String?): Boolean {
         if (origin.isNullOrBlank() || origin == "null") return true
+        val expected = boundAddress ?: return false
         return runCatching {
             val uri = URI(origin)
-            if (uri.scheme != "http") return@runCatching false
-            val host = uri.host ?: return@runCatching false
-            uri.port == boundPort && isPrivateIpv4(host)
+            uri.scheme == "http" &&
+                uri.host == expected &&
+                uri.port == boundPort &&
+                uri.userInfo == null &&
+                uri.rawPath.isNullOrEmpty() &&
+                uri.rawQuery == null &&
+                uri.rawFragment == null
         }.getOrDefault(false)
     }
 
@@ -250,7 +282,7 @@ class LocalRemoteServer(private val context: Context) {
         val bytes = response.bytes ?: response.body.toByteArray(Charsets.UTF_8)
         val reason = when (response.status) {
             200 -> "OK"; 201 -> "Created"; 204 -> "No Content"; 400 -> "Bad Request"
-            403 -> "Forbidden"; 404 -> "Not Found"; 409 -> "Conflict"; 503 -> "Service Unavailable"; else -> "Error"
+            403 -> "Forbidden"; 404 -> "Not Found"; 409 -> "Conflict"; 413 -> "Payload Too Large"; 503 -> "Service Unavailable"; else -> "Error"
         }
         val output = socket.getOutputStream()
         output.write(("HTTP/1.1 ${response.status} $reason\r\n" +
@@ -265,6 +297,7 @@ class LocalRemoteServer(private val context: Context) {
 
     companion object {
         private const val MAX_CONCURRENT_REQUESTS = 12
+        private const val MAX_REQUEST_BODY_BYTES = 64 * 1024
 
         fun isPrivateIpv4(value: String?): Boolean = runCatching {
             val address = InetAddress.getByName(value)
