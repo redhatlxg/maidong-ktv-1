@@ -2,7 +2,7 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 const uiState = {
   page: 1, query: "", searchMode: "song", busy: false, resultMode: "songs", singerGroup: "all",
-  hotPage: 1, hotPageSize: 10, hotBusy: false,
+  hotPage: 1, hotPageSize: 10, hotBusy: false, favoritesBusy: false,
   visible: true, connected: false, eqEnabled: false, category: "", queueBusy: false, queuePollAt: 0,
   equalizer: null, searchAbort: null, searchKey: ""
 };
@@ -44,7 +44,7 @@ function songRow(song, queue = false, current = false, index = 0, ranking = fals
   const number = current ? "♪" : String(index + 1).padStart(2, "0");
   const actions = queue && !current
     ? '<button class="top">置顶</button><button class="delete" aria-label="删除">×</button>'
-    : !queue ? '<button class="order">点歌</button>' : "";
+    : !queue ? `<button class="favorite${song.favorite ? " active" : ""}" data-favorite aria-label="${song.favorite ? "取消收藏" : "加入收藏"}">${song.favorite ? "★" : "☆"}</button><button class="order">点歌</button>` : "";
   return `<div class="song${ranking && index < 3 ? " podium" : ""}" data-id="${escapeHtml(song.id)}">
     <div class="song-index">${number}</div>
     <div class="info">${current ? '<span class="playing">正在播放</span>' : ""}<b>${escapeHtml(song.title)}</b><p>${escapeHtml(song.singer)}${song.language ? " · " + escapeHtml(song.language) : ""}</p></div>
@@ -103,6 +103,7 @@ function openPage(name) {
   $(`nav button[data-page="${name}"]`)?.classList.add("active");
   $("#" + pageName)?.classList.add("active");
   if (name === "queue") loadQueue();
+  if (name === "favorites") loadFavorites();
   if (name === "search" && !$("#hotList").children.length) loadHot(1);
   if (name === "singers") {
     uiState.searchMode = "singer";
@@ -369,6 +370,21 @@ async function loadQueue() {
   finally { uiState.queueBusy = false; uiState.queuePollAt = Date.now(); }
 }
 
+async function loadFavorites() {
+  if (uiState.favoritesBusy) return;
+  uiState.favoritesBusy = true;
+  try {
+    const data = await api("/api/v1/favorites");
+    const songs = data.songs || [];
+    $("#favoritesCount").textContent = `${songs.length} 首`;
+    $("#favoritesList").innerHTML = songs.map((song, index) => songRow(song, false, false, index)).join("")
+      || '<div class="empty">还没有收藏歌曲<br><small>在点歌大厅点击星标，就能加入常唱歌单</small></div>';
+  } catch (error) {
+    $("#favoritesList").innerHTML = '<div class="empty">收藏列表加载失败，请检查连接后重试</div>';
+    toast(error.message);
+  } finally { uiState.favoritesBusy = false; }
+}
+
 document.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button) return;
@@ -437,6 +453,18 @@ document.addEventListener("click", async (event) => {
     $("#query").focus();
   }
   const row = button.closest(".song");
+  if (row && button.hasAttribute("data-favorite")) {
+    try {
+      const data = await api("/api/v1/favorites", {
+        method: "POST", body: JSON.stringify({ songId: row.dataset.id })
+      });
+      button.classList.toggle("active", !!data.favorite);
+      button.textContent = data.favorite ? "★" : "☆";
+      button.setAttribute("aria-label", data.favorite ? "取消收藏" : "加入收藏");
+      toast(data.message || (data.favorite ? "已加入收藏" : "已取消收藏"));
+      if ($("#favorites").classList.contains("active")) loadFavorites();
+    } catch (error) { toast(error.message); }
+  }
   if (row && button.classList.contains("order")) {
     try {
       await api("/api/v1/queue", { method: "POST", body: JSON.stringify({ songId: row.dataset.id }) });
