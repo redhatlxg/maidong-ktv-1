@@ -43,8 +43,8 @@ jobs:
           const fs = require("node:fs");
           const js = fs.readFileSync("app/src/main/assets/mobile/app.js", "utf8");
           const invalidCollections = [
-            /\$(?!\$)\(["'][^"']+["']\)\.forEach\s*\(/g,
-            /\$(?!\$)\(["'][^"']+["']\)\.map\s*\(/g
+            /\$(?<!\$)\(["'][^"']+["']\)\.forEach\s*\(/g,
+            /\$(?<!\$)\(["'][^"']+["']\)\.map\s*\(/g
           ];
           for (const pattern of invalidCollections) {
             const matches = js.match(pattern) || [];
