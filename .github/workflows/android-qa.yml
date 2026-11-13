@@ -35,16 +35,15 @@ jobs:
           node --check app/src/main/assets/mobile/ktv_api.js
           node -e 'const fs=require("fs");const s=fs.readFileSync("app/src/main/assets/mobile/app.js","utf8");if(/(^|[^$])\$\("\[data-singer-group\]"\)\.forEach/m.test(s)){console.error("Invalid single-element selector used as a collection");process.exit(1)}'
 
+      # Package the installable QA APK first; tests run afterward and their result remains visible.
+      - name: Build QA APK
+        id: build-apk
+        run: ./gradlew --no-daemon :app:assembleDebug
+
       - name: Run unit tests
         id: unit-tests
         continue-on-error: true
         run: ./gradlew --no-daemon :app:testDebugUnitTest
-
-      # Keep APK packaging independent from legacy unit-test compilation.
-      # The test step's failure remains visible in Actions and must be fixed before release.
-      - name: Build QA APK
-        id: build-apk
-        run: ./gradlew --no-daemon :app:assembleDebug
 
       - name: Upload QA APK
         if: always() && steps.build-apk.outcome == 'success'
