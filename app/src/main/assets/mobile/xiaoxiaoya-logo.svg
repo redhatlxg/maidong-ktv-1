@@ -1,11 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="晓晓呀KTV">
-<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#18064b"/><stop offset=".52" stop-color="#5420d7"/><stop offset="1" stop-color="#071b62"/></linearGradient><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff2a6"/><stop offset=".45" stop-color="#ffc83d"/><stop offset="1" stop-color="#d87808"/></linearGradient><linearGradient id="mic" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".5" stop-color="#c7d7ff"/><stop offset="1" stop-color="#8d6bff"/></linearGradient></defs>
-<rect x="10" y="10" width="492" height="492" rx="112" fill="url(#bg)"/><rect x="18" y="18" width="476" height="476" rx="104" fill="none" stroke="#9d76ff" stroke-width="7" opacity=".75"/>
-<path d="M152 116l29 32 47-49 27 40 49-35-8 62H158z" fill="url(#gold)" stroke="#fff0a0" stroke-width="7" stroke-linejoin="round"/>
-<rect x="196" y="142" width="120" height="198" rx="60" fill="url(#mic)" stroke="#fff" stroke-width="9"/>
-<g stroke="#34216f" stroke-width="11" stroke-linecap="round"><path d="M218 193h76M211 225h90M211 257h90M220 289h72"/></g>
-<path d="M176 250v31a80 80 0 00160 0v-31M256 361v47m-48 0h96" fill="none" stroke="url(#gold)" stroke-width="18" stroke-linecap="round"/>
-<path d="M118 213l-22 19 28 3m270-43 23 18-29 7" fill="none" stroke="#ff5de4" stroke-width="9" stroke-linecap="round"/>
-<path d="M110 438h292" stroke="url(#gold)" stroke-width="8" stroke-linecap="round"/>
-<text x="256" y="474" text-anchor="middle" font-family="sans-serif" font-size="37" font-weight="900" fill="#fff">晓晓呀 KTV</text>
+  <defs>
+    <linearGradient id="shell" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#172a50"/><stop offset=".55" stop-color="#101a36"/><stop offset="1" stop-color="#080f22"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff1b8"/><stop offset=".48" stop-color="#f6c96b"/><stop offset="1" stop-color="#c88736"/></linearGradient>
+    <linearGradient id="aqua" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9af3e4"/><stop offset="1" stop-color="#4aa9c8"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect x="14" y="14" width="484" height="484" rx="116" fill="url(#shell)"/>
+  <rect x="22" y="22" width="468" height="468" rx="108" fill="none" stroke="#f1cb7d" stroke-opacity=".72" stroke-width="5"/>
+  <circle cx="256" cy="205" r="142" fill="#172b50" opacity=".48"/>
+  <g fill="none" stroke="url(#aqua)" stroke-linecap="round" stroke-width="13" opacity=".95">
+    <path d="M76 191c-22 22-22 56 0 78"/><path d="M105 169c-34 36-34 88 0 124"/>
+    <path d="M436 191c22 22 22 56 0 78"/><path d="M407 169c34 36 34 88 0 124"/>
+  </g>
+  <g filter="url(#glow)">
+    <rect x="211" y="91" width="90" height="191" rx="45" fill="url(#gold)" stroke="#fff4ce" stroke-width="6"/>
+    <path d="M230 145h52M230 178h52M230 211h52" stroke="#79552e" stroke-width="9" stroke-linecap="round"/>
+    <path d="M177 207v22a79 79 0 00158 0v-22" fill="none" stroke="url(#gold)" stroke-width="17" stroke-linecap="round"/>
+    <path d="M256 309v35m-42 0h84" stroke="url(#gold)" stroke-width="15" stroke-linecap="round"/>
+  </g>
+  <path d="M127 369h258" stroke="#f0ca7b" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+  <text x="256" y="418" text-anchor="middle" font-family="sans-serif" font-size="56" font-weight="900" letter-spacing="3" fill="#fff4d7">晓晓呀</text>
+  <text x="256" y="462" text-anchor="middle" font-family="sans-serif" font-size="27" font-weight="800" letter-spacing="10" fill="#8de4d9">K T V</text>
 </svg>
