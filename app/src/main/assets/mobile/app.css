@@ -608,3 +608,13 @@ nav .nav-settings{font-style:normal;font-size:18px;line-height:20px}
 .voice-command-hint{margin:10px 0 0;color:#8fa1bb;font-size:10px;line-height:1.6}
 @keyframes voice-pulse{50%{box-shadow:0 0 0 6px rgba(255,155,171,.1)}}
 @media(prefers-reduced-motion:reduce){.voice-command-button.listening{animation:none}}
+
+
+.category-section{margin-top:24px;padding:16px;border:1px solid rgba(255,255,255,.1);border-radius:20px;background:rgba(255,255,255,.035)}
+.category-chips{display:flex;gap:8px;overflow-x:auto;padding:12px 1px 3px;scrollbar-width:none}
+.category-chips::-webkit-scrollbar{display:none}
+.category-chips button{flex:0 0 auto;min-height:38px;padding:0 15px;border:1px solid rgba(89,214,208,.2);border-radius:13px;background:rgba(255,255,255,.055);color:#d6e8ee;font-size:12px;white-space:nowrap}
+.category-chips button.active{background:linear-gradient(135deg,#59d6d0,#3b9fc1);color:#071522;font-weight:700;border-color:transparent}
+.category-loading{padding:10px 2px;color:#91aab9;font-size:12px}
+.category-results{margin-top:15px}
+.category-results .list{margin-top:12px}
