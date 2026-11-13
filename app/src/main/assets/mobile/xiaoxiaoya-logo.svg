@@ -1,24 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="晓晓呀KTV">
   <defs>
-    <linearGradient id="shell" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#172a50"/><stop offset=".55" stop-color="#101a36"/><stop offset="1" stop-color="#080f22"/></linearGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff1b8"/><stop offset=".48" stop-color="#f6c96b"/><stop offset="1" stop-color="#c88736"/></linearGradient>
-    <linearGradient id="aqua" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9af3e4"/><stop offset="1" stop-color="#4aa9c8"/></linearGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#263B60"/><stop offset="1" stop-color="#10182B"/></linearGradient>
+    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#72F0DF"/><stop offset="1" stop-color="#27AFC4"/></linearGradient>
   </defs>
-  <rect x="14" y="14" width="484" height="484" rx="116" fill="url(#shell)"/>
-  <rect x="22" y="22" width="468" height="468" rx="108" fill="none" stroke="#f1cb7d" stroke-opacity=".72" stroke-width="5"/>
-  <circle cx="256" cy="205" r="142" fill="#172b50" opacity=".48"/>
-  <g fill="none" stroke="url(#aqua)" stroke-linecap="round" stroke-width="13" opacity=".95">
-    <path d="M76 191c-22 22-22 56 0 78"/><path d="M105 169c-34 36-34 88 0 124"/>
-    <path d="M436 191c22 22 22 56 0 78"/><path d="M407 169c34 36 34 88 0 124"/>
-  </g>
-  <g filter="url(#glow)">
-    <rect x="211" y="91" width="90" height="191" rx="45" fill="url(#gold)" stroke="#fff4ce" stroke-width="6"/>
-    <path d="M230 145h52M230 178h52M230 211h52" stroke="#79552e" stroke-width="9" stroke-linecap="round"/>
-    <path d="M177 207v22a79 79 0 00158 0v-22" fill="none" stroke="url(#gold)" stroke-width="17" stroke-linecap="round"/>
-    <path d="M256 309v35m-42 0h84" stroke="url(#gold)" stroke-width="15" stroke-linecap="round"/>
-  </g>
-  <path d="M127 369h258" stroke="#f0ca7b" stroke-width="3" stroke-linecap="round" opacity=".8"/>
-  <text x="256" y="418" text-anchor="middle" font-family="sans-serif" font-size="56" font-weight="900" letter-spacing="3" fill="#fff4d7">晓晓呀</text>
-  <text x="256" y="462" text-anchor="middle" font-family="sans-serif" font-size="27" font-weight="800" letter-spacing="10" fill="#8de4d9">K T V</text>
+  <rect x="14" y="14" width="484" height="484" rx="116" fill="#10182B"/>
+  <rect x="24" y="24" width="464" height="464" rx="104" fill="url(#navy)" stroke="#536B91" stroke-width="5"/>
+  <circle cx="256" cy="214" r="156" fill="#314B72" opacity=".28"/>
+  <g fill="none" stroke="url(#teal)" stroke-width="13" stroke-linecap="round"><path d="M95 193c-22 22-22 56 0 78M123 171c-34 36-34 88 0 124M417 193c22 22 22 56 0 78M389 171c34 36 34 88 0 124"/></g>
+  <rect x="211" y="88" width="90" height="190" rx="45" fill="url(#teal)" stroke="#D9FFFA" stroke-width="6"/>
+  <path d="M230 145h52M230 178h52M230 211h52" stroke="#17334A" stroke-width="10" stroke-linecap="round"/>
+  <path d="M177 207v22a79 79 0 00158 0v-22M256 309v35m-42 0h84" fill="none" stroke="#EAF5FF" stroke-width="15" stroke-linecap="round"/>
+  <text x="256" y="418" text-anchor="middle" font-family="sans-serif" font-size="56" font-weight="900" letter-spacing="3" fill="#F5F8FF">晓晓呀</text>
+  <text x="256" y="462" text-anchor="middle" font-family="sans-serif" font-size="27" font-weight="800" letter-spacing="10" fill="#72E8DC">K T V</text>
 </svg>
