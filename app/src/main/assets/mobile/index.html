@@ -57,6 +57,22 @@
           </div>
         </article>
 
+        <article class="glass-card live-interaction-card">
+          <div class="panel-title"><div><span class="tiny-icon">✦</span><b>现场互动</b></div><small><i class="live-dot"></i> 全场同步</small></div>
+          <p class="interaction-caption">给正在唱歌的朋友送上掌声，也可以写一句鼓励</p>
+          <div class="interaction-actions">
+            <button type="button" data-reaction="applause"><span>👏</span><b>掌声</b></button>
+            <button type="button" data-reaction="cheer"><span>🎉</span><b>欢呼</b></button>
+            <button type="button" data-reaction="bravo"><span>✨</span><b>喝彩</b></button>
+          </div>
+          <form id="interactionForm" class="interaction-compose">
+            <input id="interactionName" maxlength="12" placeholder="昵称（可选）" aria-label="昵称">
+            <div><input id="interactionText" maxlength="40" placeholder="写一句表扬或祝福…" aria-label="互动文字" autocomplete="off"><button type="submit">发送</button></div>
+            <small>文明互动 · 最多40字 · 发送间隔约2秒</small>
+          </form>
+          <div class="interaction-feed-heading"><b>现场留言</b><span id="interactionCount">等待互动…</span></div>
+          <div id="interactionFeed" class="interaction-feed"><div class="interaction-empty">还没有留言，来做第一个气氛担当吧！</div></div>
+        </article>
         <article class="next-card"><div class="next-number">02</div><div><small>下一首</small><b id="nextSong">队列为空</b></div><button data-page="queue">查看队列 <span>›</span></button></article>
       </section>
 
