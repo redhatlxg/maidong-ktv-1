@@ -111,6 +111,7 @@ async function sendInteraction(kind, text = "") {
       body: JSON.stringify({ senderId: interactionSenderId(), name, kind, text })
     });
     if (kind !== "message") playInteractionSound(kind);
+    uiState.interactionLastId = Math.max(uiState.interactionLastId, Number(data.id) || 0);
     if (kind === "message") $("#interactionText").value = "";
     toast(data.message || "已送出现场互动");
     refreshInteractions();
