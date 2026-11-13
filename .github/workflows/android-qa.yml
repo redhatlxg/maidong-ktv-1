@@ -2,6 +2,8 @@ name: Android QA Build
 
 on:
   push:
+    branches: [master, 'ui/**']
+  pull_request:
     branches: [master]
   workflow_dispatch:
 
@@ -37,7 +39,22 @@ jobs:
         run: |
           node --check app/src/main/assets/mobile/app.js
           node --check app/src/main/assets/mobile/ktv_api.js
-          node -e 'const fs=require("fs");const s=fs.readFileSync("app/src/main/assets/mobile/app.js","utf8");if(/(^|[^$])\$\("\[data-singer-group\]"\)\.forEach/m.test(s)){console.error("Invalid single-element selector used as a collection");process.exit(1)}'
+          node <<'NODE'
+          const fs = require("node:fs");
+          const js = fs.readFileSync("app/src/main/assets/mobile/app.js", "utf8");
+          const invalidCollections = [
+            /(?<!\$)\$\(["'][^"']+["']\)\.forEach\s*\(/g,
+            /(?<!\$)\$\(["'][^"']+["']\)\.map\s*\(/g
+          ];
+          for (const pattern of invalidCollections) {
+            const matches = js.match(pattern) || [];
+            if (matches.length) {
+              console.error("Single-element query used as a collection:", matches.join(", "));
+              process.exit(1);
+            }
+          }
+          console.log("Mobile selector collection checks passed");
+          NODE
 
       - name: Validate Xiaoxiaoya branding
         run: |

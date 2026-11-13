@@ -2249,7 +2249,7 @@ class MainActivity : AppCompatActivity() {
         val tv = TextView(this)
         tv.setText(title)
         tv.setTextSize(17f)
-        tv.setTextColor(Color.rgb(0x27, 0xCC, 0xA4))
+        tv.setTextColor(Color.rgb(235, 76, 94))
         tv.setTextSize(17f)
         tv.setPadding(dp(8), dp(8), dp(8), dp(12))
         tv.setTypeface(null, Typeface.BOLD)
@@ -2940,7 +2940,7 @@ class MainActivity : AppCompatActivity() {
         lateinit var eqArea: LinearLayout
         fun renderEqEnabled() {
             eqSwitch.text = if (KtvEqualizer.enabled) "均衡器：开启" else "均衡器：关闭"
-            eqSwitch.setTextColor(if (KtvEqualizer.enabled) Color.rgb(39, 204, 164) else Color.WHITE)
+            eqSwitch.setTextColor(if (KtvEqualizer.enabled) Color.rgb(235, 76, 94) else Color.WHITE)
             // 关闭时预设/频段整体降透明度，直观表达"当前不生效"。
             eqArea.alpha = if (KtvEqualizer.enabled) 1f else 0.45f
         }
@@ -3509,7 +3509,7 @@ class MainActivity : AppCompatActivity() {
         val confirm = TextView(this).apply {
             text = "确 定"
             textSize = if (compact) 13f else 15f
-            setTextColor(Color.rgb(59, 18, 92))
+            setTextColor(Color.rgb(255, 255, 255))
             gravity = Gravity.CENTER
             isClickable = true
             isFocusable = true
@@ -3565,18 +3565,18 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(8), dp(8), dp(8), dp(7))
             background = GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
-                intArrayOf(Color.rgb(255, 255, 255), Color.rgb(239, 243, 255))
+                intArrayOf(Color.rgb(255, 255, 255), Color.rgb(255, 241, 243))
             ).apply {
                 cornerRadius = dp(16).toFloat()
-                setStroke(dp(1), Color.rgb(196, 207, 245))
+                setStroke(dp(1), Color.rgb(225, 92, 108))
             }
             UiCompat.setElevation(this, dp(14).toFloat())
             addView(TextView(this@MainActivity).apply {
-                text = "手机扫码点歌"
+                text = "微信扫码点歌"
                 textSize = if (compactUi) 11f else 13f
                 typeface = Typeface.DEFAULT_BOLD
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(48, 54, 112))
+                setTextColor(Color.rgb(38, 43, 54))
                 includeFontPadding = false
             }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 20 else 23)))
             addView(ImageView(this@MainActivity).apply {
@@ -3589,17 +3589,17 @@ class MainActivity : AppCompatActivity() {
                 bottomMargin = dp(4)
             })
             addView(TextView(this@MainActivity).apply {
-                text = "微信 / 浏览器扫一扫"
+                text = "微信扫一扫 · 进入点歌大厅"
                 textSize = if (compactUi) 8f else 9f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(77, 91, 139))
+                setTextColor(Color.rgb(72, 80, 94))
                 includeFontPadding = false
             }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 14 else 16)))
             addView(TextView(this@MainActivity).apply {
                 text = "手机与电视连接同一 Wi-Fi"
                 textSize = if (compactUi) 7f else 8f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(116, 126, 157))
+                setTextColor(Color.rgb(112, 120, 134))
                 includeFontPadding = false
             }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 13 else 15)))
             setOnClickListener { showMobileRemoteDialog() }
@@ -3628,7 +3628,13 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
             setPadding(dp(4), dp(4), dp(4), dp(3))
-            setBackgroundColor(Color.argb(218, 255, 255, 255))
+            background = GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                intArrayOf(Color.rgb(255, 255, 255), Color.rgb(255, 242, 244))
+            ).apply {
+                cornerRadius = dp(10).toFloat()
+                setStroke(dp(1), Color.rgb(225, 92, 108))
+            }
             UiCompat.setElevation(this, dp(12).toFloat())
             addView(ImageView(this@MainActivity).apply {
                 setImageBitmap(qrBitmap(url, qrSize))
@@ -3638,7 +3644,7 @@ class MainActivity : AppCompatActivity() {
                 text = "微信扫码点歌"
                 textSize = if (compactUi) 9f else 10f
                 gravity = Gravity.CENTER
-                setTextColor(Color.rgb(59, 18, 92))
+                setTextColor(Color.rgb(38, 43, 54))
                 includeFontPadding = false
             }, LinearLayout.LayoutParams(-1, dp(if (compactUi) 16 else 18)))
             setOnClickListener { showMobileRemoteDialog() }
@@ -4587,8 +4593,20 @@ class MainActivity : AppCompatActivity() {
             }
             return bitmap
         } catch (e: Exception) {
+            // 生成失败时绝不能返回纯白方块冒充二维码；用醒目的红色叉号明确标记不可扫描。
             val fallback = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565)
             fallback.eraseColor(Color.WHITE)
+            val border = (size / 24).coerceAtLeast(2)
+            val stroke = (size / 12).coerceAtLeast(3)
+            val red = Color.rgb(217, 54, 72)
+            for (y in 0 until size) {
+                for (x in 0 until size) {
+                    val onBorder = x < border || y < border || x >= size - border || y >= size - border
+                    val onCross = kotlin.math.abs(x - y) <= stroke ||
+                        kotlin.math.abs((size - 1 - x) - y) <= stroke
+                    if (onBorder || onCross) fallback.setPixel(x, y, red)
+                }
+            }
             return fallback
         }
     }
@@ -7408,9 +7426,13 @@ class MainActivity : AppCompatActivity() {
                 val view = super.getView(position, convertView, parent) as TextView
                 view.setTextColor(TEXT_WHITE)
                 view.setTextSize(18f)
-                view.setMinHeight(dp(48))
+                view.setMinHeight(dp(54))
                 view.setGravity(Gravity.CENTER_VERTICAL)
-                view.setPadding(dp(14), dp(4), dp(14), dp(4))
+                view.setPadding(dp(18), dp(6), dp(18), dp(6))
+                // 统一使用电视端酒红焦点选择器：遥控器移动时有明确反馈，
+                // 同时保留 ListView 自身的选中/激活状态，不改变点击与点歌逻辑。
+                view.setBackgroundResource(R.drawable.bg_song_row_selector)
+                view.setIncludeFontPadding(true)
                 return view
             }
         }
@@ -7836,7 +7858,7 @@ class MainActivity : AppCompatActivity() {
             songList!!.setBackgroundResource(R.drawable.bg_song_list)
             songList!!.setDivider(ColorDrawable(Color.argb(34, 255, 255, 255)))
             songList!!.setDividerHeight(dp(1))
-            songList!!.selector = ColorDrawable(Color.TRANSPARENT)
+            songList!!.selector = AppCompatResources.getDrawable(this, R.drawable.bg_song_row_selector)
             songList!!.itemsCanFocus = true
             songList!!.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
         }
@@ -11466,24 +11488,24 @@ class MainActivity : AppCompatActivity() {
         /** 手机端搜索结果缓存有效期(与上方缓存策略说明保持一致)。 */
         private const val SEARCH_CACHE_TTL_MS = 60_000L
 
-        // ===== 主题色(对标原版麦动 配色) =====
-        /** 主背景:极深蓝黑(原版 #080C12 系)  */
-        private val BG = Color.rgb(19, 29, 37)
+        // ===== 晓晓呀独立 KTV 主题色：炭黑底、酒红主操作、暖金辅助 =====
+        /** 主背景：深炭黑，避免蓝紫播放器观感。 */
+        private val BG = Color.rgb(11, 14, 20)
 
-        /** 面板背景:深蓝灰(原版卡片底色)  */
-        private val PANEL = Color.rgb(39, 54, 64)
+        /** 面板背景：略亮一级，保证电视远距离可读性。 */
+        private val PANEL = Color.rgb(23, 28, 37)
 
-        /** 次级面板:更深(列表区背景)  */
-        private val PANEL_2 = Color.rgb(29, 42, 51)
+        /** 次级面板：搜索、列表与弹窗内部底色。 */
+        private val PANEL_2 = Color.rgb(16, 20, 28)
 
-        /** 焦点色:香槟金,用于商业版遥控器焦点态。 */
-        private val FOCUS = Color.rgb(225, 196, 139)
+        /** 焦点色：高对比 KTV 红，适配遥控器方向键焦点。 */
+        private val FOCUS = Color.rgb(235, 76, 94)
 
-        /** 金色:标题与高亮(原版 color_yellow_3 #FFE363 系)  */
-        private val GOLD = Color.rgb(220, 184, 119)
+        /** 暖金：仅用于标题、状态和次级强调。 */
+        private val GOLD = Color.rgb(241, 196, 104)
 
-        /** 强调色:香槟金,避免高饱和红色造成廉价感。 */
-        private val ACCENT_RED = Color.rgb(217, 184, 121)
+        /** 主强调色：酒红，用于选中态和关键操作。 */
+        private val ACCENT_RED = Color.rgb(217, 54, 72)
 
         /** 文本白:主文本色(原版 color_white_3 #F1F1F1)  */
         private val TEXT_WHITE = Color.rgb(241, 241, 241)
@@ -11491,11 +11513,11 @@ class MainActivity : AppCompatActivity() {
         /** 次要文本:70% 透明白(原版 color_white_3_70)  */
         private val TEXT_DIM = Color.argb(205, 232, 238, 240)
 
-        /** 导航选中背景:低透明香槟金。 */
-        private val NAV_SELECTED = Color.argb(42, 217, 184, 121)
+        /** 导航选中背景：低透明酒红。 */
+        private val NAV_SELECTED = Color.argb(46, 217, 54, 72)
 
         /** 分割线颜色  */
-        private val DIVIDER = Color.argb(80, 241, 241, 241)
+        private val DIVIDER = Color.argb(42, 220, 226, 236)
         private const val PREFS = "ktv"
         private const val KEY_CATALOG_URL = "catalog_url"
         private const val KEY_SHOW_MOBILE_QR = "show_mobile_qr"

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 左列顶部状态条背景 -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#44300D68" />
-    <corners android:radius="6dp" />
-    <stroke android:width="1dp" android:color="#66C78BFF" />
+<!-- 左列顶部状态条：炭黑面板与酒红细边 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="0" android:startColor="#FF202630" android:endColor="#FF141920"/>
+    <corners android:radius="8dp"/>
+    <stroke android:width="1dp" android:color="#66D94357"/>
 </shape>

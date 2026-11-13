@@ -10,7 +10,7 @@ import android.view.ViewGroup
 import java.util.Collections
 import java.util.WeakHashMap
 
-/** Applies the original OTT red-to-orange focus fill to remote-control targets. */
+/** Applies the project's wine-red focus fill and warm-gold outline to TV remote targets. */
 object TvFocusStyler {
     private val installed = Collections.newSetFromMap(WeakHashMap<View, Boolean>())
     private val fillSuppressed = Collections.newSetFromMap(WeakHashMap<View, Boolean>())
@@ -73,14 +73,14 @@ object TvFocusStyler {
         }
         fun focusFill() = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(Color.rgb(232, 49, 111), Color.rgb(255, 154, 48)),
+                intArrayOf(Color.rgb(154, 30, 48), Color.rgb(235, 76, 94)),
             ).apply {
                 when {
                     normalCornerRadii != null -> cornerRadii = normalCornerRadii.clone()
                     normalCornerRadius != null -> cornerRadius = normalCornerRadius
                     else -> cornerRadius = view.resources.displayMetrics.density * 7f
                 }
-                setStroke((view.resources.displayMetrics.density + 0.5f).toInt(), Color.argb(150, 255, 255, 255))
+                setStroke((view.resources.displayMetrics.density + 0.5f).toInt(), Color.argb(210, 241, 196, 104))
             }
 
         view.background = StateListDrawable().apply {

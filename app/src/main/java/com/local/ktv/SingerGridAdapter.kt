@@ -28,7 +28,7 @@ class SingerGridAdapter(
         val row = (convertView as? LinearLayout) ?: LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(145))
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(154))
         }
         row.removeAllViews()
         repeat(COLUMN_COUNT) { column ->
@@ -36,7 +36,7 @@ class SingerGridAdapter(
             val singer = singers.getOrNull(index)
             row.addView(
                 singer?.let(::createSingerTile) ?: View(context),
-                LinearLayout.LayoutParams(0, dp(145), 1f),
+                LinearLayout.LayoutParams(0, dp(154), 1f),
             )
         }
         return row
@@ -47,6 +47,8 @@ class SingerGridAdapter(
         return LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            setPadding(dp(4), dp(4), dp(4), dp(4))
+            setBackgroundResource(R.drawable.bg_singer_tile)
             isFocusable = true
             isClickable = true
             setAccessibleFocus("focus:singer:${singer.getOrNull(0) ?: name}", "歌星，$name")
@@ -58,17 +60,17 @@ class SingerGridAdapter(
                 // Android 4.4 不支持 outline 圆形裁剪, UiCompat 内部按版本跳过(退化为方形头像)。
                 UiCompat.applyCircleOutline(this)
             }
-            addView(avatar, LinearLayout.LayoutParams(dp(88), dp(88)).apply { topMargin = dp(21) })
+            addView(avatar, LinearLayout.LayoutParams(dp(92), dp(92)).apply { topMargin = dp(12) })
 
             addView(TextView(context).apply {
                 text = name
-                textSize = 16f
+                textSize = 17f
                 setTextColor(Color.WHITE)
                 gravity = Gravity.CENTER
                 isSingleLine = true
                 ellipsize = android.text.TextUtils.TruncateAt.END
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(30)).apply { topMargin = dp(4) })
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(36)).apply { topMargin = dp(5) })
 
             setOnTouchListener { view, event ->
                 when (event.action) {

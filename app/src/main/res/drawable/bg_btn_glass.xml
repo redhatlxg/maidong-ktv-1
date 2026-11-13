@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 玻璃态按钮(设置/退出): 半透明白边 + 透明背景 -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#22FFFFFF" />
-    <corners android:radius="20dp" />
-    <stroke android:width="1dp" android:color="#55FFFFFF" />
+<!-- 玻璃态按钮：深色半透明与低对比暖金描边 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#33182029"/>
+    <corners android:radius="16dp"/>
+    <stroke android:width="1dp" android:color="#55D9B879"/>
 </shape>

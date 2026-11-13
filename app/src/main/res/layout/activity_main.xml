@@ -371,7 +371,7 @@
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
                             android:text="下载中..."
-                            android:textColor="#FF27CCA4"
+                            android:textColor="#FFEB4C5E"
                             android:textSize="14sp" />
 
                         <ProgressBar
@@ -476,7 +476,7 @@
                             android:gravity="center"
                             android:background="@drawable/bg_key_mode"
                             android:text="ABC"
-                            android:textColor="#FF27CCA4"
+                            android:textColor="#FFEB4C5E"
                             android:textSize="14sp" />
 
                         <TextView
@@ -560,7 +560,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="‹ 主页"
-                            android:textColor="#FF27CCA4"
+                            android:textColor="#FFEB4C5E"
                             android:textSize="14sp" />
 
                         <TextView

@@ -7,7 +7,7 @@
 <p align="center"><b>电视大屏当舞台，手机扫码当点歌台 —— 开机即唱的开源 KTV</b></p>
 
 <p align="center">
-  <a href="https://github.com/ktv668899/maidong-ktv/releases"><img src="https://img.shields.io/github/v/tag/ktv668899/maidong-ktv?label=release&amp;style=flat-square&amp;color=2f81f7&amp;sort=semver" alt="release"></a>
+  <a href="https://github.com/redhatlxg/xiaoxiao-ktv-1/releases"><img src="https://img.shields.io/github/v/tag/redhatlxg/xiaoxiao-ktv-1?label=release&amp;style=flat-square&amp;color=2f81f7&amp;sort=semver" alt="release"></a>
   <img src="https://img.shields.io/badge/platform-Android%20TV%20%7C%20Mobile-3DDC84?style=flat-square&amp;logo=android&amp;logoColor=white" alt="platform">
   <img src="https://img.shields.io/badge/Android-5.0%2B%20(API%2021)-3DDC84?style=flat-square" alt="minSdk">
   <img src="https://img.shields.io/badge/Kotlin-1.9.22-7F52FF?style=flat-square&amp;logo=kotlin&amp;logoColor=white" alt="kotlin">
@@ -16,11 +16,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ktv668899/maidong-ktv/stargazers"><img src="https://img.shields.io/github/stars/ktv668899/maidong-ktv?style=flat-square&amp;logo=github&amp;label=stars" alt="stars"></a>
-  <a href="https://github.com/ktv668899/maidong-ktv/forks"><img src="https://img.shields.io/github/forks/ktv668899/maidong-ktv?style=flat-square&amp;logo=github&amp;label=forks" alt="forks"></a>
-  <a href="https://github.com/ktv668899/maidong-ktv/issues"><img src="https://img.shields.io/github/issues/ktv668899/maidong-ktv?style=flat-square&amp;color=e05d44" alt="issues"></a>
-  <img src="https://img.shields.io/github/last-commit/ktv668899/maidong-ktv?style=flat-square&amp;color=6f42c1" alt="last commit">
-  <a href="https://gitee.com/weishilong/maidong-ktv"><img src="https://img.shields.io/badge/Gitee-weishilong%2Fmaidong--ktv-C71D23?style=flat-square&amp;logo=gitee&amp;logoColor=white" alt="gitee"></a>
+  <a href="https://github.com/redhatlxg/xiaoxiao-ktv-1/stargazers"><img src="https://img.shields.io/github/stars/redhatlxg/xiaoxiao-ktv-1?style=flat-square&amp;logo=github&amp;label=stars" alt="stars"></a>
+  <a href="https://github.com/redhatlxg/xiaoxiao-ktv-1/forks"><img src="https://img.shields.io/github/forks/redhatlxg/xiaoxiao-ktv-1?style=flat-square&amp;logo=github&amp;label=forks" alt="forks"></a>
+  <a href="https://github.com/redhatlxg/xiaoxiao-ktv-1/issues"><img src="https://img.shields.io/github/issues/redhatlxg/xiaoxiao-ktv-1?style=flat-square&amp;color=e05d44" alt="issues"></a>
+  <img src="https://img.shields.io/github/last-commit/redhatlxg/xiaoxiao-ktv-1?style=flat-square&amp;color=6f42c1" alt="last commit">
 </p>
 
 <p align="center"><i>遥控器点歌 · 手机扫码 · 原伴唱切换 · 边下边唱 · 开源无广告</i></p>
@@ -38,8 +37,8 @@
 
 一句话：**把「KTV 包厢」搬回客厅，只花一台电视的钱。**
 
-> **仓库说明**：主仓在 [Gitee](https://gitee.com/weishilong/maidong-ktv)，本仓库为 GitHub 同步镜像，代码与标签保持对象级一致。
-> **内容框架来源**：[gitee.com/yangyachao-X/maidong-ktv](https://gitee.com/yangyachao-X/maidong-ktv) —— 本项目在其界面与功能框架基础上，用 **DSH（DeepSeek Harness）** 重写了内核与数据源（曲库同步、歌曲源接入、设备认证、风控应对、远程日志、广告拦截）。
+> **项目维护说明**：本仓库由 `redhatlxg` 独立维护，后续功能、界面和版本均以本仓库为准；不主动同步或合并其他仓库的更新。GitHub 当前仍保留 Fork 网络标记，正在按平台流程申请解除。
+> **来源与致谢**：本项目基于 [原始项目框架](https://gitee.com/yangyachao-X/maidong-ktv) 进行二次开发。原作者及原项目许可继续保留，详见仓库根目录 `LICENSE`；本项目的新增代码和界面改动由本仓库单独维护。
 
 ## ✨ 为什么值得一试
 
@@ -103,7 +102,7 @@
 
 **方式一：装现成 APK**
 
-到 [Releases](https://github.com/ktv668899/maidong-ktv/releases)（或 [Gitee Releases](https://gitee.com/weishilong/maidong-ktv/releases)）下载最新 `.apk`，U 盘拷到电视安装，或用 adb：
+到 [Releases](https://github.com/redhatlxg/xiaoxiao-ktv-1/releases)（或 [Gitee Releases](https://gitee.com/weishilong/maidong-ktv/releases)）下载最新 `.apk`，U 盘拷到电视安装，或用 adb：
 
 ```bash
 adb connect 192.168.1.x:5555            # 电视需先开启「网络调试」

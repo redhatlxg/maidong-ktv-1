@@ -37,8 +37,8 @@ class PlaylistGridAdapter(
             val playlist = playlists.getOrNull(position * COLUMN_COUNT + column)
             row.addView(
                 playlist?.let(::createTile) ?: View(context),
-                LinearLayout.LayoutParams(0, dp(116), 1f).apply {
-                    setMargins(dp(3), dp(3), dp(3), dp(3))
+                LinearLayout.LayoutParams(0, dp(128), 1f).apply {
+                    setMargins(dp(5), dp(5), dp(5), dp(5))
                 },
             )
         }
@@ -46,7 +46,7 @@ class PlaylistGridAdapter(
     }
 
     private fun createTile(playlist: Array<String?>): View = FrameLayout(context).apply {
-        setBackgroundResource(R.drawable.ott_bg_rank_item_not_selected)
+        setBackgroundResource(R.drawable.bg_playlist_tile)
         isClickable = true
         isFocusable = true
         val name = playlist.getOrNull(1).orEmpty()
@@ -66,17 +66,17 @@ class PlaylistGridAdapter(
                 scaleType = ImageView.ScaleType.CENTER_CROP
             }
             alpha = 0.9f
-        }, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(82), Gravity.TOP))
+        }, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(90), Gravity.TOP))
 
         addView(TextView(context).apply {
             text = playlist.getOrNull(1).orEmpty()
-            textSize = 15f
+            textSize = 16f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
             maxLines = 2
             setBackgroundResource(R.drawable.ott_bg_playlist_name)
-            setPadding(dp(4), 0, dp(4), 0)
-        }, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(34), Gravity.BOTTOM))
+            setPadding(dp(7), dp(2), dp(7), dp(2))
+        }, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(38), Gravity.BOTTOM))
 
         setOnTouchListener { view, event ->
             when (event.action) {

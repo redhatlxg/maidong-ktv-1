@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 顶部导航条背景(子页面右列) -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#44300D68" />
-    <corners android:radius="6dp" />
-    <stroke android:width="1dp" android:color="#66C78BFF" />
+<!-- 子页面顶部导航：炭黑底与红色选中主题 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="0" android:startColor="#FF1B222C" android:endColor="#FF11161D"/>
+    <corners android:radius="8dp"/>
+    <stroke android:width="1dp" android:color="#55D9B879"/>
 </shape>
