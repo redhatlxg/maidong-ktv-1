@@ -716,7 +716,7 @@
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.60"
+                android:layout_weight="0.58"
                 android:layout_marginEnd="12dp"
                 android:orientation="vertical">
 
@@ -842,7 +842,7 @@
                 android:id="@+id/home_center_column"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.24"
+                android:layout_weight="0.18"
                 android:orientation="vertical"
                 android:layout_marginEnd="12dp">
 
@@ -907,7 +907,7 @@
                 android:id="@+id/home_poster_container"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="0.16"
+                android:layout_weight="0.24"
                 android:background="@drawable/bg_player_window">
 
                 <LinearLayout
@@ -915,7 +915,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
-                    android:padding="10dp"
+                    android:padding="14dp"
                     android:background="#F00A111C">
 
                     <TextView
@@ -923,7 +923,7 @@
                         android:layout_height="wrap_content"
                         android:text="歌手分类"
                         android:textColor="#FFF4E7CF"
-                        android:textSize="17sp"
+                        android:textSize="20sp"
                         android:textStyle="bold"
                         android:gravity="center_vertical"
                         android:paddingStart="2dp" />
@@ -933,10 +933,10 @@
                         android:layout_height="wrap_content"
                         android:text="按地区与性别快速查找"
                         android:textColor="#FF8F9AA8"
-                        android:textSize="10sp"
+                        android:textSize="12sp"
                         android:gravity="center_vertical"
                         android:paddingStart="2dp"
-                        android:paddingBottom="10dp" />
+                        android:paddingBottom="14dp" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -954,9 +954,9 @@
                             android:background="@drawable/bg_home_card_blue"
                             android:focusable="true"
                             android:clickable="true"
-                            android:text="内地男歌手\nMALE"
+                            android:text="内地男歌手\n华语经典与流行"
                             android:textColor="#FFFFFFFF"
-                            android:textSize="13sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -969,9 +969,9 @@
                             android:background="@drawable/bg_home_card_violet"
                             android:focusable="true"
                             android:clickable="true"
-                            android:text="内地女歌手\nFEMALE"
+                            android:text="内地女歌手\n热门女声精选"
                             android:textColor="#FFFFFFFF"
-                            android:textSize="13sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -992,9 +992,9 @@
                             android:background="@drawable/bg_home_card_orange"
                             android:focusable="true"
                             android:clickable="true"
-                            android:text="港台男歌手\nMALE"
+                            android:text="港台男歌手\n粤语与国语经典"
                             android:textColor="#FFFFFFFF"
-                            android:textSize="13sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -1007,9 +1007,9 @@
                             android:background="@drawable/bg_home_card_pink"
                             android:focusable="true"
                             android:clickable="true"
-                            android:text="港台女歌手\nFEMALE"
+                            android:text="港台女歌手\n经典与新歌推荐"
                             android:textColor="#FFFFFFFF"
-                            android:textSize="13sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>

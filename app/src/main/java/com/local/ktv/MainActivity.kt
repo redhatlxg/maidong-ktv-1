@@ -928,15 +928,15 @@ class MainActivity : AppCompatActivity() {
         findViewById<LinearLayout?>(R.id.home_layout)?.apply {
             setPadding(dp(16), dp(10), dp(16), dp(8))
             (getChildAt(0)?.layoutParams as? LinearLayout.LayoutParams)?.let {
-                it.weight = 0.60f
+                it.weight = 0.58f
                 getChildAt(0).layoutParams = it
             }
             (findViewById<View>(R.id.home_center_column).layoutParams as? LinearLayout.LayoutParams)?.let {
-                it.weight = 0.24f
+                it.weight = 0.18f
                 findViewById<View>(R.id.home_center_column).layoutParams = it
             }
             (findViewById<View>(R.id.home_poster_container).layoutParams as? LinearLayout.LayoutParams)?.let {
-                it.weight = 0.16f
+                it.weight = 0.24f
                 findViewById<View>(R.id.home_poster_container).layoutParams = it
             }
         }
@@ -992,7 +992,7 @@ class MainActivity : AppCompatActivity() {
         val rowInner = row.width - row.paddingLeft - row.paddingRight
         // MV 是首页主视觉：把可用宽度上限从 62% 提高到 70%，减少播放器显得过窄的问题。
         // 中列和推荐列仍保留剩余空间，避免把分类入口挤没。
-        val capW = ((rowInner - colLp.leftMargin - colLp.rightMargin) * 0.70f).toInt()
+        val capW = ((rowInner - colLp.leftMargin - colLp.rightMargin) * 0.58f).toInt()
         val targetW = ((availH * 16f) / 9f).toInt().coerceIn(dp(120), capW.coerceAtLeast(dp(120)))
         val targetH = ((targetW * 9f) / 16f).toInt()
         val tolerance = dp(2)
