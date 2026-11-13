@@ -35,8 +35,8 @@ jobs:
           const fs = require('node:fs');
           const html = fs.readFileSync('app/src/main/assets/mobile/index.html', 'utf8');
           const js = fs.readFileSync('app/src/main/assets/mobile/app.js', 'utf8');
-          const ids = new Set([...html.matchAll(/\\bid="([^"]+)"/g)].map(m => m[1]));
-          const refs = [...new Set([...js.matchAll(/\\$\\("#([A-Za-z0-9_-]+)"\\)/g)].map(m => m[1]))];
+          const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
+          const refs = [...new Set([...js.matchAll(/\$\("#([A-Za-z0-9_-]+)"\)/g)].map(m => m[1]))];
           const missing = refs.filter(id => !ids.has(id) && id !== 'micValue');
           if (missing.length) {
             console.error('Missing mobile DOM IDs:', missing.join(', '));
@@ -54,7 +54,7 @@ jobs:
         run: |
           APK="$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f | head -n 1)"
           test -n "$APK"
-          VERSION_NAME="$(sed -n 's/^[[:space:]]*versionName[[:space:]]*"\\([^"]*\\)".*/\\1/p' app/build.gradle | head -n 1)"
+          VERSION_NAME="$(sed -n 's/^[[:space:]]*versionName[[:space:]]*"\([^"]*\)".*/\1/p' app/build.gradle | head -n 1)"
           echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           echo "apk_path=$APK" >> "$GITHUB_OUTPUT"
           sha256sum "$APK" | tee "$APK.sha256"
