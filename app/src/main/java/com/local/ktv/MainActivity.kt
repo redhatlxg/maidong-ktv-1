@@ -8,6 +8,7 @@ import android.content.DialogInterface.OnShowListener
 import android.content.Intent
 import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.ComponentCallbacks2
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.res.ColorStateList
@@ -807,8 +808,6 @@ class MainActivity : AppCompatActivity() {
         synchronized(remoteSearchCache) { remoteSearchCache.clear() }
         synchronized(browsePageCache) { browsePageCache.clear() }
         synchronized(browseCountCache) { browseCountCache.clear() }
-        browseRequestsInFlight.clear()
-        browseDisplayRequests.clear()
         synchronized(liveInteractions) { liveInteractions.clear() }
         interactionRate.clear()
     }
